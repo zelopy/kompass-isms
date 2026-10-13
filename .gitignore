@@ -23,3 +23,8 @@ lab/**/*.tfvars
 
 # RAG 인덱스
 .chroma/
+
+# 기준 문서 원문 — 재배포하지 않음. 출처와 해시는 knowledge/SOURCES.md에 기록
+knowledge/**/*.pdf
+knowledge/**/*.hwp
+knowledge/**/*.hwpx

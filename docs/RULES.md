@@ -52,7 +52,7 @@
 ### IAM-007 관리자 권한 사용자 현황
 - 심각도: high
 - API: `iam:ListUsers`, `iam:ListAttachedUserPolicies`, `iam:ListGroupsForUser`, `iam:ListAttachedGroupPolicies`, `iam:ListUserPolicies`, `iam:GetUserPolicy`
-- 판정: `AdministratorAccess` 또는 `Action: "*"`, `Resource: "*"` 정책을 직접·그룹 경유로 가진 사용자를 식별한다. 사용자에게 직접 연결된 경우 FAIL, 그룹 경유는 INFO 수준으로 현황 보고.
+- 판정: `AdministratorAccess` 또는 `Action: "*"`, `Resource: "*"` 정책을 직접·그룹 경유로 가진 사용자를 식별한다. 사용자에게 직접 연결된 경우 FAIL, 그룹 경유는 `REVIEW`로 현황 보고.
 - 비고: 관리자 수의 적정성은 사람이 판단할 영역이므로, 현황 증적 제공이 주목적이다. (`automation: partial`)
 - ISMS-P(초안): 2.5.5 특수 계정 및 권한 관리
 - KISA: (미정)

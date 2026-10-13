@@ -61,6 +61,7 @@ class Status(StrEnum):
     PASS = "PASS"
     FAIL = "FAIL"
     ERROR = "ERROR"               # 수집 실패, 권한 없음
+    REVIEW = "REVIEW"             # 수집은 자동, 양호/취약 판단은 사람이 함
     NOT_APPLICABLE = "N/A"        # 점검 대상 리소스 없음
 
 class Severity(StrEnum):
@@ -97,6 +98,28 @@ class Mappings(BaseModel):
 
 `evidence`에는 판정에 실제로 쓴 값만 원본 그대로 담는다. 이것이 ISMS-P 증적이 된다.
 
+`REVIEW`는 룰이 결정론적으로 내리는 상태다. "사람이 판단할 영역"임을 룰 정의에서 미리 정해 두는 것이며, LLM이나 에이전트가 다른 상태를 `REVIEW`로 바꾸는 것이 아니다.
+
+## 항목 단위 집계
+
+finding은 리소스 단위(버킷별, 사용자별, 보안그룹별)로 나오지만, KISA·ISMS-P 점검표는 항목 단위로 결과를 적는다. 항목 결과는 그 항목에 매핑된 모든 finding의 상태를 아래 우선순위로 집계한다.
+
+```
+FAIL > ERROR > REVIEW > PASS > N/A
+```
+
+| 항목 결과 | 조건 | 점검표 표기 |
+|---|---|---|
+| FAIL | FAIL이 하나라도 있음 | 취약 |
+| ERROR | FAIL 없음, ERROR가 하나라도 있음 | 확인 불가 |
+| REVIEW | FAIL·ERROR 없음, REVIEW가 하나라도 있음 | 검토 필요 |
+| PASS | 모두 PASS 또는 N/A이고 PASS가 하나 이상 | 양호 |
+| N/A | 모두 N/A | 해당 없음 |
+
+- FAIL과 ERROR가 섞여 있으면 FAIL이다. 확인된 취약점이 있으면 항목은 취약이며, 확인 불가 리소스 수는 별도로 표시한다.
+- ERROR가 섞인 항목은 절대 양호가 되지 않는다 (ADR-005).
+- 집계 함수는 `models.py`에 두고, 우선순위 조합 전체에 대한 테스트를 둔다.
+
 ## 인터페이스
 
 ```python
@@ -132,6 +155,7 @@ IAM 역할을 `SecurityAudit`로 제한하는 것과 별개로, 코드 레벨에
 S3-001:
   title: 계정 수준 S3 퍼블릭 액세스 차단 미설정
   kisa: []                 # 0단계에서 원문 확인 후 채움
+  kisa_importance: null    # KISA 원문 중요도 (상 | 중 | 하), 원문 확인 후 채움
   isms_p: ["2.6.1"]
   automation: full         # full | partial | manual
   verified: false          # 원문 근거 확인 전까지 false
