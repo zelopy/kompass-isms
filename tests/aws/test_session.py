@@ -4,6 +4,7 @@ from collections.abc import Iterator
 from typing import Any
 
 import pytest
+from botocore.exceptions import EndpointConnectionError
 from moto import mock_aws
 
 from kompass.aws.guard import ReadOnlyViolation
@@ -55,6 +56,13 @@ def test_enabled_regions_excludes_not_opted_in() -> None:
     assert enabled == {"ap-northeast-2", "ap-east-1"}
 
 
+def test_enabled_regions_includes_missing_status() -> None:
+    # 상태를 모르는 리전을 조용히 빼면 점검 누락이 드러나지 않는다.
+    # 넣어 두면 실제로 비활성일 때 collector 단계에서 ERROR로 드러난다.
+    _, enabled = enabled_regions({"Regions": [{"RegionName": "xx-new-1"}]})
+    assert enabled == {"xx-new-1"}
+
+
 # --- select_regions ---
 
 KNOWN = {"ap-northeast-2", "us-east-1", "me-south-1"}
@@ -78,6 +86,12 @@ def test_select_rejects_unknown_region() -> None:
 def test_select_rejects_not_enabled_region() -> None:
     with pytest.raises(SessionError, match="me-south-1"):
         select_regions(KNOWN, ENABLED, ["me-south-1"])
+
+
+def test_select_rejects_plain_string() -> None:
+    # 문자열도 Sequence[str]이라 mypy가 잡지 못한다. 글자 단위로 쪼개지는 것을 막는다
+    with pytest.raises(TypeError):
+        select_regions(KNOWN, ENABLED, "ap-northeast-2")
 
 
 def test_select_rejects_empty_request() -> None:
@@ -162,3 +176,46 @@ def test_scan_context_is_immutable(aws: None, audit_profile: str) -> None:
     scan: Any = open_scan(profile=audit_profile)
     with pytest.raises(AttributeError):
         scan.account_id = "999999999999"
+
+
+def test_open_scan_with_env_credentials_only(aws: None) -> None:
+    # 프로필 없이 환경 변수 자격증명만 있는 경우 (conftest의 가짜 키)
+    scan = open_scan(region="ap-northeast-2")
+    assert scan.account_id == MOTO_ACCOUNT
+
+
+def test_clients_use_scanner_config(aws: None, audit_profile: str) -> None:
+    config = open_scan(profile=audit_profile).session.client("ec2").meta.config
+    assert config.retries["mode"] == "standard"
+    assert config.connect_timeout == 10
+    assert "kompass/" in config.user_agent_extra
+
+
+def test_expected_account_matches(aws: None, audit_profile: str) -> None:
+    scan = open_scan(profile=audit_profile, expected_account_id=MOTO_ACCOUNT)
+    assert scan.account_id == MOTO_ACCOUNT
+
+
+def test_expected_account_mismatch_aborts(aws: None, audit_profile: str) -> None:
+    with pytest.raises(SessionError, match="999999999999"):
+        open_scan(profile=audit_profile, expected_account_id="999999999999")
+
+
+class _UnreachableClient:
+    def get_caller_identity(self) -> dict[str, Any]:
+        raise EndpointConnectionError(endpoint_url="https://sts.ap-northeast-02.amazonaws.com")
+
+
+class _UnreachableSession:
+    region_name = "ap-northeast-02"
+
+    def client(self, *args: Any, **kwargs: Any) -> _UnreachableClient:
+        return _UnreachableClient()
+
+
+def test_unreachable_home_region_message_points_to_region(monkeypatch: pytest.MonkeyPatch) -> None:
+    # 리전 오타가 "자격증명 확인 실패"로 보이면 사용자가 키를 의심하게 된다
+    monkeypatch.setattr("kompass.aws.session.read_only_session", lambda **_: _UnreachableSession())
+    with pytest.raises(SessionError, match="ap-northeast-02") as exc_info:
+        open_scan(region="ap-northeast-02")
+    assert "자격증명" not in str(exc_info.value)

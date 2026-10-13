@@ -162,6 +162,10 @@ class Rule(Protocol):
 - 점검 리전은 `DescribeRegions(AllRegions=True)`의 활성 리전(`opt-in-not-required`, `opted-in`) 중에서 고른다. `--regions`에 알 수 없거나 비활성인 리전이 있으면 점검 전에 중단한다.
 - 세션 단계 실패는 `SessionError`로 실행을 중단한다. 계정 ID조차 모르는 상태라 스냅샷을 만들 수 없기 때문이다. 개별 API의 권한 오류를 ERROR finding으로 기록하는 것(ADR-005)과 구분한다.
 - `--regions`는 리전 리소스(EC2·VPC 등)에만 적용한다. S3 버킷은 버킷 목록이 전역이므로 리전과 관계없이 모두 점검하고 버킷 리전을 증적에 남긴다. IAM과 계정 단위 설정은 전역이다.
+- 모든 client는 점검 도구용 기본 설정을 쓴다: 재시도 `standard` 방식 최대 10회(호출 제한 대응), 연결 대기 10초, 요청 식별자 `kompass/<버전>`. 요청 식별자로 점검 대상 계정의 CloudTrail에서 kompass의 호출을 구분할 수 있다.
+- `expected_account_id`(CLI `--account-id`)를 주면 실제 계정이 다를 때 중단한다. 엉뚱한 프로필로 다른 계정을 점검하는 실수를 막는다.
+- `regions`에 문자열 하나를 넘기면 `TypeError`. 리전 상태 필드(`OptInStatus`)가 없는 리전은 활성으로 넣는다 (조용히 빠지지 않고 collector 단계에서 드러나도록).
+- MFA가 필요한 역할 프로필(`mfa_serial`)은 botocore가 터미널에서 코드를 물으므로 대화형 실행에서만 쓴다.
 - boto3 세션은 스레드 안전하지 않다. 병렬 수집을 도입하면 client를 미리 만들거나 스레드마다 `read_only_session()`으로 세션을 만든다.
 
 ## 읽기 전용 가드

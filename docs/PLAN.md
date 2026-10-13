@@ -40,7 +40,7 @@
 - [ ] 스냅샷 저장/로드: `.kompass/snapshots/<timestamp>/<service>.json`
 - [ ] 룰 엔진: 룰 레지스트리, 실행기
 - [ ] `docs/RULES.md`의 초기 룰 구현 (룰마다 PASS/FAIL/ERROR 테스트)
-- [ ] CLI: `kompass collect`, `kompass evaluate`, `kompass scan` (`SessionError`는 메시지와 종료 코드로 처리, Windows 콘솔 UTF-8 출력 확인)
+- [ ] CLI: `kompass collect`, `kompass evaluate`, `kompass scan` (`SessionError`는 메시지와 종료 코드로 처리, Windows 콘솔 UTF-8 출력 확인, `--account-id` 옵션, 점검 시작 시 계정 ID·호출자 표시)
 - [ ] 실습 환경 통합 테스트: 기대 결과표와 실제 결과 비교
 
 **완료 기준:** `kompass scan`이 실습 환경에서 기대한 FAIL/PASS를 모두 맞히고 `findings.json`을 출력한다.
