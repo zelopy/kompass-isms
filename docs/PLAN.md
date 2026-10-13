@@ -19,9 +19,9 @@
 - [x] ISMS-P 인증기준 원문 확보 → `knowledge/isms_p/`
 - [x] 항목 분류표 작성 → `docs/COVERAGE.md`
   - 각 항목을 `full`(API로 자동 판정) / `partial`(증적 수집만 자동) / `manual`(사람이 확인)로 분류
-- [ ] `docs/RULES.md`의 KISA 항목코드 칸 채우기 (원문 근거 확인 후 `verified: true`) — 코드 기입 완료, 사용자 확인 대기
+- [x] `docs/RULES.md`의 KISA 항목코드 칸 채우기 (원문 근거 확인 후 `verified: true`) — KISA 매핑 사용자 확인 (2026-10-13), ISMS-P는 초안
 - [ ] AWS 점검 전용 IAM 역할 생성 (`SecurityAudit` 관리형 정책만 부여) — 사용자가 직접
-- [ ] `lab/` 취약 실습 환경 Terraform 작성
+- [x] `lab/` 취약 실습 환경 Terraform 작성 — `terraform validate` 미실행 (Terraform 미설치)
   - 퍼블릭 S3 버킷(정책, ACL), 0.0.0.0/0 SSH 허용 SG, 사용 중인 기본 SG, MFA 없는 콘솔 IAM 사용자, 직접 연결된 관리자 권한, 오래된 액세스 키, 퍼블릭 서브넷만 있는 VPC, 공인 IP가 붙은 ENI, CloudTrail, OIDC 공급자 등
   - 양호 케이스 리소스도 함께 구성 (PASS 검증용)
 - [ ] 실습 환경 배포 — 사용자가 직접 `terraform apply`

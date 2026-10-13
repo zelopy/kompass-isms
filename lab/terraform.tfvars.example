@@ -1,0 +1,15 @@
+# terraform.tfvars로 복사해서 쓴다. *.tfvars는 .gitignore 대상이다.
+
+aws_profile = "kompass-lab-admin"
+region      = "ap-northeast-2"
+
+# 계정 단위 설정 (실습 전용 계정에서만 바꾼다)
+password_policy             = "weak" # weak | kisa | none
+account_block_public_access = false  # true면 퍼블릭 버킷 케이스가 생성되지 않는다
+
+# CloudTrail
+cloudtrail_enabled         = true
+cloudtrail_read_write_type = "All" # All | WriteOnly
+
+# 비용이 드는 선택 리소스
+enable_public_rds = false
