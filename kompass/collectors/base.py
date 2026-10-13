@@ -160,6 +160,12 @@ class CallRecorder:
             _abort(client, method, type(exc).__name__, exc)
         self._record(client, method, resource, type(exc).__name__, str(exc))
 
+    def record_failure(
+        self, client: Any, method: str, error_code: str, message: str, resource: str | None = None
+    ) -> None:
+        """API 예외가 아닌 수집 실패를 기록한다 (예: 보고서 생성 대기 시간 초과)."""
+        self._record(client, method, resource, error_code, message)
+
     def _record(
         self, client: Any, method: str, resource: str | None, error_code: str, message: str
     ) -> None:
