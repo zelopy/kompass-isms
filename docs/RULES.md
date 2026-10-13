@@ -102,6 +102,8 @@
 
 ## S3
 
+데이터 형태: `bucket_details.<버킷>.<항목>`의 값이 null이면 "설정 없음", 키가 없으면 "수집 실패"다. 로깅이 꺼진 버킷은 AWS가 빈 응답을 주므로 `logging`이 null이다. `ListBuckets`는 버킷 리전을 주지 않아 버킷마다 `GetBucketLocation`으로 확인한다 (실습 계정 확인, 2026-10-13). S3 룰의 `resource`는 버킷 이름(전역 고유)이고 `region`은 버킷 리전이다.
+
 ### S3-001 계정 수준 퍼블릭 액세스 차단 미설정
 - 심각도: high
 - API: `s3control:GetPublicAccessBlock`
