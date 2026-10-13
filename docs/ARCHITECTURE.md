@@ -85,7 +85,7 @@ class Snapshot(BaseModel):
 
 class Finding(BaseModel):
     rule_id: str                  # "S3-001" (형식 ^[A-Z][A-Z0-9]*-\d{3}$)
-    resource: str                 # ARN 또는 계정 단위면 "account"
+    resource: str                 # ARN 또는 리소스 ID(EC2: sg-…, vpc-…), 계정·리전 단위면 "account"
     region: str | None
     status: Status
     severity: Severity

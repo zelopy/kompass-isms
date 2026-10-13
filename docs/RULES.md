@@ -163,7 +163,9 @@ EC2 룰은 모두 `ec2` 스냅샷(보안그룹, VPC, 서브넷, 라우팅 테이
 
 한계: 규칙이 접두사 목록(`PrefixListIds`)을 참조하면 목록 안의 CIDR은 수집하지 않으므로 전체 개방 여부를 판정하지 않는다. evidence에 접두사 목록 ID를 남긴다.
 
-포트 포함 판정: `IpProtocol == "-1"`(모든 프로토콜)인 규칙은 모든 포트를 포함한다. `tcp`·`udp` 규칙은 `FromPort`~`ToPort` 범위에 포트가 들어 있으면 포함한다.
+finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 IP 인터페이스별이다. `resource`는 리소스 ID(`sg-…`, `vpc-…`, `eni-…`)이고 `region`과 함께 리소스를 가리킨다. 스냅샷에 파티션이 없어 ARN을 만들지 않는다. 리전 데이터를 수집하지 못하면 그 리전에 `resource="account"`인 ERROR finding 하나, 리소스가 없으면 NOT_APPLICABLE 하나를 낸다.
+
+포트 포함 판정: `IpProtocol == "-1"`(모든 프로토콜)인 규칙은 모든 포트를 포함한다. 프로토콜은 `tcp`/`udp`와 숫자 표기 `6`/`17`을 모두 인식한다. `tcp`·`udp` 규칙은 `FromPort`~`ToPort` 범위에 포트가 들어 있으면 포함한다.
 
 ### SG-001 관리 포트 전체 개방
 - 심각도: critical
@@ -175,7 +177,7 @@ EC2 룰은 모두 `ec2` 스냅샷(보안그룹, VPC, 서브넷, 라우팅 테이
 ### SG-002 전체 포트·프로토콜 개방
 - 심각도: critical
 - API: `ec2:DescribeSecurityGroups`
-- 판정: `IpProtocol == "-1"` 또는 0~65535 범위 인바운드 규칙이 0.0.0.0/0 또는 ::/0에 열려 있으면 FAIL
+- 판정: `IpProtocol == "-1"` 또는 0~65535 범위 인바운드 규칙이 0.0.0.0/0 또는 ::/0에 열려 있으면 FAIL. 시작 포트가 1인 `1~65535`도 사실상 전체 개방이므로 포함한다.
 - ISMS-P(초안): 2.6.1 네트워크 접근, 2.10.1 보안시스템 운영
 - KISA: CA-09 접근 제어 설정 관리 (상, 862쪽) — 근거 수준: 직접
 
@@ -189,7 +191,7 @@ EC2 룰은 모두 `ec2` 스냅샷(보안그룹, VPC, 서브넷, 라우팅 테이
 ### SG-004 사용 중인 기본 보안그룹에 규칙 존재
 - 심각도: low
 - API: `ec2:DescribeSecurityGroups`, `ec2:DescribeNetworkInterfaces`
-- 판정: 이름이 `default`인 보안그룹에 인바운드 또는 아웃바운드 규칙이 있고, 네트워크 인터페이스가 하나 이상 연결되어 있으면 FAIL. 연결된 인터페이스가 없으면 PASS (evidence에 규칙 존재를 남긴다).
+- 판정: 이름이 `default`인 보안그룹에 인바운드 또는 아웃바운드 규칙이 있고, 네트워크 인터페이스가 하나 이상 연결되어 있으면 FAIL. 연결된 인터페이스가 없으면 PASS (evidence에 규칙 존재를 남긴다). 규칙이 없으면 연결 여부와 관계없이 PASS. 규칙이 있는데 인터페이스를 수집하지 못해 연결 여부를 모르면 ERROR.
 - 이유: AWS는 모든 VPC의 기본 보안그룹에 기본 규칙을 만든다. 쓰지 않는 기본 보안그룹까지 FAIL로 보면 손대지 않은 계정도 리전마다 FAIL이 나와 결과가 의미를 잃는다 (ADR-018).
 - ISMS-P(초안): 2.6.1 네트워크 접근
 - KISA: 대응 항목 없음 (ADR-018)
@@ -203,6 +205,7 @@ EC2 룰은 모두 `ec2` 스냅샷(보안그룹, VPC, 서브넷, 라우팅 테이
 - API: `ec2:DescribeVpcs`, `ec2:DescribeSubnets`, `ec2:DescribeRouteTables`, `ec2:DescribeNetworkInterfaces`
 - 판정: VPC별로 네트워크 인터페이스가 있는 서브넷을 모은다. 그 서브넷이 모두 퍼블릭이면 FAIL. 프라이빗 서브넷에 리소스가 하나라도 있으면 PASS.
 - 해당 없음: 네트워크 인터페이스가 하나도 없는 VPC(쓰지 않는 기본 VPC 등)는 `NOT_APPLICABLE`.
+- 오류: 리소스가 있는 서브넷의 퍼블릭 여부를 판별할 수 없고(연결된 라우팅 테이블도 VPC 기본 테이블도 없음) 프라이빗 서브넷의 리소스도 없으면 FAIL로 단정하지 않고 ERROR. `blackhole` 상태의 IGW 경로는 퍼블릭 경로로 보지 않는다.
 - 비고: 퍼블릭 서브넷에 있는 리소스가 공개용으로 의도된 것인지는 사람이 판단한다 (CA-07 `partial`).
 - ISMS-P(초안): 2.6.1 네트워크 접근, 2.10.2 클라우드 보안
 - KISA: CA-07 VPC 네트워크 서브넷 관리 (상, 860쪽) — 근거 수준: 직접 ("Public 서브넷은 인터넷 게이트웨이로, Private 서브넷은 NAT 게이트웨이로 할당")
@@ -210,7 +213,7 @@ EC2 룰은 모두 `ec2` 스냅샷(보안그룹, VPC, 서브넷, 라우팅 테이
 ### VPC-002 공인 IP가 할당된 네트워크 인터페이스
 - 심각도: medium
 - API: `ec2:DescribeNetworkInterfaces`
-- 판정: `Association.PublicIp`가 있는 네트워크 인터페이스마다 `REVIEW` finding을 낸다. evidence에는 인터페이스 유형, 요청 주체(`RequesterId`), 설명, 연결된 인스턴스, 서브넷(퍼블릭/프라이빗), 보안그룹을 담는다. 리전에 해당 인터페이스가 없으면 리전 단위 PASS 하나.
+- 판정: `Association.PublicIp`가 있는 네트워크 인터페이스마다 `REVIEW` finding을 낸다. evidence에는 인터페이스 유형, 요청 주체(`RequesterId`), 설명, 연결된 인스턴스, 서브넷(퍼블릭/프라이빗, 라우팅 테이블을 수집하지 못했으면 null), 보안그룹을 담는다. 리전에 해당 인터페이스가 없으면 리전 단위 PASS 하나이며, evidence에 제외한 인터페이스 ID를 남긴다.
 - 제외: 공개가 목적인 리소스만 뺀다.
   - NAT 게이트웨이: `InterfaceType == "nat_gateway"`
   - 로드 밸런서: `InterfaceType`이 `network_load_balancer` 또는 `gateway_load_balancer`이거나, `RequesterId == "amazon-elb"`

@@ -16,5 +16,13 @@ class CloudTrailSettings(_Section):
     require_read_events: bool = True
 
 
+class Ec2Settings(_Section):
+    # SG-001: 전체 개방되면 안 되는 관리 포트
+    admin_ports: tuple[int, ...] = (22, 3389)
+    # SG-003: 전체 개방되면 안 되는 데이터베이스 포트
+    db_ports: tuple[int, ...] = (3306, 5432, 1433, 1521, 27017, 6379)
+
+
 class Settings(_Section):
     cloudtrail: CloudTrailSettings = CloudTrailSettings()
+    ec2: Ec2Settings = Ec2Settings()

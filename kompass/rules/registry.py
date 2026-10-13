@@ -7,8 +7,22 @@ from kompass.config import Settings
 from kompass.models import Finding, Snapshot
 from kompass.rules.base import BaseRule
 from kompass.rules.cloudtrail.ct_001_multi_region_trail import Ct001MultiRegionTrail
+from kompass.rules.ec2.sg_001_admin_port_open import Sg001AdminPortOpen
+from kompass.rules.ec2.sg_002_all_ports_open import Sg002AllPortsOpen
+from kompass.rules.ec2.sg_003_db_port_open import Sg003DbPortOpen
+from kompass.rules.ec2.sg_004_default_group_in_use import Sg004DefaultGroupInUse
+from kompass.rules.ec2.vpc_001_subnet_separation import Vpc001SubnetSeparation
+from kompass.rules.ec2.vpc_002_public_ip_interface import Vpc002PublicIpInterface
 
-RULES: tuple[BaseRule, ...] = (Ct001MultiRegionTrail(),)
+RULES: tuple[BaseRule, ...] = (
+    Ct001MultiRegionTrail(),
+    Sg001AdminPortOpen(),
+    Sg002AllPortsOpen(),
+    Sg003DbPortOpen(),
+    Sg004DefaultGroupInUse(),
+    Vpc001SubnetSeparation(),
+    Vpc002PublicIpInterface(),
+)
 
 
 @dataclass(frozen=True)
