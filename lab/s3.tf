@@ -1,9 +1,12 @@
 # S3 실습 케이스. 버킷은 모두 비어 있다. 퍼블릭 버킷에도 객체를 올리지 않는다.
 
 # --- S3-001 계정 수준 퍼블릭 액세스 차단 ---
-# 퍼블릭 버킷 케이스를 만들려면 계정 수준 차단이 꺼져 있어야 한다.
+# 기본값(manage_account_public_access_block = false)에서는 만들지 않는다. 기존 계정 설정이 없으면 S3-001 FAIL.
+# 퍼블릭 버킷 케이스를 만들려면 계정 수준 차단이 꺼져 있거나 설정이 없어야 한다.
 
 resource "aws_s3_account_public_access_block" "this" {
+  count = var.manage_account_public_access_block ? 1 : 0
+
   block_public_acls       = var.account_block_public_access
   ignore_public_acls      = var.account_block_public_access
   block_public_policy     = var.account_block_public_access
@@ -11,7 +14,7 @@ resource "aws_s3_account_public_access_block" "this" {
 }
 
 locals {
-  public_cases = var.account_block_public_access ? 0 : 1
+  public_cases = var.manage_account_public_access_block && var.account_block_public_access ? 0 : 1
 }
 
 # --- 로그 버킷: S3 서버 액세스 로그와 CloudTrail 로그 저장 ---

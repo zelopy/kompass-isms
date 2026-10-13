@@ -3,7 +3,8 @@
 kompass 룰이 기대한 FAIL/PASS/REVIEW를 내는지 확인하기 위한 **의도적으로 취약한** AWS 환경이다. 1단계 통합 테스트는 아래 [기대 결과표](#기대-결과표)와 실제 결과를 비교한다.
 
 > **경고**
-> - **실습 전용 AWS 계정**에서만 배포한다. 이 구성은 계정 전체 설정(IAM 비밀번호 정책, 계정 수준 S3 퍼블릭 액세스 차단)을 바꾸고, 퍼블릭 버킷과 관리자 권한 IAM 사용자를 만든다.
+> - 퍼블릭 버킷과 관리자 권한 IAM 사용자를 만든다. 가능하면 실습 전용 AWS 계정에 배포한다.
+> - **다른 서비스와 같은 계정에 배포할 때는 계정 단위 변수를 기본값으로 둔다.** 기본값에서는 IAM 비밀번호 정책과 계정 수준 S3 퍼블릭 액세스 차단을 만들지 않으므로, 기존 사용자·버킷·서비스에 적용되는 설정이 바뀌지 않는다. 실습 리소스는 모두 별도 VPC와 `kompass-lab-` 접두사 이름으로 만들어져 기존 리소스와 겹치지 않는다 (아래 [다른 서비스와 같은 계정에 배포할 때](#다른-서비스와-같은-계정에-배포할-때) 참고).
 > - `terraform apply`/`destroy`는 사용자가 직접 실행한다. Claude Code는 이 디렉터리의 코드를 작성·수정만 한다 (CLAUDE.md 원칙 6).
 > - state 파일에는 IAM 사용자 초기 비밀번호 등 민감 정보가 들어간다. `*.tfstate`는 `.gitignore` 대상이며 커밋하지 않는다.
 
@@ -30,21 +31,22 @@ terraform apply
 
 - 배포 프로필은 관리자 권한이 필요하다. kompass 점검은 별도의 `SecurityAudit` 전용 프로필로 실행한다.
 - 다른 리전의 기본 VPC 결과가 섞이지 않도록 점검은 `--regions ap-northeast-2`로 한정한다.
-- 정리: `terraform destroy`. 계정 비밀번호 정책과 계정 수준 퍼블릭 액세스 차단 설정도 함께 삭제된다.
+- 정리: `terraform destroy`. 계정 단위 변수를 바꿔서 만든 비밀번호 정책·계정 수준 차단 설정은 함께 **삭제**된다 (원래 값으로 복구되지 않는다).
 
 ## 변수로 바꿀 수 있는 케이스
 
 | 변수 | 기본값 | 바꾸면 |
 |---|---|---|
-| `password_policy` | `weak` | `kisa` → IAM-004 PASS, `none` → IAM-004 FAIL (정책 없음) |
-| `account_block_public_access` | `false` | `true` → S3-001 PASS. 대신 퍼블릭 버킷 3개가 생성되지 않는다 |
+| `password_policy` | `none` | `weak` → IAM-004 FAIL (2종 8자), `kisa` → IAM-004 PASS. **계정의 모든 IAM 사용자에게 적용** |
+| `manage_account_public_access_block` | `false` | `true` → 계정 수준 차단을 Terraform이 관리. **계정의 모든 버킷에 적용** |
+| `account_block_public_access` | `false` | 위 변수가 `true`일 때 `true` → S3-001 PASS. 대신 퍼블릭 버킷 3개가 생성되지 않는다 |
 | `cloudtrail_enabled` | `true` | `false` → CT-001 FAIL (로깅 중지) |
 | `cloudtrail_read_write_type` | `All` | `WriteOnly` → CT-001 FAIL (`require_read_events: true`일 때) |
 | `enable_public_rds` | `false` | `true` → VPC-002에 RDS 인터페이스 REVIEW 추가 |
 
 ## 기대 결과표
 
-기본 변수값, 점검 리전 `ap-northeast-2` 기준. "계정 상태"는 Terraform이 만들지 않는 루트 계정 상태에 따라 달라진다.
+기본 변수값, 점검 리전 `ap-northeast-2`, 계정에 비밀번호 정책과 계정 수준 S3 차단 설정이 원래 없는 상태 기준. "계정 상태"는 Terraform이 만들지 않는 루트 계정 상태에 따라 달라진다. 실습 리소스가 아닌 기존 리소스의 결과는 이 표의 비교 대상이 아니다.
 
 ### IAM
 
@@ -53,7 +55,7 @@ terraform apply
 | IAM-001 | 루트 계정 | 계정 상태 (루트 MFA를 설정해 두면 PASS) |
 | IAM-002 | 루트 계정 | 계정 상태 (루트 액세스 키가 없으면 PASS) |
 | IAM-003 | `kompass-lab-console-no-mfa` | FAIL |
-| IAM-004 | 계정 비밀번호 정책 (영문자+숫자 2종, 8자) | FAIL |
+| IAM-004 | 계정 비밀번호 정책 (없음) | FAIL (`NoSuchEntity`) |
 | IAM-005 | 콘솔 사용자 (최근 설정된 비밀번호) | PASS |
 | IAM-006 | 액세스 키 없음 | N/A (실습 계정에 다른 키가 없다면) |
 | IAM-007 | `kompass-lab-direct-admin` (AdministratorAccess 직접) | FAIL |
@@ -68,7 +70,7 @@ terraform apply
 
 | 룰 | 대상 | 기대 결과 |
 |---|---|---|
-| S3-001 | 계정 | FAIL |
+| S3-001 | 계정 (계정 수준 차단 설정 없음) | FAIL |
 | S3-002 | `logs`, `private` | PASS |
 | S3-002 | `public-policy`, `restricted-policy`, `public-acl` | FAIL |
 | S3-003 | `public-policy` | FAIL |
@@ -91,10 +93,10 @@ terraform apply
 | SG-003 | `open-db` (IPv6 ::/0), `open-all` | FAIL |
 | SG-004 | `mixed` VPC 기본 SG (ENI 연결, 기본 규칙 유지) | FAIL |
 | SG-004 | `public-only` VPC 기본 SG (규칙 제거) | PASS |
-| SG-004 | 리전 기본 VPC의 기본 SG (연결 없음) | PASS |
+| SG-004 | 리전 기본 VPC의 기본 SG | 실습 비교 대상 아님 |
 | VPC-001 | `mixed` (프라이빗 서브넷에 ENI) | PASS |
 | VPC-001 | `public-only` (퍼블릭 서브넷에만 ENI) | FAIL |
-| VPC-001 | 리전 기본 VPC (ENI 없음) | N/A |
+| VPC-001 | 리전 기본 VPC | 실습 비교 대상 아님 (기존 리소스가 있으면 결과가 달라진다) |
 | VPC-002 | `public-only` ENI (EIP 연결) | REVIEW |
 | VPC-002 | 공개 RDS ENI (`enable_public_rds = true`일 때) | REVIEW. **RDS ENI 필드값 확인 대상** |
 
@@ -105,6 +107,8 @@ terraform apply
 | CT-001 | `kompass-lab-trail` | PASS |
 
 ### KISA 항목 단위 (집계 후)
+
+실습 리소스와 계정 단위 룰만으로 집계한 값이다. 같은 계정의 기존 리소스까지 포함한 실제 항목 결과는 이보다 나쁠 수 있다 (FAIL이 하나라도 있으면 취약).
 
 | 항목 | 분류 | 기대 결과 | 이유 |
 |---|---|---|---|
@@ -118,6 +122,19 @@ terraform apply
 | CA-10 | partial | 취약 | S3-001~003, S3-006 FAIL |
 | CA-13 | full | 양호 | CT-001 PASS |
 | CA-16 | full | 취약 | S3-005 FAIL |
+
+## 다른 서비스와 같은 계정에 배포할 때
+
+계정 단위 변수를 기본값으로 두면 기존 서비스에 적용되는 설정은 바뀌지 않는다. 남는 고려사항은 다음과 같다.
+
+| 항목 | 내용 |
+|---|---|
+| 기존 리소스 | Terraform은 새 리소스만 만든다 (`plan`에서 change 0, destroy 0 확인). 실습 VPC는 기존 VPC와 분리되어 있어 실습 보안그룹을 기존 인스턴스에 붙일 수 없다 |
+| CloudTrail | 계정에 추적이 없으면 이 추적이 첫 추적이 되어 기존 서비스의 활동도 기록된다. 추적 요금은 없다. destroy하면 함께 삭제된다 |
+| 관리자 권한 실습 사용자 | 비밀번호·액세스 키가 없어 로그인할 수 없다. 콘솔 비밀번호가 있는 `console-no-mfa`는 권한이 없다 |
+| 배포용 관리자 키 | `kompass-lab-admin` 액세스 키가 유출되면 기존 서비스까지 위험하다. apply/destroy할 때만 활성화하고 평소에는 비활성화한다 |
+| 서비스 한도 | VPC 2개, EIP 1개를 추가로 쓴다 (리전 기본 한도: VPC 5개, EIP 5개) |
+| 점검 결과 | kompass는 계정 전체를 점검하므로 기존 리소스의 결과도 나온다. 통합 테스트는 이름이 `kompass-lab-`으로 시작하는 리소스와 계정 단위 룰만 기대 결과표와 비교한다. 기존 리소스의 결과는 실계정 점검 결과로 따로 본다 |
 
 ## Terraform으로 재현하지 않는 케이스
 

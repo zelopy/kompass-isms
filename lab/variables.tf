@@ -11,11 +11,13 @@ variable "aws_profile" {
 }
 
 # --- 계정 단위 설정 (계정 전체에 영향) ---
+# 기본값은 계정 단위 설정을 전혀 건드리지 않는다. 다른 서비스와 같은 계정에 배포해도 기존 사용자·버킷에 영향이 없다.
+# 바꾸면 그 계정의 모든 IAM 사용자·S3 버킷에 적용되므로 실습 전용 계정에서만 바꾼다.
 
 variable "password_policy" {
-  description = "IAM 비밀번호 정책: weak(2종 8자, IAM-004 FAIL), kisa(3종 8자, PASS), none(정책 없음, FAIL)"
+  description = "IAM 비밀번호 정책: none(만들지 않음, IAM-004 FAIL), weak(2종 8자, FAIL), kisa(3종 8자, PASS). none 외에는 계정의 모든 IAM 사용자에게 적용된다."
   type        = string
-  default     = "weak"
+  default     = "none"
 
   validation {
     condition     = contains(["weak", "kisa", "none"], var.password_policy)
@@ -23,8 +25,14 @@ variable "password_policy" {
   }
 }
 
+variable "manage_account_public_access_block" {
+  description = "계정 수준 S3 퍼블릭 액세스 차단을 Terraform으로 관리할지. false면 기존 설정을 건드리지 않는다."
+  type        = bool
+  default     = false
+}
+
 variable "account_block_public_access" {
-  description = "계정 수준 S3 퍼블릭 액세스 차단. true면 S3-001 PASS지만 퍼블릭 버킷 케이스(정책·ACL)를 만들 수 없다."
+  description = "manage_account_public_access_block = true일 때의 값. true면 S3-001 PASS지만 퍼블릭 버킷 케이스를 만들 수 없다."
   type        = bool
   default     = false
 }

@@ -3,9 +3,11 @@
 aws_profile = "kompass-lab-admin"
 region      = "ap-northeast-2"
 
-# 계정 단위 설정 (실습 전용 계정에서만 바꾼다)
-password_policy             = "weak" # weak | kisa | none
-account_block_public_access = false  # true면 퍼블릭 버킷 케이스가 생성되지 않는다
+# 계정 단위 설정. 기본값은 계정 설정을 건드리지 않는다.
+# 다른 서비스와 같은 계정이면 바꾸지 않는다 (계정의 모든 IAM 사용자·버킷에 적용됨).
+password_policy                    = "none" # none | weak | kisa
+manage_account_public_access_block = false
+account_block_public_access        = false # manage_account_public_access_block = true일 때만 의미 있음
 
 # CloudTrail
 cloudtrail_enabled         = true
