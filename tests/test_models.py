@@ -1,6 +1,6 @@
 """공용 모델과 항목 단위 집계 테스트."""
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta, timezone
 from itertools import combinations
 from typing import Any
 
@@ -82,9 +82,123 @@ def test_finding_mappings_default_to_none() -> None:
     assert _finding().mappings is None
 
 
-def test_finding_accepts_mappings() -> None:
-    mappings = Mappings(kisa=["CA-10"], isms_p=["2.10.2"], verified=False)
-    assert _finding(mappings=mappings).mappings == mappings
+def test_with_mappings_returns_new_finding() -> None:
+    finding = _finding()
+    mappings = Mappings(kisa=("CA-10",), isms_p=("2.10.2",), verified=False)
+    mapped = finding.with_mappings(mappings)
+    assert mapped.mappings == mappings
+    assert mapped.status == finding.status
+    assert finding.mappings is None
+
+
+def test_model_copy_cannot_change_status() -> None:
+    # frozen은 직접 대입만 막는다. model_copy(update=...)는 검증 없이 값을 바꾸므로
+    # 따로 막아야 한다 (ADR-001)
+    with pytest.raises(TypeError, match="ADR-001"):
+        _finding().model_copy(update={"status": Status.PASS})
+
+
+def test_model_copy_without_update_is_allowed() -> None:
+    finding = _finding()
+    assert finding.model_copy() == finding
+
+
+def test_snapshot_model_copy_cannot_update() -> None:
+    with pytest.raises(TypeError):
+        _snapshot().model_copy(update={"data": {"x": 1}})
+
+
+def test_mappings_are_tuples() -> None:
+    mappings = Mappings.model_validate({"kisa": ["CA-10"], "isms_p": ["2.10.2"], "verified": False})
+    assert mappings.kisa == ("CA-10",)
+    assert mappings.isms_p == ("2.10.2",)
+
+
+# --- rule_id 형식 ---
+
+
+@pytest.mark.parametrize("rule_id", ["IAM-001", "S3-006", "SG-004", "VPC-002", "CT-001"])
+def test_finding_accepts_rule_id(rule_id: str) -> None:
+    assert _finding(rule_id=rule_id).rule_id == rule_id
+
+
+@pytest.mark.parametrize("rule_id", ["s3_1", "S3-1", "S3-0001", "s3-001", "-001", "S3001", ""])
+def test_finding_rejects_malformed_rule_id(rule_id: str) -> None:
+    with pytest.raises(ValidationError):
+        _finding(rule_id=rule_id)
+
+
+# --- 증적·스냅샷 데이터 정규화 (ADR-019) ---
+
+BOTO_LIKE = {
+    "Users": [{"UserName": "u", "CreateDate": datetime(2026, 1, 1, tzinfo=UTC)}],
+    "Tags": ("a", "b"),
+}
+
+
+def test_evidence_is_normalized_to_json_types() -> None:
+    finding = _finding(evidence=BOTO_LIKE)
+    assert finding.evidence == {
+        "Users": [{"UserName": "u", "CreateDate": "2026-01-01T00:00:00Z"}],
+        "Tags": ["a", "b"],
+    }
+
+
+def test_snapshot_data_is_normalized_to_json_types() -> None:
+    snapshot = _snapshot(data=BOTO_LIKE)
+    assert snapshot.data["Users"][0]["CreateDate"] == "2026-01-01T00:00:00Z"
+
+
+def test_snapshot_is_identical_after_save_and_load() -> None:
+    # 바로 수집한 스냅샷과 저장했다 불러온 스냅샷에서 룰이 같은 값을 봐야 한다 (ADR-003)
+    snapshot = _snapshot(data=BOTO_LIKE)
+    assert Snapshot.model_validate_json(snapshot.model_dump_json()) == snapshot
+
+
+def test_finding_with_datetime_evidence_round_trips() -> None:
+    finding = _finding(evidence=BOTO_LIKE)
+    assert Finding.model_validate_json(finding.model_dump_json()) == finding
+
+
+def test_evidence_is_copied_from_input() -> None:
+    source: dict[str, Any] = {"Rules": [{"Port": 22}]}
+    finding = _finding(evidence=source)
+    source["Rules"][0]["Port"] = 3389
+    assert finding.evidence == {"Rules": [{"Port": 22}]}
+
+
+def test_evidence_rejects_non_json_values() -> None:
+    with pytest.raises(ValidationError):
+        _finding(evidence={"obj": object()})
+
+
+# --- 시각 UTC 정규화 ---
+
+
+def test_collected_at_is_normalized_to_utc() -> None:
+    kst = timezone(timedelta(hours=9))
+    finding = _finding(collected_at=datetime(2026, 10, 13, 21, 0, tzinfo=kst))
+    assert finding.collected_at == NOW
+    assert finding.collected_at.tzinfo == UTC
+
+
+def test_snapshot_collected_at_is_normalized_to_utc() -> None:
+    kst = timezone(timedelta(hours=9))
+    snapshot = _snapshot(collected_at=datetime(2026, 10, 13, 21, 0, tzinfo=kst))
+    assert snapshot.collected_at.tzinfo == UTC
+
+
+# --- 컨테이너 불변 ---
+
+
+def test_snapshot_sequences_are_immutable() -> None:
+    error = CollectError(
+        operation="iam:GetAccountSummary", region=None, error_code="E", message="m"
+    )
+    snapshot = _snapshot(errors=[error])
+    assert snapshot.regions == ("ap-northeast-2",)
+    assert snapshot.errors == (error,)
+    assert not hasattr(snapshot.errors, "append")
 
 
 def test_finding_round_trips_through_json() -> None:
@@ -96,7 +210,7 @@ def test_finding_round_trips_through_json() -> None:
 
 
 def test_snapshot_errors_default_to_empty() -> None:
-    assert _snapshot().errors == []
+    assert _snapshot().errors == ()
 
 
 def test_snapshot_records_collect_errors() -> None:
@@ -106,7 +220,7 @@ def test_snapshot_records_collect_errors() -> None:
         error_code="AccessDenied",
         message="User is not authorized",
     )
-    assert _snapshot(errors=[error]).errors == [error]
+    assert _snapshot(errors=[error]).errors == (error,)
 
 
 @pytest.mark.parametrize("account_id", ["12345678901", "1234567890123", "12345678901a", ""])
@@ -138,8 +252,10 @@ def test_aggregate_full(statuses: list[Status], expected: Status) -> None:
     assert aggregate_status(statuses, Automation.FULL) == expected
 
 
-def test_aggregate_defaults_to_full() -> None:
-    assert aggregate_status([Status.PASS]) == Status.PASS
+def test_aggregate_requires_automation() -> None:
+    # 분류를 빠뜨리면 full로 처리되어 partial 항목이 양호가 되는 실수를 막는다
+    with pytest.raises(TypeError):
+        aggregate_status([Status.PASS])  # type: ignore[call-arg]
 
 
 @pytest.mark.parametrize("automation", [Automation.PARTIAL, Automation.MANUAL])
@@ -154,11 +270,11 @@ def test_aggregate_keeps_not_applicable_when_not_full(automation: Automation) ->
 
 def test_aggregate_rejects_empty() -> None:
     with pytest.raises(ValueError, match="finding"):
-        aggregate_status([])
+        aggregate_status([], Automation.FULL)
 
 
 def test_aggregate_accepts_generator() -> None:
-    assert aggregate_status(s for s in [Status.PASS, Status.FAIL]) == Status.FAIL
+    assert aggregate_status((s for s in [Status.PASS, Status.FAIL]), Automation.FULL) == Status.FAIL
 
 
 # --- aggregate_status: 모든 조합에 대한 불변 조건 (ADR-005, ADR-009, ADR-013) ---

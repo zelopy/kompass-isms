@@ -50,7 +50,7 @@
 - [ ] `mappings/rules.yaml`: 룰 → KISA 항목 → ISMS-P 통제항목
 - [ ] 매퍼: finding에 매핑 정보 부착, 매핑 누락 검증 테스트
 - [ ] ISMS-P 커버리지 리포트 (자동 점검 / 부분 / 수동 항목 현황)
-- [ ] 리포터: JSON, Markdown
+- [ ] 리포터: JSON, Markdown (UTC로 저장된 시각은 KST로 표시, ADR-019)
 - [ ] 리포터: 엑셀 점검표 (항목별 결과, 대상 리소스, 증적 요약)
 - [ ] CLI: `kompass report --format md|xlsx`
 - [ ] README에 사용법과 출력 예시 추가
@@ -59,6 +59,7 @@
 
 ## 3단계 — LLM 해석 (2주)
 
+- [ ] finding 식별자 정의 (룰 ID + 리소스 + 리전 기반). 해설·인용을 finding에 연결하는 데 필요
 - [ ] LLM 공급자 인터페이스 (Claude API 구현체 + 로컬 LLM 구현체 자리)
 - [ ] 마스킹 레이어: 계정 ID, IP, ARN, 리소스명 치환 및 복원 + 테스트
 - [ ] RAG: KISA 가이드·ISMS-P 원문 청킹, 임베딩, Chroma 인덱스
@@ -83,7 +84,7 @@
 
 ## 5단계 — 확장 (이후)
 
-- [ ] Prowler OCSF 출력 어댑터
+- [ ] Prowler OCSF 출력 어댑터 (`rule_id` 형식에 출처 접두사 허용 여부 결정, ADR-019)
 - [ ] 서비스 추가: CloudTrail, KMS, RDS, VPC Flow Logs
 - [ ] Azure 지원
 - [ ] 다른 기준 추가 (CSAP 등)

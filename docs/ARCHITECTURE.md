@@ -78,29 +78,31 @@ class Severity(StrEnum):
 class Snapshot(BaseModel):
     service: str                  # "iam" | "s3" | "ec2" | "cloudtrail"
     account_id: str
-    regions: list[str]
-    collected_at: datetime
-    data: dict[str, Any]          # API 응답 원본(필요한 부분)
-    errors: list[CollectError]    # API별 실패 기록
+    regions: tuple[str, ...]
+    collected_at: datetime        # UTC
+    data: dict[str, Any]          # API 응답 원본(필요한 부분), JSON 호환으로 정규화
+    errors: tuple[CollectError, ...]  # API별 실패 기록
 
 class Finding(BaseModel):
-    rule_id: str                  # "S3-001"
+    rule_id: str                  # "S3-001" (형식 ^[A-Z][A-Z0-9]*-\d{3}$)
     resource: str                 # ARN 또는 계정 단위면 "account"
     region: str | None
     status: Status
     severity: Severity
     message: str                  # 사람이 읽는 판정 요약
-    evidence: dict[str, Any]      # 판정 근거가 된 원본 설정 (증적)
-    collected_at: datetime
-    mappings: Mappings | None     # Mapper가 채움
+    evidence: dict[str, Any]      # 판정 근거가 된 원본 설정 (증적), JSON 호환으로 정규화
+    collected_at: datetime        # UTC
+    mappings: Mappings | None     # Mapper가 with_mappings()로 채움
 
 class Mappings(BaseModel):
-    kisa: list[str]
-    isms_p: list[str]
+    kisa: tuple[str, ...]
+    isms_p: tuple[str, ...]
     verified: bool
 ```
 
 `evidence`에는 판정에 실제로 쓴 값만 원본 그대로 담는다. 이것이 ISMS-P 증적이 된다.
+
+`data`와 `evidence`는 생성 시 JSON으로 한 번 왕복시켜 정규화한다 (ADR-019). boto3 응답의 `datetime`은 ISO 8601 문자열(`"2026-01-01T00:00:00Z"`)이, 튜플은 리스트가 된다. 바로 수집한 스냅샷과 저장했다 불러온 스냅샷이 같은 모양이므로 룰은 두 경우를 구분하지 않는다. 날짜 계산이 필요한 룰은 `rules/base.py`의 공용 파싱 함수를 쓴다.
 
 `REVIEW`는 룰이 결정론적으로 내리는 상태다. "사람이 판단할 영역"임을 룰 정의에서 미리 정해 두는 것이며, LLM이나 에이전트가 다른 상태를 `REVIEW`로 바꾸는 것이 아니다.
 
@@ -136,7 +138,7 @@ FAIL > ERROR > REVIEW > PASS > N/A
 ```python
 class Collector(Protocol):
     service: str
-    def collect(self, session: boto3.Session, regions: list[str]) -> Snapshot: ...
+    def collect(self, session: boto3.Session, regions: Sequence[str]) -> Snapshot: ...
 
 class Rule(Protocol):
     id: str
