@@ -145,7 +145,7 @@ class Rule(Protocol):
     service: str
     title: str
     severity: Severity
-    def evaluate(self, snapshot: Snapshot) -> list[Finding]: ...
+    def evaluate(self, snapshot: Snapshot, settings: Settings) -> list[Finding]: ...  # rules/base.py BaseRule
 ```
 
 - collector는 AWS 호출을 `collectors/base.py`의 `CallRecorder`로 감싼다.
@@ -159,6 +159,13 @@ class Rule(Protocol):
 - 룰은 하나의 서비스 스냅샷만 입력으로 받는다. 여러 서비스를 엮는 판단은 Interpreter나 Agent의 몫이다.
 - 룰은 스냅샷의 `errors`를 확인해서, 필요한 데이터 수집이 실패했으면 `ERROR` finding을 낸다.
 - 점검 대상 리소스가 없으면 `NOT_APPLICABLE` finding 하나를 낸다.
+- 실행기(`rules/registry.py`)의 규칙 (ADR-023)
+  - 스냅샷이 없는 서비스의 룰은 실행하지 않고 "건너뛴 룰"로 따로 돌려준다. PASS가 아니며, 해당 항목은 집계에서 "점검하지 않음"이 된다.
+  - 룰은 항상 finding을 하나 이상 내야 하고, 자기 ID의 finding만 내야 한다. 어기면 실행을 중단한다.
+  - 룰 코드의 예외는 잡지 않는다. 버그를 ERROR finding으로 숨기지 않는다.
+  - finding의 `collected_at`은 스냅샷의 수집 시각이다 (판정 시각이 아니다).
+  - 등록된 룰의 ID와 제목이 RULES.md와 일치하는지 테스트로 검사한다.
+- 판정 기준값은 `config.py`의 `Settings`(`kompass.yaml`)로 받는다. 정의되지 않은 키는 거부한다. 오타가 조용히 무시되어 기본값으로 판정되는 것을 막는다.
 
 ## 스냅샷 저장
 

@@ -229,7 +229,10 @@ EC2 룰은 모두 `ec2` 스냅샷(보안그룹, VPC, 서브넷, 라우팅 테이
 - 확인됨 (실습 계정, 2026-10-13):
   - `LatestDeliveryError`는 오류가 없으면 키 자체가 없다 (`None`이 아니다).
   - 실제 AWS는 `EventSelectors`와 `AdvancedEventSelectors` 중 사용 중인 하나만 돌려준다. moto는 둘 다 돌려주므로 단위 테스트는 실제 형태를 따른 가짜 데이터로 쓴다.
-- 결정 필요 (룰 구현 시): 기본 선택기의 `ExcludeManagementEventSources`(예: `kms.amazonaws.com`, `rdsdata.amazonaws.com`)로 일부 관리 이벤트를 제외한 추적을 PASS로 볼지. 최소한 evidence에 제외 목록을 남긴다.
+- 관리 이벤트 일부 제외: 기본 선택기의 `ExcludeManagementEventSources`(`kms.amazonaws.com`, `rdsdata.amazonaws.com`)나 고급 선택기의 `eventSource` `NotEquals`로 일부 관리 이벤트를 제외한 추적은 PASS로 보고, evidence의 `excluded_event_sources`에 제외 목록을 남긴다 (사용자 결정, 2026-10-13).
+- 고급 선택기 해석: `eventCategory = Management`인 선택기만 본다. 읽기·쓰기 범위는 여러 선택기의 합집합이다. `eventCategory`·`readOnly`·`eventSource NotEquals` 외의 조건(예: `eventSource Equals`)이 있는 선택기는 일부 이벤트만 기록하므로 인정하지 않는다.
+- 단일 리전 추적은 상태를 수집하지 못해도 조건을 만족할 수 없으므로 ERROR의 원인이 되지 않는다.
+- 구현: `kompass/rules/cloudtrail/ct_001_multi_region_trail.py`. 실습 계정에서 기대값(PASS) 확인 (2026-10-13).
 - 조직 추적(Organization trail)은 멤버 계정에서 섀도 추적으로 보이며, 조건을 만족하면 인정한다. 상태 조회가 `AccessDenied`이면 그 추적은 ERROR로 기록하고, 다른 추적으로 PASS가 확정되지 않으면 결과는 ERROR다. 멤버 계정에서의 실제 동작은 단일 계정 실습으로 확인할 수 없으므로 조직 환경에서 별도로 확인한다.
 - 비고: CA-16(버킷 로깅)을 CloudTrail S3 데이터 이벤트로 대신하는 판단은 이 룰에서 하지 않는다 (ADR-015).
 - ISMS-P(초안): 2.9.4 로그 및 접속기록 관리, 2.10.2 클라우드 보안
