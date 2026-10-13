@@ -152,7 +152,10 @@ class Rule(Protocol):
   - 정상 응답은 데이터로, collector가 지정한 "설정 없음" 오류 코드(예: `NoSuchBucketPolicy`, 비밀번호 정책 `NoSuchEntity`)는 `Absent`로 받아 데이터로 기록한다.
   - 그 외 실패(권한 오류, 연결 실패, 호출 제한)는 `CollectError`(operation, region, error_code, message, resource)로 스냅샷 `errors`에 남긴다. 리소스 단위 호출이면 `resource`에 대상(버킷 이름 등)을 적어 그 리소스만 ERROR로 판정할 수 있게 한다.
   - 페이지 조회가 중간에 실패하면 받은 페이지도 버리고 실패로 기록한다. 목록 일부만 보고 "리소스 없음"으로 판정하지 않기 위해서다.
-  - 가드 위반(`ReadOnlyViolation`)과 잘못된 파라미터(`ParamValidationError`)는 kompass 코드 버그이므로 잡지 않고 실행을 중단한다.
+  - 정상 응답에서는 `ResponseMetadata`(HTTP 헤더, 요청 ID 등)를 뺀다. 헤더의 날짜 때문에 같은 설정도 매번 다른 스냅샷이 되는 것을 막는다.
+  - 세션 전체 실패(`ExpiredToken`, `InvalidClientTokenId`, `UnrecognizedClientException`, `SignatureDoesNotMatch`, 자격증명 없음)는 기록하지 않고 `SessionError`로 중단한다. 호출마다 ERROR로 쌓으면 보고서 전체가 "확인 불가"로 채워질 뿐이다 (ADR-021).
+  - kompass 코드 버그는 잡지 않고 실행을 중단한다: 가드 위반(`ReadOnlyViolation`), 잘못된 파라미터(`ParamValidationError`), 페이지 조회가 안 되는 API(`OperationNotPageableError`), 응답 형식에 없는 `result_key`. 특히 `result_key` 오타는 빈 목록, 즉 "리소스 없음"으로 둔갑하므로 호출 전에 응답 형식과 대조한다.
+  - "설정 없음" 오류 코드는 호출마다 collector가 지정한다. 같은 코드가 다른 상황에서도 나올 수 있으므로(예: `GetLoginProfile`의 `NoSuchEntity`는 사용자 자체가 없을 때도 나온다) 호출별로 의미를 확인한다.
 - 룰은 하나의 서비스 스냅샷만 입력으로 받는다. 여러 서비스를 엮는 판단은 Interpreter나 Agent의 몫이다.
 - 룰은 스냅샷의 `errors`를 확인해서, 필요한 데이터 수집이 실패했으면 `ERROR` finding을 낸다.
 - 점검 대상 리소스가 없으면 `NOT_APPLICABLE` finding 하나를 낸다.

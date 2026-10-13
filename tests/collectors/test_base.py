@@ -9,11 +9,17 @@ from typing import Any
 
 import boto3
 import pytest
-from botocore.exceptions import EndpointConnectionError, ParamValidationError
+from botocore.exceptions import (
+    EndpointConnectionError,
+    NoCredentialsError,
+    OperationNotPageableError,
+    ParamValidationError,
+)
 from botocore.stub import Stubber
 from moto import mock_aws
 
 from kompass.aws.guard import ReadOnlyViolation, read_only_session
+from kompass.aws.session import SessionError
 from kompass.collectors.base import Absent, CallRecorder
 
 
@@ -47,6 +53,14 @@ def test_call_returns_response(session: Any, recorder: CallRecorder) -> None:
     assert isinstance(response, dict)
     assert response["Buckets"] == []
     assert recorder.errors == []
+
+
+def test_call_strips_response_metadata(session: Any, recorder: CallRecorder) -> None:
+    # HTTP 헤더의 날짜 등이 스냅샷에 들어가면 같은 설정도 매번 다른 스냅샷이 된다
+    response = recorder.call(session.client("iam"), "get_account_summary")
+    assert isinstance(response, dict)
+    assert "SummaryMap" in response
+    assert "ResponseMetadata" not in response
 
 
 def test_absent_code_is_data_not_error(
@@ -180,3 +194,67 @@ def test_errors_accumulate_across_calls(session: Any, recorder: CallRecorder) ->
         recorder.call(iam, "list_users")
         recorder.call(iam, "get_account_summary")
     assert [e.operation for e in recorder.errors] == ["iam:ListUsers", "iam:GetAccountSummary"]
+
+
+# --- 코드 버그는 실행 중단 ---
+
+
+def test_paginate_rejects_unknown_result_key(session: Any, recorder: CallRecorder) -> None:
+    # 오타("Users" -> "User")가 빈 목록, 즉 "리소스 없음"으로 둔갑하면 안 된다 (ADR-005)
+    iam = session.client("iam")
+    with Stubber(iam), pytest.raises(ValueError, match="User"):
+        # Stubber에 응답을 넣지 않았으므로 실제 호출이 일어나면 Stubber가 실패한다
+        recorder.paginate(iam, "list_users", "User")
+    assert recorder.errors == []
+
+
+def test_paginate_non_pageable_operation_raises(session: Any, recorder: CallRecorder) -> None:
+    with pytest.raises(OperationNotPageableError):
+        recorder.paginate(session.client("iam"), "get_account_summary", "SummaryMap")
+    assert recorder.errors == []
+
+
+# --- 세션 전체 실패는 실행 중단 ---
+
+SESSION_WIDE_CODES = [
+    "ExpiredToken",
+    "ExpiredTokenException",
+    "InvalidClientTokenId",
+    "UnrecognizedClientException",
+    "SignatureDoesNotMatch",
+]
+
+
+@pytest.mark.parametrize("code", SESSION_WIDE_CODES)
+def test_session_wide_error_aborts_call(session: Any, recorder: CallRecorder, code: str) -> None:
+    # 자격증명 만료 등을 호출마다 ERROR로 쌓으면 보고서 전체가 "확인 불가"로 채워진다
+    iam = session.client("iam")
+    with Stubber(iam) as stub, pytest.raises(SessionError, match=code):
+        stub.add_client_error("list_users", service_error_code=code, http_status_code=403)
+        recorder.call(iam, "list_users")
+    assert recorder.errors == []
+
+
+@pytest.mark.parametrize("code", SESSION_WIDE_CODES)
+def test_session_wide_error_aborts_paginate(
+    session: Any, recorder: CallRecorder, code: str
+) -> None:
+    iam = session.client("iam")
+    with Stubber(iam) as stub, pytest.raises(SessionError, match=code):
+        stub.add_client_error("list_users", service_error_code=code, http_status_code=403)
+        recorder.paginate(iam, "list_users", "Users")
+    assert recorder.errors == []
+
+
+def test_missing_credentials_aborts(
+    session: Any, recorder: CallRecorder, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    iam = session.client("iam")
+
+    def no_credentials(**_: Any) -> None:
+        raise NoCredentialsError()
+
+    monkeypatch.setattr(iam, "list_users", no_credentials)
+    with pytest.raises(SessionError):
+        recorder.call(iam, "list_users")
+    assert recorder.errors == []
