@@ -74,7 +74,7 @@ terraform apply
 | S3-002 | `logs`, `private` | PASS |
 | S3-002 | `public-policy`, `restricted-policy`, `public-acl` | FAIL |
 | S3-003 | `public-policy` | FAIL |
-| S3-003 | `restricted-policy` | FAIL (evidence에 `RestrictPublicBuckets: true`). **`IsPublic` 실제 값 확인 대상** |
+| S3-003 | `restricted-policy` | FAIL (evidence에 `RestrictPublicBuckets: true`). `IsPublic=true` 확인됨 |
 | S3-003 | 나머지 | PASS |
 | S3-004 | 전체 | PASS (SSE-S3 기본 암호화) |
 | S3-005 | `private` | PASS |

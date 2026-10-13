@@ -1,6 +1,6 @@
 # 구현 계획
 
-> **현재 단계: 0단계 — 준비**
+> **현재 단계: 1단계 — 수집과 판정**
 > 단계를 마치면 이 줄을 갱신한다.
 
 ## 목표
@@ -24,7 +24,7 @@
 - [x] `lab/` 취약 실습 환경 Terraform 작성 — `terraform validate` 통과 (Terraform 1.16.5, AWS provider 6.68.0)
   - 퍼블릭 S3 버킷(정책, ACL), 0.0.0.0/0 SSH 허용 SG, 사용 중인 기본 SG, MFA 없는 콘솔 IAM 사용자, 직접 연결된 관리자 권한, 오래된 액세스 키, 퍼블릭 서브넷만 있는 VPC, 공인 IP가 붙은 ENI, CloudTrail, OIDC 공급자 등
   - 양호 케이스 리소스도 함께 구성 (PASS 검증용)
-- [ ] 실습 환경 배포 — 사용자가 직접 `terraform apply`
+- [x] 실습 환경 배포 — 사용자가 직접 `terraform apply` (실습 전용 계정, 리소스 60개, 2026-10-13)
 
 **완료 기준:** 분류표가 있고, 실습 환경이 떠 있으며, 빈 CLI가 `uv run kompass --help`로 실행된다.
 

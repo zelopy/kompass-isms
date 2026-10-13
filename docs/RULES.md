@@ -119,8 +119,9 @@
 - 심각도: critical
 - API: `s3:GetBucketPolicyStatus`
 - 판정: `PolicyStatus.IsPublic == true`이면 FAIL. `false`이거나 정책이 없으면 PASS.
+- 정책 없음: `GetBucketPolicyStatus`는 정책이 없는 버킷에 `NoSuchBucketPolicy` 오류를 낸다. collector는 이를 수집 실패(ERROR)가 아니라 "정책 없음"으로 기록한다 (실습 환경 확인, 2026-10-13).
 - evidence: 계정·버킷 수준 `RestrictPublicBuckets` 값을 함께 남긴다 (공통 원칙: 설정이 존재하면 FAIL).
-- 구현 시 확인: 퍼블릭 액세스 차단이 켜진 상태에서 `IsPublic`이 어떻게 보고되는지 실습 환경에서 확인한다.
+- 확인됨 (실습 환경, 2026-10-13): `RestrictPublicBuckets: true`로 실제 공개가 막혀 있어도 `IsPublic`은 `true`로 보고된다. `IsPublic`은 정책 문서 자체만 평가하므로, 공통 원칙대로 FAIL로 판정하고 차단 설정을 evidence에 남기는 것이 맞다.
 - ISMS-P(초안): 2.10.2 클라우드 보안
 - KISA: CA-10 스토리지 리소스 퍼블릭 접근 관리 (중, 863쪽) — 근거 수준: 직접
 
