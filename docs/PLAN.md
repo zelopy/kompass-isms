@@ -1,6 +1,6 @@
 # 구현 계획
 
-> **현재 단계: 1단계 — 수집과 판정**
+> **현재 단계: 2단계 — 매핑과 보고서**
 > 단계를 마치면 이 줄을 갱신한다.
 
 ## 목표
@@ -42,7 +42,7 @@
 - [x] 룰 엔진: 룰 레지스트리, 실행기, 판정 기준값 설정(`config.py`) (ADR-023)
 - [x] `docs/RULES.md`의 초기 룰 구현 (룰마다 PASS/FAIL/ERROR 테스트) — 22개 룰 모두 실습 계정 기대값 일치
 - [x] CLI: `kompass collect`, `kompass evaluate`, `kompass scan` (종료 코드 0/1/2/3/4, `--fail-on`, `--account-id`, `--config`, 결과 파일 `.kompass/findings/`)
-- [ ] 실습 환경 통합 테스트: 기대 결과표와 실제 결과 비교
+- [x] 실습 환경 통합 테스트: 기대 결과표와 실제 결과 비교 (`lab/expected.yaml`, `pytest -m lab`, 62개 항목 일치)
 
 **완료 기준:** `kompass scan`이 실습 환경에서 기대한 FAIL/PASS를 모두 맞히고 `findings.json`을 출력한다.
 

@@ -78,4 +78,7 @@ warn_required_dynamic_aliases = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = ["-ra", "--strict-markers", "--strict-config"]
+addopts = ["-ra", "--strict-markers", "--strict-config", "-m", "not lab"]
+markers = [
+    "lab: 실제 실습 AWS 계정을 읽기 전용으로 스캔한다. 기본 실행에서 제외, pytest -m lab으로 실행",
+]

@@ -2,6 +2,7 @@
 
 개발자 PC의 실제 `~/.aws` 프로필과 `AWS_*` 환경 변수가 테스트에 보이지 않게 한다.
 moto가 꺼진 상태로 요청이 나가는 실수가 있어도 가짜 키라서 AWS가 거부한다.
+`lab` 마커가 붙은 실습 통합 테스트만 예외다 (기본 실행에서 제외, `pytest -m lab`).
 """
 
 import os
@@ -21,7 +22,13 @@ class AwsFiles:
 
 
 @pytest.fixture(autouse=True)
-def isolated_aws_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[AwsFiles]:
+def isolated_aws_env(
+    request: pytest.FixtureRequest, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> Iterator[AwsFiles | None]:
+    if request.node.get_closest_marker("lab"):
+        # 실습 통합 테스트만 실제 AWS 설정을 쓴다. 기본 실행에서는 마커로 제외된다
+        yield None
+        return
     for name in list(os.environ):
         if name.startswith("AWS_"):
             monkeypatch.delenv(name)

@@ -46,6 +46,8 @@ terraform apply
 
 ## 기대 결과표
 
+통합 테스트(`uv run pytest -m lab`)는 이 표를 옮긴 [expected.yaml](expected.yaml)을 기준으로 실제 스캔 결과를 대조한다. 표를 바꾸면 `expected.yaml`도 함께 바꾼다.
+
 기본 변수값, 점검 리전 `ap-northeast-2`, 계정에 비밀번호 정책과 계정 수준 S3 차단 설정이 원래 없는 상태 기준. "계정 상태"는 Terraform이 만들지 않는 루트 계정 상태에 따라 달라진다. 실습 리소스가 아닌 기존 리소스의 결과는 이 표의 비교 대상이 아니다.
 
 ### IAM

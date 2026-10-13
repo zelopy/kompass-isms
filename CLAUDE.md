@@ -37,9 +37,10 @@ AWS 계정을 **읽기 전용**으로 스캔해서 KISA 클라우드 취약점 �
 uv sync                          # 의존성 설치
 uv run pytest                    # 전체 테스트
 uv run pytest tests/rules -k S3  # 일부 테스트
+uv run pytest -m lab             # 실습 계정 통합 테스트 (실제 AWS, 읽기 전용, 기본 실행에서 제외)
 uv run ruff check . && uv run ruff format .
 uv run mypy kompass
-uv run kompass scan --profile kompass-lab --regions ap-northeast-2
+uv run kompass scan --profile kompass-lab-audit --regions ap-northeast-2
 ```
 
 ## 코드 규칙

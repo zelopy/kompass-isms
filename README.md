@@ -2,7 +2,7 @@
 
 KISA 클라우드 취약점 점검 가이드와 ISMS-P 인증기준으로 AWS 환경을 자동 진단하는 AI 에이전트.
 
-> 🚧 개발 중 (0단계). 진행 상황은 [docs/PLAN.md](docs/PLAN.md) 참고.
+> 🚧 개발 중 (1단계 완료: 수집과 판정). 진행 상황은 [docs/PLAN.md](docs/PLAN.md) 참고.
 
 ## 무엇을 하나
 
@@ -20,13 +20,36 @@ KISA 클라우드 취약점 점검 가이드와 ISMS-P 인증기준으로 AWS �
 
 자세한 내용은 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/DECISIONS.md](docs/DECISIONS.md)를 참고하세요.
 
-## 사용법 (예정)
+## 사용법
+
+점검용 AWS 프로필에는 `SecurityAudit` 관리형 정책만 부여한다. 코드에도 읽기 전용 가드가 있어 조회 외의 호출은 요청 전에 차단된다.
 
 ```bash
 uv sync
+
+# 수집 + 판정
 uv run kompass scan --profile <aws-profile> --regions ap-northeast-2
-uv run kompass report --format xlsx
+
+# 따로 실행
+uv run kompass collect --profile <aws-profile> --account-id <예상 계정 ID>
+uv run kompass evaluate --config kompass.yaml --fail-on fail
 ```
+
+| 옵션 | 설명 |
+|---|---|
+| `--regions` | EC2·VPC를 점검할 리전 (쉼표 구분). 없으면 활성 리전 전체. S3 버킷·IAM은 항상 전체 |
+| `--account-id` | 실제 계정이 다르면 중단 (엉뚱한 프로필로 점검하는 실수 방지) |
+| `--service` | 수집할 서비스 (`cloudtrail`, `ec2`, `iam`, `s3`). 없으면 전체 |
+| `--config` | 판정 기준값 파일. 없으면 현재 디렉터리의 `kompass.yaml` |
+| `--fail-on` | `fail`·`error`·`review` 이상의 결과가 있으면 종료 코드 1 (CI용) |
+
+결과는 `.kompass/` 아래에 저장된다. 실제 계정 데이터이므로 `.kompass/.gitignore`가 자동으로 만들어진다.
+- 스냅샷: `.kompass/snapshots/<계정>/<점검 ID>/` (파일별 SHA-256 기록)
+- 판정 결과: `.kompass/findings/<계정>/<점검 ID>.findings.json`
+
+종료 코드: 0 완료(취약 결과가 있어도 0), 1 `--fail-on` 해당, 2 사용법·설정 오류, 3 세션 오류, 4 스냅샷 오류.
+
+보고서(Markdown, Excel)와 KISA·ISMS-P 항목 매핑은 2단계에서 추가한다.
 
 ## 점검 항목
 

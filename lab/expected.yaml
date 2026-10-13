@@ -1,0 +1,85 @@
+# 실습 환경 기대 결과 (통합 테스트 기준: tests/lab/test_lab_scan.py)
+#
+# lab/README.md의 기대 결과표를 기계가 읽을 수 있게 옮긴 것이다. 표를 바꾸면 이 파일도 바꾼다.
+# resource는 배포마다 바뀌는 ID 대신 이름표로 적는다.
+#   - 보안그룹: 그룹 이름. 기본 보안그룹은 default@<VPC Name 태그>
+#   - VPC: Name 태그 / 네트워크 인터페이스: 설명(Description)
+#   - S3: 버킷 이름에서 무작위 접미사(-xxxxxxxx)를 뺀 것
+#   - IAM: 사용자 이름(+ #access_key_N), 그 외 ARN의 리소스 부분 / 계정 단위: account
+# status NONE은 "finding이 없어야 한다"는 뜻이다.
+# 기본 변수값(terraform.tfvars.example)으로 배포한 실습 전용 계정 기준.
+
+profile: kompass-lab-audit
+regions: [ap-northeast-2]
+
+expectations:
+  # CloudTrail
+  - {rule: CT-001, resource: account, status: PASS}
+
+  # 보안그룹
+  - {rule: SG-001, resource: kompass-lab-open-ssh, status: FAIL}
+  - {rule: SG-001, resource: kompass-lab-open-all, status: FAIL}
+  - {rule: SG-001, resource: kompass-lab-open-db, status: PASS}
+  - {rule: SG-001, resource: kompass-lab-restricted, status: PASS}
+  - {rule: SG-001, resource: kompass-lab-public-only-workload, status: PASS}
+  - {rule: SG-002, resource: kompass-lab-open-all, status: FAIL}
+  - {rule: SG-002, resource: kompass-lab-open-ssh, status: PASS}
+  - {rule: SG-002, resource: kompass-lab-open-db, status: PASS}
+  - {rule: SG-002, resource: kompass-lab-restricted, status: PASS}
+  - {rule: SG-003, resource: kompass-lab-open-db, status: FAIL}
+  - {rule: SG-003, resource: kompass-lab-open-all, status: FAIL}
+  - {rule: SG-003, resource: kompass-lab-open-ssh, status: PASS}
+  - {rule: SG-003, resource: kompass-lab-restricted, status: PASS}
+  - {rule: SG-004, resource: default@kompass-lab-mixed, status: FAIL}
+  - {rule: SG-004, resource: default@kompass-lab-public-only, status: PASS}
+
+  # VPC
+  - {rule: VPC-001, resource: kompass-lab-mixed, status: PASS}
+  - {rule: VPC-001, resource: kompass-lab-public-only, status: FAIL}
+  - {rule: VPC-002, resource: "kompass lab: workload in public-only VPC", status: REVIEW}
+  - {rule: VPC-002, resource: "kompass lab: workload in private subnet", status: NONE}
+
+  # S3
+  - {rule: S3-001, resource: account, status: FAIL}
+  - {rule: S3-002, resource: kompass-lab-logs, status: PASS}
+  - {rule: S3-002, resource: kompass-lab-private, status: PASS}
+  - {rule: S3-002, resource: kompass-lab-public-policy, status: FAIL}
+  - {rule: S3-002, resource: kompass-lab-restricted-policy, status: FAIL}
+  - {rule: S3-002, resource: kompass-lab-public-acl, status: FAIL}
+  - {rule: S3-003, resource: kompass-lab-public-policy, status: FAIL}
+  - {rule: S3-003, resource: kompass-lab-restricted-policy, status: FAIL}
+  - {rule: S3-003, resource: kompass-lab-logs, status: PASS}
+  - {rule: S3-003, resource: kompass-lab-private, status: PASS}
+  - {rule: S3-003, resource: kompass-lab-public-acl, status: PASS}
+  - {rule: S3-004, resource: kompass-lab-logs, status: PASS}
+  - {rule: S3-004, resource: kompass-lab-private, status: PASS}
+  - {rule: S3-004, resource: kompass-lab-public-policy, status: PASS}
+  - {rule: S3-004, resource: kompass-lab-restricted-policy, status: PASS}
+  - {rule: S3-004, resource: kompass-lab-public-acl, status: PASS}
+  - {rule: S3-005, resource: kompass-lab-private, status: PASS}
+  - {rule: S3-005, resource: kompass-lab-logs, status: FAIL}
+  - {rule: S3-005, resource: kompass-lab-public-policy, status: FAIL}
+  - {rule: S3-005, resource: kompass-lab-restricted-policy, status: FAIL}
+  - {rule: S3-005, resource: kompass-lab-public-acl, status: FAIL}
+  - {rule: S3-006, resource: kompass-lab-public-acl, status: FAIL}
+  - {rule: S3-006, resource: kompass-lab-logs, status: PASS}
+  - {rule: S3-006, resource: kompass-lab-private, status: PASS}
+  - {rule: S3-006, resource: kompass-lab-public-policy, status: PASS}
+  - {rule: S3-006, resource: kompass-lab-restricted-policy, status: PASS}
+
+  # IAM
+  - {rule: IAM-001, resource: account, status: PASS}
+  - {rule: IAM-002, resource: account, status: PASS}
+  - {rule: IAM-003, resource: kompass-lab-console-no-mfa, status: FAIL}
+  - {rule: IAM-004, resource: account, status: FAIL}
+  - {rule: IAM-005, resource: kompass-lab-console-no-mfa, status: PASS}
+  - {rule: IAM-006, resource: "kompass-lab-admin#access_key_1", status: PASS}
+  - {rule: IAM-006, resource: "security_manager#access_key_1", status: PASS}
+  - {rule: IAM-007, resource: kompass-lab-direct-admin, status: FAIL}
+  - {rule: IAM-007, resource: kompass-lab-wildcard-admin, status: FAIL}
+  - {rule: IAM-007, resource: kompass-lab-group-admin, status: REVIEW}
+  - {rule: IAM-007, resource: kompass-lab-notaction, status: REVIEW}
+  - {rule: IAM-007, resource: kompass-lab-admin, status: REVIEW}
+  - {rule: IAM-007, resource: kompass-lab-readonly, status: NONE}
+  - {rule: IAM-008, resource: account, status: REVIEW}
+  - {rule: IAM-009, resource: oidc-provider/token.actions.githubusercontent.com, status: REVIEW}
