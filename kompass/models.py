@@ -145,6 +145,22 @@ class ScanManifest(_Frozen):
     snapshots: dict[str, str]
 
 
+class EvaluationReport(_Frozen):
+    """판정 결과 파일 (`*.findings.json`).
+
+    같은 스냅샷을 어떤 기준값과 버전으로 판정했는지 재현할 수 있도록 판정 조건을 함께 남긴다.
+    """
+
+    format_version: Literal[1] = 1
+    scan_id: str
+    account_id: AccountId
+    kompass_version: str
+    evaluated_at: UtcDatetime
+    settings: JsonObject  # 적용한 판정 기준값 (kompass.yaml + 기본값)
+    skipped_rules: tuple[str, ...]  # 스냅샷이 없어 실행하지 않은 룰. PASS가 아니다
+    findings: tuple[Finding, ...]
+
+
 _PRECEDENCE = (Status.FAIL, Status.ERROR, Status.REVIEW)
 
 

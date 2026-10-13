@@ -66,9 +66,9 @@ strict = true
 packages = ["kompass"]
 plugins = ["pydantic.mypy"]
 
-# boto3·botocore·moto는 타입 정보를 제공하지 않는다. 필요해지면 boto3-stubs 도입을 검토한다.
+# boto3·botocore·moto·PyYAML은 타입 정보를 제공하지 않는다. 필요해지면 stub 패키지 도입을 검토한다.
 [[tool.mypy.overrides]]
-module = ["boto3", "boto3.*", "botocore", "botocore.*", "moto", "moto.*"]
+module = ["boto3", "boto3.*", "botocore", "botocore.*", "moto", "moto.*", "yaml", "yaml.*"]
 ignore_missing_imports = true
 
 [tool.pydantic-mypy]

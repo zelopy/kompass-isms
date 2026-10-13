@@ -4,7 +4,10 @@
 보고서에는 적용한 기준값을 함께 표시한다. 항목은 그 값을 쓰는 룰을 구현할 때 추가한다.
 """
 
-from pydantic import BaseModel, ConfigDict
+from pathlib import Path
+
+import yaml
+from pydantic import BaseModel, ConfigDict, ValidationError
 
 
 class _Section(BaseModel):
@@ -48,3 +51,29 @@ class Settings(_Section):
     ec2: Ec2Settings = Ec2Settings()
     s3: S3Settings = S3Settings()
     iam: IamSettings = IamSettings()
+
+
+class ConfigError(Exception):
+    """`kompass.yaml`을 읽을 수 없거나 형식이 틀리다. 판정 전에 중단한다."""
+
+
+def load_settings(path: Path | None) -> Settings:
+    """설정 파일을 읽는다. `path`가 None이면 기본값.
+
+    정의되지 않은 키나 잘못된 값은 ConfigError다. 오타가 조용히 무시되어 기본값으로 판정되는
+    것을 막는다 (ADR-023).
+    """
+    if path is None:
+        return Settings()
+    try:
+        raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as exc:
+        raise ConfigError(f"설정 파일을 읽을 수 없다: {path}: {exc}") from exc
+    if raw is None:
+        return Settings()
+    if not isinstance(raw, dict):
+        raise ConfigError(f"설정 파일의 최상위는 키-값 형식이어야 한다: {path}")
+    try:
+        return Settings.model_validate(raw)
+    except ValidationError as exc:
+        raise ConfigError(f"설정 파일 형식이 틀리다: {path}\n{exc}") from exc
