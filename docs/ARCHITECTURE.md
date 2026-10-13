@@ -160,6 +160,25 @@ class Rule(Protocol):
 - 룰은 스냅샷의 `errors`를 확인해서, 필요한 데이터 수집이 실패했으면 `ERROR` finding을 낸다.
 - 점검 대상 리소스가 없으면 `NOT_APPLICABLE` finding 하나를 낸다.
 
+## 스냅샷 저장
+
+`snapshots.py`가 점검 결과를 파일로 남긴다 (ADR-003, ADR-022).
+
+```
+.kompass/
+├── .gitignore                 # "*" (자동 생성, 실제 계정 데이터 커밋 방지)
+└── snapshots/<account_id>/<scan_id>/   # scan_id = 20261013T120000Z-a1b2
+    ├── iam.json, s3.json, ...  # 서비스별 Snapshot
+    └── scan.json               # ScanManifest: 계정, 호출자, 리전, kompass 버전, 시작·종료 시각, 파일별 SHA-256
+```
+
+- `scan.json`은 맨 마지막에 쓴다. 이 파일이 없는 폴더는 중단된 점검이므로 불러오지 않는다.
+- 불러올 때 파일별 SHA-256을 `scan.json`과 대조해 손상·수정을 찾는다. 증적 신뢰성을 위한 장치이며, `scan.json` 자체까지 바꾸는 의도적 위조는 막지 못한다.
+- 모든 파일은 UTF-8로 쓰고, 임시 파일에 쓴 뒤 이름을 바꾼다. 점검 폴더는 이미 있으면 덮어쓰지 않고 실패하며, POSIX에서는 소유자 전용 권한(0700)으로 만든다.
+- 최신 점검 찾기는 완료된 점검 중 시작 시각이 가장 늦은 것이다. 계정을 지정하지 않았는데 여러 계정의 점검이 있으면 오류를 낸다.
+- `format_version`을 기록하고, 모르는 버전은 불러오지 않는다.
+- 오래된 스냅샷은 자동으로 지우지 않는다.
+
 ## 점검 세션
 
 `aws/session.py`의 `open_scan()`이 한 번의 점검 실행에 쓸 `ScanContext`를 만든다 (ADR-021).

@@ -12,7 +12,7 @@ import json
 from collections.abc import Iterable, Mapping
 from datetime import UTC, datetime
 from enum import StrEnum
-from typing import Annotated, Any, Self
+from typing import Annotated, Any, Literal, Self
 
 from pydantic import AfterValidator, AwareDatetime, BaseModel, ConfigDict, Field
 from pydantic_core import PydanticSerializationError, to_json
@@ -123,6 +123,26 @@ class Finding(_Frozen):
     def with_mappings(self, mappings: Mappings) -> Self:
         """매핑을 붙인 새 finding을 돌려준다. 나머지 필드는 그대로 다시 검증한다."""
         return self.model_validate({**self.model_dump(), "mappings": mappings})
+
+
+class ScanManifest(_Frozen):
+    """점검 한 번의 정보와 스냅샷 파일 목록 (`scan.json`).
+
+    점검 폴더에 맨 마지막에 쓴다. 이 파일이 없는 폴더는 중단된 점검이다.
+    `snapshots`는 서비스 이름 → 스냅샷 파일의 SHA-256. 불러올 때 대조해 손상·수정을 찾는다.
+    """
+
+    format_version: Literal[1] = 1
+    scan_id: str
+    account_id: AccountId
+    partition: str
+    caller_arn: str  # 점검 수행 주체
+    home_region: str
+    regions: tuple[str, ...]
+    kompass_version: str
+    started_at: UtcDatetime
+    finished_at: UtcDatetime
+    snapshots: dict[str, str]
 
 
 _PRECEDENCE = (Status.FAIL, Status.ERROR, Status.REVIEW)
