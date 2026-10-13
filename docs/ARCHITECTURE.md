@@ -58,6 +58,8 @@ kompass-isms/
 
 ## 핵심 모델
 
+아래는 개요이며 정본은 [kompass/models.py](../kompass/models.py)다. 모든 모델은 frozen(생성 후 변경 불가)이고 정의되지 않은 필드를 거부하며, 시각은 시간대가 있는 값만 받는다.
+
 ```python
 class Status(StrEnum):
     PASS = "PASS"
