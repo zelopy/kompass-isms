@@ -13,6 +13,15 @@ from kompass.rules.ec2.sg_003_db_port_open import Sg003DbPortOpen
 from kompass.rules.ec2.sg_004_default_group_in_use import Sg004DefaultGroupInUse
 from kompass.rules.ec2.vpc_001_subnet_separation import Vpc001SubnetSeparation
 from kompass.rules.ec2.vpc_002_public_ip_interface import Vpc002PublicIpInterface
+from kompass.rules.iam.iam_001_root_mfa import Iam001RootMfa
+from kompass.rules.iam.iam_002_root_access_key import Iam002RootAccessKey
+from kompass.rules.iam.iam_003_console_user_mfa import Iam003ConsoleUserMfa
+from kompass.rules.iam.iam_004_password_policy import Iam004PasswordPolicy
+from kompass.rules.iam.iam_005_unused_credentials import Iam005UnusedCredentials
+from kompass.rules.iam.iam_006_access_key_rotation import Iam006AccessKeyRotation
+from kompass.rules.iam.iam_007_admin_users import Iam007AdminUsers
+from kompass.rules.iam.iam_008_root_recent_use import Iam008RootRecentUse
+from kompass.rules.iam.iam_009_external_identity import Iam009ExternalIdentity
 from kompass.rules.s3.s3_001_account_public_access_block import S3001AccountPublicAccessBlock
 from kompass.rules.s3.s3_002_bucket_public_access_block import S3002BucketPublicAccessBlock
 from kompass.rules.s3.s3_003_public_bucket_policy import S3003PublicBucketPolicy
@@ -34,6 +43,15 @@ RULES: tuple[BaseRule, ...] = (
     S3004DefaultEncryption(),
     S3005AccessLogging(),
     S3006PublicBucketAcl(),
+    Iam001RootMfa(),
+    Iam002RootAccessKey(),
+    Iam003ConsoleUserMfa(),
+    Iam004PasswordPolicy(),
+    Iam005UnusedCredentials(),
+    Iam006AccessKeyRotation(),
+    Iam007AdminUsers(),
+    Iam008RootRecentUse(),
+    Iam009ExternalIdentity(),
 )
 
 

@@ -50,6 +50,8 @@ terraform apply
 
 ### IAM
 
+실습 계정에서 기대값과 일치 확인 (2026-10-14). 배포·점검용 사용자(`kompass-lab-admin`, `security_manager`)의 결과도 함께 적는다.
+
 | 룰 | 대상 | 기대 결과 |
 |---|---|---|
 | IAM-001 | 루트 계정 | 계정 상태 (루트 MFA를 설정해 두면 PASS) |
@@ -57,13 +59,14 @@ terraform apply
 | IAM-003 | `kompass-lab-console-no-mfa` | FAIL |
 | IAM-004 | 계정 비밀번호 정책 (없음) | FAIL (`NoSuchEntity`) |
 | IAM-005 | 콘솔 사용자 (최근 설정된 비밀번호) | PASS |
-| IAM-006 | 액세스 키 없음 | N/A (실습 계정에 다른 키가 없다면) |
+| IAM-006 | `kompass-lab-admin`, `security_manager`의 액세스 키 | PASS (90일 안에 생성) |
 | IAM-007 | `kompass-lab-direct-admin` (AdministratorAccess 직접) | FAIL |
 | IAM-007 | `kompass-lab-wildcard-admin` (`*`/`*` 고객 관리형 정책 직접) | FAIL |
 | IAM-007 | `kompass-lab-group-admin` (그룹 경유) | REVIEW |
 | IAM-007 | `kompass-lab-notaction` (Allow + NotAction) | REVIEW |
 | IAM-007 | `kompass-lab-readonly` | finding 없음 |
-| IAM-008 | 루트 계정 | 계정 상태 (계정 생성·설정에 최근 90일 안에 루트를 썼으면 REVIEW) |
+| IAM-007 | `kompass-lab-admin` (배포용, `admin` 그룹 경유) | REVIEW |
+| IAM-008 | 루트 계정 | REVIEW. 루트 `password_last_used`가 `no_information`이라 사용 이력 확인 불가 (최근 90일 안의 사용일이 보고서에 있어도 REVIEW) |
 | IAM-009 | GitHub Actions OIDC 공급자 | REVIEW |
 
 ### S3

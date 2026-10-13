@@ -58,13 +58,15 @@
   - 비밀번호를 한 번도 쓰지 않았으면 `password_last_changed`(비밀번호 설정일)를 기준으로 한다.
   - 액세스 키를 한 번도 쓰지 않았으면 `access_key_N_last_rotated`(키 생성일)를 기준으로 한다.
 - 해당 없음: 활성 자격증명이 하나도 없는 사용자는 대상에서 제외한다. 대상 사용자가 없으면 `NOT_APPLICABLE`.
+- 기준 시각: 스냅샷 수집 시각. 같은 스냅샷을 언제 다시 판정해도 결과가 같다 (IAM-006, IAM-008도 같다).
+- 오류: 기준일 자체를 알 수 없는 자격증명이 있고 기준을 넘은 자격증명이 없으면 ERROR.
 - ISMS-P(초안): 2.5.1 사용자 계정 관리, 2.5.6 접근권한 검토, 2.10.2 클라우드 보안
 - KISA: CA-01 사용자 계정 관리 (상, 854쪽) — 근거 수준: 직접
 
 ### IAM-006 액세스 키 교체 주기 초과
 - 심각도: medium
 - API: 자격증명 보고서
-- 판정: 활성 액세스 키의 `last_rotated`가 `iam.access_key_rotation_days`(기본 90일)를 초과하면 FAIL. 키별 finding.
+- 판정: 활성 액세스 키의 `last_rotated`가 `iam.access_key_rotation_days`(기본 90일)를 초과하면 FAIL. 키별 finding이며 `resource`는 `<사용자 ARN>#access_key_<번호>`. 루트 키는 IAM-002가 다룬다.
 - ISMS-P(초안): 2.10.2 클라우드 보안 (Access Key 관리 절차), 2.5.3 사용자 인증
 - KISA: 대응 항목 없음
 
@@ -75,7 +77,9 @@
   - AWS 관리형 정책 `AdministratorAccess`
   - 관리형·인라인 정책 중 `Effect: Allow`이고 `Action`에 `"*"`, `Resource`에 `"*"`가 포함된 문(statement)
 - 판정: 사용자에게 직접 연결된 관리자 권한은 FAIL. 그룹을 거친 관리자 권한은 `REVIEW`로 현황 보고. 관리자 권한이 없는 사용자는 finding을 내지 않으며, 관리자가 한 명도 없으면 계정 단위 PASS 하나.
-- 애매한 정책: `Allow` + `NotAction`처럼 정적 분석으로 관리자 여부를 확정하기 어려운 문이 있으면 해당 사용자는 `REVIEW`.
+- 애매한 정책: `Allow` + `NotAction`/`NotResource`처럼 정적 분석으로 관리자 여부를 확정하기 어려운 문이 있거나, 연결된 고객 관리형 정책의 본문이 응답에 없으면 해당 사용자는 `REVIEW`.
+- `Deny` 문으로 일부 권한을 막은 경우도 보수적으로 관리자로 판정한다. 권한 경계(permissions boundary)는 evidence에 남기고 판정은 바꾸지 않는다.
+- 확인됨 (실습 계정, 2026-10-14): `GetAccountAuthorizationDetails`는 여러 페이지로 나뉘며(`IsTruncated`), 정책 문서는 dict로 풀려서 온다. collector는 관리형 정책의 기본 버전 본문만 보관하고, 룰은 정책을 ARN으로 찾는다.
 - 범위 밖: 역할(role)의 관리자 권한은 1단계에서 판정하지 않는다. 같은 API 응답에 들어 있으므로 evidence 수집만 해 두고 이후 룰로 추가한다.
 - 비고: 관리자 수의 적정성은 사람이 판단할 영역이므로, 현황 증적 제공이 주목적이다.
 - ISMS-P(초안): 2.5.5 특수 계정 및 권한 관리, 2.5.6 접근권한 검토, 2.10.2 클라우드 보안
@@ -86,6 +90,8 @@
 - API: 자격증명 보고서
 - 판정: `<root_account>` 행의 `password_last_used`, `access_key_1_last_used_date`, `access_key_2_last_used_date` 중 가장 최근 값이 `iam.root_recent_use_days`(기본 90일) 이내이면 `REVIEW`. 그 외(사용 이력 없음 포함)는 PASS. evidence에 마지막 사용 시각을 담는다.
 - 해당 없음: 루트 자격증명이 없는 계정은 `NOT_APPLICABLE` (IAM-001과 같은 판별).
+- 사용 이력 확인 불가: 루트 비밀번호가 있는데 `password_last_used`가 `no_information`이면 `REVIEW` (사용자 결정, 2026-10-14). 실습 계정에서 루트로 로그인한 직후에도 `no_information`이었으므로 "사용 안 함"으로 보지 않는다.
+- 오류: 자격증명 보고서에 루트 행이 없으면 ERROR.
 - 비고: 루트 사용이 계정 복구 등 불가피한 작업이었는지, 서비스 운영 목적이었는지는 사람이 판단한다.
 - ISMS-P(초안): 2.5.5 특수 계정 및 권한 관리, 2.10.2 클라우드 보안
 - KISA: CA-02 사용자 정책 관리 (중, 855쪽) — 근거 수준: 직접 (Step 2 "콘솔 최상위 관리자(최초 가입계정) 계정은 서비스 운영에 활용 금지")
@@ -93,10 +99,11 @@
 ### IAM-009 외부 자격증명 공급자 사용 (MFA 확인 필요)
 - 심각도: medium
 - API: `iam:ListSAMLProviders`, `iam:ListOpenIDConnectProviders`, `sso-admin:ListInstances`
-- 판정: SAML 공급자, OIDC 공급자, IAM Identity Center 인스턴스마다 `REVIEW` finding을 낸다. 하나도 없으면 계정 단위 `NOT_APPLICABLE`.
+- 판정: SAML 공급자, OIDC 공급자, IAM Identity Center 인스턴스마다 `REVIEW` finding을 낸다. Identity Center가 만든 역할(`/aws-reserved/sso.amazonaws.com/` 경로)이 있으면 그 역할 목록으로 `REVIEW` 하나를 낸다 (조직 멤버 계정은 인스턴스가 관리 계정에 있어 조회되지 않기 때문, 사용자 결정 2026-10-14). 하나도 없으면 계정 단위 `NOT_APPLICABLE`이지만, 조회에 실패한 곳이 있으면 ERROR.
+- Identity Center 인스턴스는 `--regions`와 관계없이 활성 리전 전체에서 조회한다 (인스턴스는 한 리전에만 있다).
 - 이유: 이 경로로 로그인하는 사용자는 IAM 사용자가 아니어서 IAM-003이 보지 못한다. MFA는 IdP 쪽 설정이라 API로 확인할 수 없으므로 사람이 확인해야 한다는 사실을 결과에 남긴다.
 - 비고: OIDC 공급자는 GitHub Actions 같은 워크로드 연동에 쓰이는 경우가 많다. 사람이 로그인하는 경로가 아니면 검토자가 그렇게 기록한다.
-- 구현 시 확인: Identity Center 인스턴스가 조직 관리 계정이 아닌 멤버 계정에서 어떻게 보이는지, `SecurityAudit` 정책으로 `sso:ListInstances`가 허용되는지.
+- 확인됨 (실습 계정, 2026-10-14): `SecurityAudit` 정책으로 `sso-admin:ListInstances`를 17개 활성 리전 모두에서 조회할 수 있다.
 - ISMS-P(초안): 2.5.3 사용자 인증, 2.10.2 클라우드 보안
 - KISA: CA-03 MFA 설정 (상, 856쪽) — 근거 수준: 직접 ("각 계정별 2차 인증")
 
