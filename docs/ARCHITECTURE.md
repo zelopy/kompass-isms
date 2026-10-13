@@ -178,12 +178,15 @@ S3-001:
 iam:
   unused_credential_days: 90
   access_key_rotation_days: 90
+  root_recent_use_days: 90
   password_policy:            # KISA CA-04 기준 (ADR-014)
     min_length_two_types: 10
     min_length_three_types: 8
 ec2:
   admin_ports: [22, 3389]
   db_ports: [3306, 5432, 1433, 1521, 27017, 6379]
+cloudtrail:
+  require_read_events: true  # false면 쓰기 이벤트만 기록해도 PASS (ADR-017)
 ```
 
 ## 3단계 이후: Interpreter
