@@ -114,7 +114,7 @@
 ### S3-002 버킷 수준 퍼블릭 액세스 차단 미설정
 - 심각도: high
 - API: `s3:ListBuckets`, `s3:GetPublicAccessBlock`
-- 판정: 버킷별로 4개 설정이 모두 true이면 PASS. 계정 수준이 모두 true이면 버킷 수준이 없어도 PASS로 보되, evidence에 계정 수준 설정을 함께 남긴다.
+- 판정: 버킷별로 4개 설정이 모두 true이면 PASS. 계정 수준이 모두 true이면 버킷 수준이 없어도 PASS로 보되, evidence에 계정 수준 설정을 함께 남긴다. 둘 다 만족하지 않고 버킷·계정 설정 중 하나라도 수집하지 못했으면 ERROR.
 - ISMS-P(초안): 2.10.2 클라우드 보안
 - KISA: CA-10 스토리지 리소스 퍼블릭 접근 관리 (중, 863쪽) — 근거 수준: 직접
 
@@ -124,7 +124,7 @@
 - 판정: `PolicyStatus.IsPublic == true`이면 FAIL. `false`이거나 정책이 없으면 PASS.
 - 정책 없음: `GetBucketPolicyStatus`는 정책이 없는 버킷에 `NoSuchBucketPolicy` 오류를 낸다. collector는 이를 수집 실패(ERROR)가 아니라 "정책 없음"으로 기록한다 (실습 환경 확인, 2026-10-13).
 - evidence: 계정·버킷 수준 `RestrictPublicBuckets` 값을 함께 남긴다 (공통 원칙: 설정이 존재하면 FAIL).
-- 확인됨 (실습 환경, 2026-10-13): `RestrictPublicBuckets: true`로 실제 공개가 막혀 있어도 `IsPublic`은 `true`로 보고된다. `IsPublic`은 정책 문서 자체만 평가하므로, 공통 원칙대로 FAIL로 판정하고 차단 설정을 evidence에 남기는 것이 맞다.
+- 확인됨 (실습 환경, 2026-10-13): `RestrictPublicBuckets: true`로 실제 공개가 막혀 있어도 `IsPublic`은 `true`로 보고된다. evidence의 `restrict_public_buckets`에 버킷·계정 값을 남긴다. `IsPublic`은 정책 문서 자체만 평가하므로, 공통 원칙대로 FAIL로 판정하고 차단 설정을 evidence에 남기는 것이 맞다.
 - ISMS-P(초안): 2.10.2 클라우드 보안
 - KISA: CA-10 스토리지 리소스 퍼블릭 접근 관리 (중, 863쪽) — 근거 수준: 직접
 
@@ -139,7 +139,7 @@
 ### S3-005 서버 액세스 로깅 미설정
 - 심각도: low
 - API: `s3:GetBucketLogging`
-- 판정: `LoggingEnabled`가 있으면 PASS. 로그 저장 버킷 자신은 제외 옵션 제공.
+- 판정: `LoggingEnabled`가 있으면 PASS. 로그 저장 버킷 자신은 제외 옵션 제공: `s3.exclude_log_target_buckets`(기본 false)를 켜면 다른 버킷의 로그를 받는 버킷은 `NOT_APPLICABLE`.
 - 비고: CloudTrail S3 데이터 이벤트로 버킷 접근을 기록하는 경우도 이 룰에서는 FAIL이다. 룰은 `s3` 스냅샷만 보기 때문이다. 그런 경우의 재판단은 4단계 에이전트의 추가 조사로 다룬다 (ADR-015).
 - ISMS-P(초안): 2.9.4 로그 및 접속기록 관리
 - KISA: CA-16 오브젝트 스토리지 버킷 로깅 설정 (중, 869쪽) — 근거 수준: 직접

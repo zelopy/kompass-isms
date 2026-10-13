@@ -13,6 +13,12 @@ from kompass.rules.ec2.sg_003_db_port_open import Sg003DbPortOpen
 from kompass.rules.ec2.sg_004_default_group_in_use import Sg004DefaultGroupInUse
 from kompass.rules.ec2.vpc_001_subnet_separation import Vpc001SubnetSeparation
 from kompass.rules.ec2.vpc_002_public_ip_interface import Vpc002PublicIpInterface
+from kompass.rules.s3.s3_001_account_public_access_block import S3001AccountPublicAccessBlock
+from kompass.rules.s3.s3_002_bucket_public_access_block import S3002BucketPublicAccessBlock
+from kompass.rules.s3.s3_003_public_bucket_policy import S3003PublicBucketPolicy
+from kompass.rules.s3.s3_004_default_encryption import S3004DefaultEncryption
+from kompass.rules.s3.s3_005_access_logging import S3005AccessLogging
+from kompass.rules.s3.s3_006_public_bucket_acl import S3006PublicBucketAcl
 
 RULES: tuple[BaseRule, ...] = (
     Ct001MultiRegionTrail(),
@@ -22,6 +28,12 @@ RULES: tuple[BaseRule, ...] = (
     Sg004DefaultGroupInUse(),
     Vpc001SubnetSeparation(),
     Vpc002PublicIpInterface(),
+    S3001AccountPublicAccessBlock(),
+    S3002BucketPublicAccessBlock(),
+    S3003PublicBucketPolicy(),
+    S3004DefaultEncryption(),
+    S3005AccessLogging(),
+    S3006PublicBucketAcl(),
 )
 
 

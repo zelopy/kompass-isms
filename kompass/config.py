@@ -23,6 +23,14 @@ class Ec2Settings(_Section):
     db_ports: tuple[int, ...] = (3306, 5432, 1433, 1521, 27017, 6379)
 
 
+class S3Settings(_Section):
+    # S3-004: true면 SSE-KMS(aws:kms, aws:kms:dsse)일 때만 PASS
+    require_kms: bool = False
+    # S3-005: true면 다른 버킷의 서버 액세스 로그를 받는 버킷은 판정에서 제외(N/A)
+    exclude_log_target_buckets: bool = False
+
+
 class Settings(_Section):
     cloudtrail: CloudTrailSettings = CloudTrailSettings()
     ec2: Ec2Settings = Ec2Settings()
+    s3: S3Settings = S3Settings()

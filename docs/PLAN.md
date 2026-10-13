@@ -40,7 +40,7 @@
 - [x] collector: `cloudtrail.py` (추적 목록, 추적 상태, 이벤트 선택기)
 - [x] 스냅샷 저장/로드: `.kompass/snapshots/<account_id>/<scan_id>/<service>.json` + `scan.json` (ADR-022)
 - [x] 룰 엔진: 룰 레지스트리, 실행기, 판정 기준값 설정(`config.py`) (ADR-023)
-- [ ] `docs/RULES.md`의 초기 룰 구현 (룰마다 PASS/FAIL/ERROR 테스트) — CT-001, SG-001~004, VPC-001~002 완료 (실습 계정 기대값 일치)
+- [ ] `docs/RULES.md`의 초기 룰 구현 (룰마다 PASS/FAIL/ERROR 테스트) — CT-001, SG-001~004, VPC-001~002, S3-001~006 완료 (실습 계정 기대값 일치)
 - [ ] CLI: `kompass collect`, `kompass evaluate`, `kompass scan` (`SessionError`는 메시지와 종료 코드로 처리, Windows 콘솔 UTF-8 출력 확인, `--account-id` 옵션, 점검 시작 시 계정 ID·호출자 표시)
 - [ ] 실습 환경 통합 테스트: 기대 결과표와 실제 결과 비교
 
