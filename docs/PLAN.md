@@ -36,7 +36,7 @@
 - [x] `collectors/base.py`: `Collector` 인터페이스, `CallRecorder`(호출 결과를 정상·설정 없음·실패로 구분), `CollectError.resource` 추가
 - [ ] collector: `iam.py` (계정 요약, 비밀번호 정책, 자격증명 보고서, 사용자·그룹 정책)
 - [ ] collector: `s3.py` (계정/버킷 퍼블릭 액세스 차단, 정책 상태, 암호화, 로깅)
-- [ ] collector: `ec2.py` (리전별 보안그룹, VPC, 서브넷, 라우팅 테이블, 네트워크 인터페이스)
+- [x] collector: `ec2.py` (리전별 보안그룹, VPC, 서브넷, 라우팅 테이블, 네트워크 인터페이스)
 - [x] collector: `cloudtrail.py` (추적 목록, 추적 상태, 이벤트 선택기)
 - [x] 스냅샷 저장/로드: `.kompass/snapshots/<account_id>/<scan_id>/<service>.json` + `scan.json` (ADR-022)
 - [x] 룰 엔진: 룰 레지스트리, 실행기, 판정 기준값 설정(`config.py`) (ADR-023)

@@ -17,6 +17,7 @@ from kompass.aws.guard import read_only_session
 from kompass.aws.session import ScanContext
 from kompass.collectors.cloudtrail import CloudTrailCollector
 from kompass.snapshots import SnapshotStore, load_scan
+from tests.collectors.stubbing import StubbingSession
 
 ACCOUNT = "123456789012"
 HOME = "ap-northeast-2"
@@ -58,20 +59,6 @@ def _create_trail(setup: Any, name: str, region: str = HOME, logging: bool = Tru
     if logging:
         client.start_logging(Name=name)
     return arn
-
-
-class _StubbingSession:
-    """지정한 (서비스, 리전)만 미리 만든 client를 돌려주고 나머지는 실제 세션에 맡긴다."""
-
-    def __init__(self, session: Any, overrides: dict[tuple[str, str | None], Any]):
-        self._session = session
-        self._overrides = overrides
-
-    def client(self, service: str, region_name: str | None = None, **kwargs: Any) -> Any:
-        override = self._overrides.get((service, region_name))
-        if override is not None:
-            return override
-        return self._session.client(service, region_name=region_name, **kwargs)
 
 
 # --- 정상 경로 ---
@@ -137,7 +124,7 @@ def test_describe_failure_leaves_trails_missing(setup: Any) -> None:
     with Stubber(client) as stub:
         stub.add_client_error("describe_trails", service_error_code="AccessDeniedException")
         snapshot = CloudTrailCollector().collect(
-            _scan(_StubbingSession(session, {("cloudtrail", HOME): client}))
+            _scan(StubbingSession(session, {("cloudtrail", HOME): client}))
         )
     assert "trails" not in snapshot.data
     [error] = snapshot.errors
@@ -161,7 +148,7 @@ def test_status_failure_is_recorded_per_trail(setup: Any) -> None:
         stub.add_client_error("get_trail_status", service_error_code="TrailNotFoundException")
         stub.add_response("get_event_selectors", selectors)
         snapshot = CloudTrailCollector().collect(
-            _scan(_StubbingSession(session, {("cloudtrail", HOME): client}))
+            _scan(StubbingSession(session, {("cloudtrail", HOME): client}))
         )
 
     assert arn not in snapshot.data["status"]
