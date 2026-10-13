@@ -8,12 +8,17 @@ sha256sum knowledge/kisa/*.pdf
 
 ## KISA
 
+클라우드 항목은 XII장(PDF 851~873쪽), 항목코드 `CA-01`~`CA-19` 19개. 항목 목록과 중요도는 852~853쪽.
+
 | 문서 | 판 | 등록일 | 출처 | 로컬 경로 | SHA-256 |
 |---|---|---|---|---|---|
-| 주요정보통신기반시설 기술적 취약점 분석·평가 방법 상세가이드 | 2026 (확인 필요) | 2025-12-24 | [KISA 보호나라](https://www.boho.or.kr/kr/bbs/view.do?searchCnd=&bbsId=B0000127&searchWrd=&menuNo=205021&pageIndex=1&categoryCode=&nttId=71928) | `knowledge/kisa/` | (원문 확보 후 기록) |
+| 주요정보통신기반시설 기술적 취약점 분석·평가 방법 상세가이드 | 2026 (표지 확인) | 2025-12-24 | [KISA 보호나라](https://www.boho.or.kr/kr/bbs/view.do?searchCnd=&bbsId=B0000127&searchWrd=&menuNo=205021&pageIndex=1&categoryCode=&nttId=71928) | `knowledge/kisa/주요정보통신기반시설 기술적 취약점 분석·평가 방법 상세가이드.pdf` (8,415,536 bytes) | `44fe393981b244147be6af7423d99dc15633c089fad0bcb296cbe2371dde812d` |
 
 ## ISMS-P
 
-| 문서 | 판 | 시행일 | 출처 | 로컬 경로 | SHA-256 |
+| 문서 | 판 | 시행·등록일 | 출처 | 로컬 경로 | SHA-256 |
 |---|---|---|---|---|---|
-| 정보보호 및 개인정보보호 관리체계 인증 등에 관한 고시 / 인증기준 | (확인 필요) | | | `knowledge/isms_p/` | (원문 확보 후 기록) |
+| 정보보호 및 개인정보보호 관리체계 인증 등에 관한 고시 (인증기준은 별표 7) | 개인정보보호위원회고시 제2023-8호, 과학기술정보통신부고시 제2023-33호 | 2023-10-05 시행 | [국가법령정보센터](https://law.go.kr/LSW/admRulLsInfoP.do?admRulSeq=2100000230176) | `knowledge/isms_p/[별표 7] 인증기준(제23조 관련)(정보보호 및 개인정보보호 관리체계 인증 등에 관한 고시).pdf` (124,311 bytes) | `0f0dc7f3a7789b75f3faaddb84e261b836a8541d9e962caacfc8e326ef69bd58` |
+| 정보보호 및 개인정보보호 관리체계(ISMS-P) 인증기준 안내서 | 2023.11. 개정 | 2024-03-15 등록 | [개인정보 포털](https://www.privacy.go.kr/front/bbs/bbsView.do?bbsNo=BBSMSTR_000000000049&bbscttNo=20677) / [KISA ISMS-P 홈페이지](https://isms.kisa.or.kr/main/) | `knowledge/isms_p/★정보보호 및 개인정보보호 관리체계 인증기준 안내서(2023.11).pdf` (7,336,823 bytes) | `6df06f8ddf007094952ec714341bc466266a4fc5459470b1744495725049e599` |
+
+통제항목 번호와 명칭의 정본은 고시 별표 7이다 (101개: 1.x 관리체계 16, 2.x 보호대책 64, 3.x 개인정보 처리 단계별 21). 안내서는 개인정보보호위원회고시 제2023-8호 기준이다. 안내서는 항목별 세부 확인사항과 결함 사례를 참고하는 용도로 쓴다.
