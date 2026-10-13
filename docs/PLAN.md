@@ -33,6 +33,7 @@
 - [x] `models.py`: `Snapshot`, `Finding`, `Status`, `Severity` (+ `CollectError`, `Mappings`, `Automation`, 항목 집계 `aggregate_status`)
 - [x] `aws/session.py`: 프로필·역할 기반 세션(`sts:AssumeRole`, ADR-020), 활성 리전 조회 (ADR-021)
 - [x] `aws/guard.py`: 읽기 전용 가드 (botocore `before-call` 이벤트 훅) + 테스트
+- [x] `collectors/base.py`: `Collector` 인터페이스, `CallRecorder`(호출 결과를 정상·설정 없음·실패로 구분), `CollectError.resource` 추가
 - [ ] collector: `iam.py` (계정 요약, 비밀번호 정책, 자격증명 보고서, 사용자·그룹 정책)
 - [ ] collector: `s3.py` (계정/버킷 퍼블릭 액세스 차단, 정책 상태, 암호화, 로깅)
 - [ ] collector: `ec2.py` (리전별 보안그룹, VPC, 서브넷, 라우팅 테이블, 네트워크 인터페이스)

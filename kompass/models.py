@@ -82,9 +82,10 @@ class CollectError(_Frozen):
     """API 호출 하나의 수집 실패 기록."""
 
     operation: str  # "s3control:GetPublicAccessBlock"
-    region: str | None
+    region: str | None  # 전역 서비스(IAM 등)는 None
     error_code: str  # "AccessDenied"
     message: str
+    resource: str | None = None  # 리소스 단위 호출이면 대상 (버킷 이름, 추적 ARN 등)
 
 
 class Snapshot(_Frozen):

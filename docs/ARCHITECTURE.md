@@ -148,6 +148,11 @@ class Rule(Protocol):
     def evaluate(self, snapshot: Snapshot) -> list[Finding]: ...
 ```
 
+- collector는 AWS 호출을 `collectors/base.py`의 `CallRecorder`로 감싼다.
+  - 정상 응답은 데이터로, collector가 지정한 "설정 없음" 오류 코드(예: `NoSuchBucketPolicy`, 비밀번호 정책 `NoSuchEntity`)는 `Absent`로 받아 데이터로 기록한다.
+  - 그 외 실패(권한 오류, 연결 실패, 호출 제한)는 `CollectError`(operation, region, error_code, message, resource)로 스냅샷 `errors`에 남긴다. 리소스 단위 호출이면 `resource`에 대상(버킷 이름 등)을 적어 그 리소스만 ERROR로 판정할 수 있게 한다.
+  - 페이지 조회가 중간에 실패하면 받은 페이지도 버리고 실패로 기록한다. 목록 일부만 보고 "리소스 없음"으로 판정하지 않기 위해서다.
+  - 가드 위반(`ReadOnlyViolation`)과 잘못된 파라미터(`ParamValidationError`)는 kompass 코드 버그이므로 잡지 않고 실행을 중단한다.
 - 룰은 하나의 서비스 스냅샷만 입력으로 받는다. 여러 서비스를 엮는 판단은 Interpreter나 Agent의 몫이다.
 - 룰은 스냅샷의 `errors`를 확인해서, 필요한 데이터 수집이 실패했으면 `ERROR` finding을 낸다.
 - 점검 대상 리소스가 없으면 `NOT_APPLICABLE` finding 하나를 낸다.
