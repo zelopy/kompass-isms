@@ -219,3 +219,11 @@ def test_unreachable_home_region_message_points_to_region(monkeypatch: pytest.Mo
     with pytest.raises(SessionError, match="ap-northeast-02") as exc_info:
         open_scan(region="ap-northeast-02")
     assert "자격증명" not in str(exc_info.value)
+
+
+def test_open_scan_records_all_enabled_regions(aws: None, audit_profile: str) -> None:
+    # 점검 리전을 좁혀도 계정 단위 조회(Identity Center 등)는 활성 리전 전체를 본다
+    scan = open_scan(profile=audit_profile, regions=["ap-northeast-2"])
+    assert scan.regions == ("ap-northeast-2",)
+    assert "us-east-1" in scan.enabled_regions
+    assert list(scan.enabled_regions) == sorted(scan.enabled_regions)

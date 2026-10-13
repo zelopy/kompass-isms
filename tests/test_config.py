@@ -25,3 +25,12 @@ def test_settings_are_immutable() -> None:
     settings = Settings()
     with pytest.raises(ValidationError):
         settings.cloudtrail.require_read_events = False  # type: ignore[misc]
+
+
+def test_iam_defaults() -> None:
+    iam = Settings().iam
+    assert iam.unused_credential_days == 90
+    assert iam.access_key_rotation_days == 90
+    assert iam.root_recent_use_days == 90
+    assert iam.password_policy.min_length_two_types == 10
+    assert iam.password_policy.min_length_three_types == 8

@@ -109,15 +109,33 @@ class CallRecorder:
         중간 페이지에서 실패하면 이미 받은 페이지도 버리고 None을 돌려준다. 목록 일부만 보고
         "해당 리소스 없음"으로 판정하는 일을 막기 위해서다.
         """
+        result = self.paginate_keys(client, method, (result_key,), resource=resource, **params)
+        return None if result is None else result[result_key]
+
+    def paginate_keys(
+        self,
+        client: Any,
+        method: str,
+        result_keys: tuple[str, ...],
+        *,
+        resource: str | None = None,
+        **params: Any,
+    ) -> dict[str, list[Any]] | None:
+        """여러 결과 키를 함께 페이지 조회한다 (예: `GetAccountAuthorizationDetails`).
+
+        한 키라도 중간에 실패하면 모든 키의 데이터를 버리고 None을 돌려준다.
+        """
         # 호출 전에 사용법을 검증한다. 페이지 조회가 안 되는 API면 여기서 예외가 나고,
         # result_key 오타는 빈 목록("리소스 없음")으로 둔갑하므로 응답 형식과 대조한다
         paginator = client.get_paginator(method)
-        _require_output_member(client, method, result_key)
+        for key in result_keys:
+            _require_output_member(client, method, key)
 
-        items: list[Any] = []
+        items: dict[str, list[Any]] = {key: [] for key in result_keys}
         try:
             for page in paginator.paginate(**params):
-                items.extend(page.get(result_key, []))
+                for key in result_keys:
+                    items[key].extend(page.get(key, []))
         except ClientError as exc:
             self._handle_client_error(client, method, resource, _error_code(exc), exc)
             return None

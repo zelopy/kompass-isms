@@ -30,7 +30,21 @@ class S3Settings(_Section):
     exclude_log_target_buckets: bool = False
 
 
+class PasswordPolicySettings(_Section):
+    # IAM-004 (KISA CA-04, ADR-014): 영문자·숫자·특수문자 중 2종이면 10자, 3종이면 8자 이상
+    min_length_two_types: int = 10
+    min_length_three_types: int = 8
+
+
+class IamSettings(_Section):
+    unused_credential_days: int = 90  # IAM-005
+    access_key_rotation_days: int = 90  # IAM-006
+    root_recent_use_days: int = 90  # IAM-008
+    password_policy: PasswordPolicySettings = PasswordPolicySettings()
+
+
 class Settings(_Section):
     cloudtrail: CloudTrailSettings = CloudTrailSettings()
     ec2: Ec2Settings = Ec2Settings()
     s3: S3Settings = S3Settings()
+    iam: IamSettings = IamSettings()

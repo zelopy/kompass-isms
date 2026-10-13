@@ -49,6 +49,8 @@ class ScanContext:
     caller_arn: str  # 점검 수행 주체 (보고서 증적)
     home_region: str  # 리전 조회 등 기본 호출에 쓰는 리전
     regions: tuple[str, ...]  # 리전 리소스(EC2·VPC 등)를 점검할 리전
+    # 계정의 활성 리전 전체. --regions와 관계없이 계정 단위 조회(Identity Center 등)에 쓴다
+    enabled_regions: tuple[str, ...] = ()
 
 
 def enabled_regions(describe_regions_response: dict[str, Any]) -> tuple[set[str], set[str]]:
@@ -159,6 +161,7 @@ def open_scan(
         caller_arn=caller_arn,
         home_region=home_region,
         regions=select_regions(known, enabled, regions),
+        enabled_regions=tuple(sorted(enabled)),
     )
 
 

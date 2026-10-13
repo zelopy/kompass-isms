@@ -258,3 +258,46 @@ def test_missing_credentials_aborts(
     with pytest.raises(SessionError):
         recorder.call(iam, "list_users")
     assert recorder.errors == []
+
+
+# --- paginate_keys: 여러 결과 키 ---
+
+
+def test_paginate_keys_collects_every_key_across_pages(
+    session: Any, unguarded: Any, recorder: CallRecorder
+) -> None:
+    iam = unguarded.client("iam")
+    for name in ("a", "b"):
+        iam.create_user(UserName=name)
+    iam.create_group(GroupName="g")
+    result = recorder.paginate_keys(
+        session.client("iam"),
+        "get_account_authorization_details",
+        ("UserDetailList", "GroupDetailList"),
+        PaginationConfig={"PageSize": 1},
+    )
+    assert result is not None
+    assert sorted(u["UserName"] for u in result["UserDetailList"]) == ["a", "b"]
+    assert [g["GroupName"] for g in result["GroupDetailList"]] == ["g"]
+
+
+def test_paginate_keys_rejects_unknown_key(session: Any, recorder: CallRecorder) -> None:
+    with pytest.raises(ValueError, match="Users"):
+        recorder.paginate_keys(
+            session.client("iam"), "get_account_authorization_details", ("UserDetailList", "Users")
+        )
+
+
+def test_paginate_keys_failure_discards_all_keys(session: Any, recorder: CallRecorder) -> None:
+    iam = session.client("iam")
+    with Stubber(iam) as stub:
+        stub.add_response(
+            "get_account_authorization_details",
+            {"UserDetailList": [], "GroupDetailList": [], "IsTruncated": True, "Marker": "m"},
+        )
+        stub.add_client_error("get_account_authorization_details", service_error_code="Throttling")
+        result = recorder.paginate_keys(
+            iam, "get_account_authorization_details", ("UserDetailList", "GroupDetailList")
+        )
+    assert result is None
+    assert recorder.errors[0].operation == "iam:GetAccountAuthorizationDetails"
