@@ -5,7 +5,7 @@
 
 ## 목표
 
-1차 목표: AWS 계정 하나를 읽기 전용으로 스캔해서 IAM, S3, EC2 보안그룹을 대상으로 KISA 클라우드 취약점 점검 가이드와 ISMS-P 기준 양호/취약을 판정하고, 근거와 조치 방안이 담긴 점검 보고서를 생성한다.
+1차 목표: AWS 계정 하나를 읽기 전용으로 스캔해서 IAM, S3, EC2(보안그룹·VPC), CloudTrail을 대상으로 KISA 클라우드 취약점 점검 가이드와 ISMS-P 기준 양호/취약을 판정하고, 근거와 조치 방안이 담긴 점검 보고서를 생성한다.
 
 작업량 기준: 주당 8~10시간. 3단계까지 약 2~2.5개월, 4단계까지 약 3개월.
 
@@ -15,14 +15,14 @@
 
 - [x] 저장소 초기화: `uv init`, `pyproject.toml`, ruff/mypy/pytest 설정, `.gitignore`
 - [x] 디렉터리 골격 생성 (`docs/ARCHITECTURE.md`의 구조 참고)
-- [ ] KISA 클라우드 취약점 점검 가이드 원문 확보 → `knowledge/kisa/`
-- [ ] ISMS-P 인증기준 원문 확보 → `knowledge/isms_p/`
-- [ ] 항목 분류표 작성 → `docs/COVERAGE.md`
+- [x] KISA 클라우드 취약점 점검 가이드 원문 확보 → `knowledge/kisa/` (2026 주통 상세가이드 XII. 클라우드)
+- [x] ISMS-P 인증기준 원문 확보 → `knowledge/isms_p/`
+- [x] 항목 분류표 작성 → `docs/COVERAGE.md`
   - 각 항목을 `full`(API로 자동 판정) / `partial`(증적 수집만 자동) / `manual`(사람이 확인)로 분류
-- [ ] `docs/RULES.md`의 KISA 항목코드 칸 채우기 (원문 근거 확인 후 `verified: true`)
+- [ ] `docs/RULES.md`의 KISA 항목코드 칸 채우기 (원문 근거 확인 후 `verified: true`) — 코드 기입 완료, 사용자 확인 대기
 - [ ] AWS 점검 전용 IAM 역할 생성 (`SecurityAudit` 관리형 정책만 부여) — 사용자가 직접
 - [ ] `lab/` 취약 실습 환경 Terraform 작성
-  - 퍼블릭 S3 버킷, 0.0.0.0/0 SSH 허용 SG, MFA 없는 콘솔 IAM 사용자, 오래된 액세스 키 등
+  - 퍼블릭 S3 버킷, 0.0.0.0/0 SSH 허용 SG, MFA 없는 콘솔 IAM 사용자, 오래된 액세스 키, 퍼블릭 서브넷만 있는 VPC, 공인 IP가 붙은 ENI, CloudTrail 등
   - 양호 케이스 리소스도 함께 구성 (PASS 검증용)
 - [ ] 실습 환경 배포 — 사용자가 직접 `terraform apply`
 
@@ -35,7 +35,8 @@
 - [ ] `aws/guard.py`: 읽기 전용 가드 (botocore `before-call` 이벤트 훅) + 테스트
 - [ ] collector: `iam.py` (계정 요약, 비밀번호 정책, 자격증명 보고서, 사용자·그룹 정책)
 - [ ] collector: `s3.py` (계정/버킷 퍼블릭 액세스 차단, 정책 상태, 암호화, 로깅)
-- [ ] collector: `ec2_sg.py` (리전별 보안그룹)
+- [ ] collector: `ec2.py` (리전별 보안그룹, VPC, 서브넷, 라우팅 테이블, 네트워크 인터페이스)
+- [ ] collector: `cloudtrail.py` (추적 목록, 추적 상태, 이벤트 선택기)
 - [ ] 스냅샷 저장/로드: `.kompass/snapshots/<timestamp>/<service>.json`
 - [ ] 룰 엔진: 룰 레지스트리, 실행기
 - [ ] `docs/RULES.md`의 초기 룰 구현 (룰마다 PASS/FAIL/ERROR 테스트)

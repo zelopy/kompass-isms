@@ -26,13 +26,15 @@ kompass-isms/
 │   │   ├── base.py
 │   │   ├── iam.py
 │   │   ├── s3.py
-│   │   └── ec2_sg.py
+│   │   ├── ec2.py           # 보안그룹, VPC·서브넷·라우팅 테이블·ENI
+│   │   └── cloudtrail.py
 │   ├── rules/
 │   │   ├── base.py
 │   │   ├── registry.py
 │   │   ├── iam/
 │   │   ├── s3/
-│   │   └── ec2/
+│   │   ├── ec2/
+│   │   └── cloudtrail/
 │   ├── mappings/
 │   │   ├── rules.yaml       # 룰 → KISA → ISMS-P
 │   │   └── mapper.py
@@ -72,7 +74,7 @@ class Severity(StrEnum):
     INFO = "info"
 
 class Snapshot(BaseModel):
-    service: str                  # "iam" | "s3" | "ec2_sg"
+    service: str                  # "iam" | "s3" | "ec2" | "cloudtrail"
     account_id: str
     regions: list[str]
     collected_at: datetime
@@ -119,6 +121,13 @@ FAIL > ERROR > REVIEW > PASS > N/A
 - FAIL과 ERROR가 섞여 있으면 FAIL이다. 확인된 취약점이 있으면 항목은 취약이며, 확인 불가 리소스 수는 별도로 표시한다.
 - ERROR가 섞인 항목은 절대 양호가 되지 않는다 (ADR-005).
 - 집계 함수는 `models.py`에 두고, 우선순위 조합 전체에 대한 테스트를 둔다.
+
+### `partial` 항목의 상한 (ADR-013)
+
+[COVERAGE.md](COVERAGE.md)에서 `partial`로 분류한 항목은 위 규칙으로 PASS가 나오더라도 항목 결과를 `REVIEW`(검토 필요)로 낮춘다. 룰은 자기가 검사한 범위에서 정직하게 PASS를 내고(예: "이 보안그룹에는 전체 개방된 관리 포트가 없음"), 항목 기준 중 API로 확인할 수 없는 나머지(예: "주기적 검토")가 있다는 사실은 집계 단계가 반영한다.
+
+- `partial` 항목에서 자동으로 나올 수 있는 결과: 취약, 확인 불가, 검토 필요. 양호는 나오지 않는다.
+- 항목별 분류(full/partial/manual)는 매핑 데이터에 둔다.
 
 ## 인터페이스
 
@@ -169,10 +178,10 @@ S3-001:
 iam:
   unused_credential_days: 90
   access_key_rotation_days: 90
-  password_policy:
-    min_length: 8
-    require_char_types: 3
-ec2_sg:
+  password_policy:            # KISA CA-04 기준 (ADR-014)
+    min_length_two_types: 10
+    min_length_three_types: 8
+ec2:
   admin_ports: [22, 3389]
   db_ports: [3306, 5432, 1433, 1521, 27017, 6379]
 ```
