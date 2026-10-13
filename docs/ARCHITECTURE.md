@@ -138,7 +138,7 @@ FAIL > ERROR > REVIEW > PASS > N/A
 ```python
 class Collector(Protocol):
     service: str
-    def collect(self, session: boto3.Session, regions: Sequence[str]) -> Snapshot: ...
+    def collect(self, scan: ScanContext) -> Snapshot: ...  # aws/session.py
 
 class Rule(Protocol):
     id: str
@@ -151,6 +151,18 @@ class Rule(Protocol):
 - 룰은 하나의 서비스 스냅샷만 입력으로 받는다. 여러 서비스를 엮는 판단은 Interpreter나 Agent의 몫이다.
 - 룰은 스냅샷의 `errors`를 확인해서, 필요한 데이터 수집이 실패했으면 `ERROR` finding을 낸다.
 - 점검 대상 리소스가 없으면 `NOT_APPLICABLE` finding 하나를 낸다.
+
+## 점검 세션
+
+`aws/session.py`의 `open_scan()`이 한 번의 점검 실행에 쓸 `ScanContext`를 만든다 (ADR-021).
+
+- 가드가 걸린 세션(`read_only_session()`), 계정 ID, 파티션, 호출자 ARN(점검 수행 주체), 기본 리전, 점검 리전을 묶는다. 모든 collector가 같은 값을 쓰므로 스냅샷 간 계정·리전이 어긋나지 않는다.
+- 자격증명은 AWS 프로필로만 받는다: 액세스 키 프로필, 또는 `role_arn` + `source_profile` 역할 프로필. 역할 자격증명 발급·갱신은 botocore가 하며 `sts:AssumeRole`이 가드를 통과한다 (ADR-020, 확인됨). SSO 프로필은 1단계 미지원(토큰 갱신이 가드에 막힐 수 있음, 미검증).
+- 기본 리전은 `--region` → 프로필 리전 순서로 정하고, 없으면 중단한다. 다른 파티션에서 틀릴 수 있으므로 몰래 대체하지 않는다.
+- 점검 리전은 `DescribeRegions(AllRegions=True)`의 활성 리전(`opt-in-not-required`, `opted-in`) 중에서 고른다. `--regions`에 알 수 없거나 비활성인 리전이 있으면 점검 전에 중단한다.
+- 세션 단계 실패는 `SessionError`로 실행을 중단한다. 계정 ID조차 모르는 상태라 스냅샷을 만들 수 없기 때문이다. 개별 API의 권한 오류를 ERROR finding으로 기록하는 것(ADR-005)과 구분한다.
+- `--regions`는 리전 리소스(EC2·VPC 등)에만 적용한다. S3 버킷은 버킷 목록이 전역이므로 리전과 관계없이 모두 점검하고 버킷 리전을 증적에 남긴다. IAM과 계정 단위 설정은 전역이다.
+- boto3 세션은 스레드 안전하지 않다. 병렬 수집을 도입하면 client를 미리 만들거나 스레드마다 `read_only_session()`으로 세션을 만든다.
 
 ## 읽기 전용 가드
 

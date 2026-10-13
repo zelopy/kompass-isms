@@ -31,7 +31,7 @@
 ## 1단계 — 수집과 판정 (2~3주)
 
 - [x] `models.py`: `Snapshot`, `Finding`, `Status`, `Severity` (+ `CollectError`, `Mappings`, `Automation`, 항목 집계 `aggregate_status`)
-- [ ] `aws/session.py`: 프로필·역할 기반 세션(`sts:AssumeRole`, ADR-020), 활성 리전 조회
+- [x] `aws/session.py`: 프로필·역할 기반 세션(`sts:AssumeRole`, ADR-020), 활성 리전 조회 (ADR-021)
 - [x] `aws/guard.py`: 읽기 전용 가드 (botocore `before-call` 이벤트 훅) + 테스트
 - [ ] collector: `iam.py` (계정 요약, 비밀번호 정책, 자격증명 보고서, 사용자·그룹 정책)
 - [ ] collector: `s3.py` (계정/버킷 퍼블릭 액세스 차단, 정책 상태, 암호화, 로깅)
@@ -40,7 +40,7 @@
 - [ ] 스냅샷 저장/로드: `.kompass/snapshots/<timestamp>/<service>.json`
 - [ ] 룰 엔진: 룰 레지스트리, 실행기
 - [ ] `docs/RULES.md`의 초기 룰 구현 (룰마다 PASS/FAIL/ERROR 테스트)
-- [ ] CLI: `kompass collect`, `kompass evaluate`, `kompass scan`
+- [ ] CLI: `kompass collect`, `kompass evaluate`, `kompass scan` (`SessionError`는 메시지와 종료 코드로 처리, Windows 콘솔 UTF-8 출력 확인)
 - [ ] 실습 환경 통합 테스트: 기대 결과표와 실제 결과 비교
 
 **완료 기준:** `kompass scan`이 실습 환경에서 기대한 FAIL/PASS를 모두 맞히고 `findings.json`을 출력한다.
