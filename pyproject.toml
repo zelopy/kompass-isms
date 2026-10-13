@@ -1,0 +1,76 @@
+[project]
+name = "kompass-isms"
+version = "0.1.0"
+description = "KISA 클라우드 취약점 점검 가이드와 ISMS-P 기준으로 AWS 환경을 읽기 전용 진단하는 AI 에이전트"
+readme = "README.md"
+authors = [
+    { name = "Changhyun Kim", email = "33337013+zelopy@users.noreply.github.com" }
+]
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "boto3>=1.35",
+    "pydantic>=2.9",
+    "pyyaml>=6.0",
+    "typer>=0.12",
+]
+
+[project.scripts]
+kompass = "kompass.cli:app"
+
+[dependency-groups]
+dev = [
+    "moto[iam,s3,ec2]>=5.0",
+    "mypy>=1.13",
+    "pytest>=8.3",
+    "ruff>=0.8",
+]
+
+[build-system]
+requires = ["uv_build>=0.13.0,<0.14.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "kompass"
+module-root = ""
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["lab", "knowledge"]
+
+[tool.ruff.format]
+# 문서 안 코드 예시의 정렬을 유지한다
+exclude = ["*.md"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "W",    # pycodestyle warnings
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "UP",   # pyupgrade
+    "SIM",  # flake8-simplify
+    "RUF",  # ruff 고유 규칙
+]
+# 한국어 docstring·주석의 전각/유사 문자 경고는 끈다
+ignore = ["RUF001", "RUF002", "RUF003"]
+
+[tool.ruff.lint.flake8-bugbear]
+# typer 옵션 기본값 패턴 허용
+extend-immutable-calls = ["typer.Option", "typer.Argument"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["kompass"]
+plugins = ["pydantic.mypy"]
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-ra", "--strict-markers", "--strict-config"]

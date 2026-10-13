@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# 실제 계정 데이터 — 절대 커밋 금지
+.kompass/
+output/
+*.findings.json
+
+# 자격증명
+.env
+*.pem
+
+# Terraform
+lab/**/.terraform/
+lab/**/*.tfstate
+lab/**/*.tfstate.*
+lab/**/*.tfvars
+
+# RAG 인덱스
+.chroma/

@@ -1,0 +1,88 @@
+# 구현 계획
+
+> **현재 단계: 0단계 — 준비**
+> 단계를 마치면 이 줄을 갱신한다.
+
+## 목표
+
+1차 목표: AWS 계정 하나를 읽기 전용으로 스캔해서 IAM, S3, EC2 보안그룹을 대상으로 KISA 클라우드 취약점 점검 가이드와 ISMS-P 기준 양호/취약을 판정하고, 근거와 조치 방안이 담긴 점검 보고서를 생성한다.
+
+작업량 기준: 주당 8~10시간. 3단계까지 약 2~2.5개월, 4단계까지 약 3개월.
+
+---
+
+## 0단계 — 준비 (1주)
+
+- [x] 저장소 초기화: `uv init`, `pyproject.toml`, ruff/mypy/pytest 설정, `.gitignore`
+- [x] 디렉터리 골격 생성 (`docs/ARCHITECTURE.md`의 구조 참고)
+- [ ] KISA 클라우드 취약점 점검 가이드 원문 확보 → `knowledge/kisa/`
+- [ ] ISMS-P 인증기준 원문 확보 → `knowledge/isms_p/`
+- [ ] 항목 분류표 작성 → `docs/COVERAGE.md`
+  - 각 항목을 `full`(API로 자동 판정) / `partial`(증적 수집만 자동) / `manual`(사람이 확인)로 분류
+- [ ] `docs/RULES.md`의 KISA 항목코드 칸 채우기 (원문 근거 확인 후 `verified: true`)
+- [ ] AWS 점검 전용 IAM 역할 생성 (`SecurityAudit` 관리형 정책만 부여) — 사용자가 직접
+- [ ] `lab/` 취약 실습 환경 Terraform 작성
+  - 퍼블릭 S3 버킷, 0.0.0.0/0 SSH 허용 SG, MFA 없는 콘솔 IAM 사용자, 오래된 액세스 키 등
+  - 양호 케이스 리소스도 함께 구성 (PASS 검증용)
+- [ ] 실습 환경 배포 — 사용자가 직접 `terraform apply`
+
+**완료 기준:** 분류표가 있고, 실습 환경이 떠 있으며, 빈 CLI가 `uv run kompass --help`로 실행된다.
+
+## 1단계 — 수집과 판정 (2~3주)
+
+- [ ] `models.py`: `Snapshot`, `Finding`, `Status`, `Severity`
+- [ ] `aws/session.py`: 프로필·역할 기반 세션, 활성 리전 조회
+- [ ] `aws/guard.py`: 읽기 전용 가드 (botocore `before-call` 이벤트 훅) + 테스트
+- [ ] collector: `iam.py` (계정 요약, 비밀번호 정책, 자격증명 보고서, 사용자·그룹 정책)
+- [ ] collector: `s3.py` (계정/버킷 퍼블릭 액세스 차단, 정책 상태, 암호화, 로깅)
+- [ ] collector: `ec2_sg.py` (리전별 보안그룹)
+- [ ] 스냅샷 저장/로드: `.kompass/snapshots/<timestamp>/<service>.json`
+- [ ] 룰 엔진: 룰 레지스트리, 실행기
+- [ ] `docs/RULES.md`의 초기 룰 구현 (룰마다 PASS/FAIL/ERROR 테스트)
+- [ ] CLI: `kompass collect`, `kompass evaluate`, `kompass scan`
+- [ ] 실습 환경 통합 테스트: 기대 결과표와 실제 결과 비교
+
+**완료 기준:** `kompass scan`이 실습 환경에서 기대한 FAIL/PASS를 모두 맞히고 `findings.json`을 출력한다.
+
+## 2단계 — 매핑과 보고서 (1~2주)
+
+- [ ] `mappings/rules.yaml`: 룰 → KISA 항목 → ISMS-P 통제항목
+- [ ] 매퍼: finding에 매핑 정보 부착, 매핑 누락 검증 테스트
+- [ ] ISMS-P 커버리지 리포트 (자동 점검 / 부분 / 수동 항목 현황)
+- [ ] 리포터: JSON, Markdown
+- [ ] 리포터: 엑셀 점검표 (항목별 결과, 대상 리소스, 증적 요약)
+- [ ] CLI: `kompass report --format md|xlsx`
+- [ ] README에 사용법과 출력 예시 추가
+
+**완료 기준:** LLM 없이도 실무에서 쓸 수 있는 점검표가 나온다. 이 시점에 README와 데모를 정리해서 공개 가능한 상태로 만든다.
+
+## 3단계 — LLM 해석 (2주)
+
+- [ ] LLM 공급자 인터페이스 (Claude API 구현체 + 로컬 LLM 구현체 자리)
+- [ ] 마스킹 레이어: 계정 ID, IP, ARN, 리소스명 치환 및 복원 + 테스트
+- [ ] RAG: KISA 가이드·ISMS-P 원문 청킹, 임베딩, Chroma 인덱스
+- [ ] finding별 해설: 항목 근거 인용, 위험 설명
+- [ ] 인용 검증: LLM이 인용한 항목코드가 실제 매핑/원문에 존재하는지 확인
+- [ ] 위험 우선순위: 여러 finding을 엮은 종합 평가
+- [ ] 조치 방안: AWS CLI 명령 + Terraform 수정안
+- [ ] 평가셋: 실습 환경 결과 기반 골든셋, 인용 정확도·조치 유효성 측정
+- [ ] CLI: `kompass explain`
+
+**완료 기준:** 평가셋에서 인용 정확도와 조치 유효성 수치를 보고서로 낼 수 있다.
+
+## 4단계 — 에이전트화 (2~3주)
+
+- [ ] collector 기능을 에이전트 도구로 노출 (읽기 전용 가드 유지)
+- [ ] 추가 조사 루프: 예) 퍼블릭 S3 발견 → 버킷 정책·ACL·CloudTrail 데이터 이벤트 추가 조회
+- [ ] 수동 항목 인터뷰: 담당자에게 증적 요청, 업로드 문서 RAG 검토
+- [ ] MCP 서버로 도구 노출
+- [ ] 에이전트가 status를 변경할 수 없음을 보장하는 테스트
+
+**완료 기준:** 에이전트가 1차 결과를 근거로 추가 조사를 스스로 수행하고, 그 과정이 로그로 남는다.
+
+## 5단계 — 확장 (이후)
+
+- [ ] Prowler OCSF 출력 어댑터
+- [ ] 서비스 추가: CloudTrail, KMS, RDS, VPC Flow Logs
+- [ ] Azure 지원
+- [ ] 다른 기준 추가 (CSAP 등)
