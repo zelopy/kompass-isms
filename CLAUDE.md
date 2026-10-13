@@ -16,7 +16,7 @@ AWS 계정을 **읽기 전용**으로 스캔해서 KISA 클라우드 취약점 �
 ## 절대 원칙 (위반 금지)
 
 1. **판정은 코드가 한다.** PASS/FAIL 판정은 `kompass/rules/`의 결정론적 로직만 내린다. LLM은 판정된 결과를 해석·우선순위화·설명·조치안 작성만 한다. LLM 출력으로 `status`를 바꾸는 코드를 만들지 않는다.
-2. **AWS는 읽기 전용.** collector는 `Describe*`, `Get*`, `List*`, `GenerateCredentialReport`만 호출한다. 그 외 API는 `kompass/aws/guard.py`의 읽기 전용 가드가 차단해야 하며, 가드를 우회하거나 끄는 코드를 만들지 않는다.
+2. **AWS는 읽기 전용.** collector는 `Describe*`, `Get*`, `List*`, `GenerateCredentialReport`만 호출한다. 유일한 예외는 역할 기반 점검 세션을 위한 `sts:AssumeRole`이다 (ADR-020). 그 외 API는 `kompass/aws/guard.py`의 읽기 전용 가드가 차단해야 하며, 가드를 우회하거나 끄는 코드를 만들지 않는다. 허용 목록을 늘리는 변경은 사용자 확인 후 ADR로 기록한다.
 3. **권한 오류는 PASS가 아니다.** 수집 실패나 AccessDenied는 `ERROR` 상태로 기록한다. 데이터가 없다고 양호로 처리하지 않는다.
 4. **실제 계정 데이터는 커밋하지 않는다.** 스냅샷, findings, 보고서 출력물(`.kompass/`, `output/`)은 `.gitignore` 대상이다. 테스트 픽스처는 moto 또는 가공된 가짜 데이터만 쓴다.
 5. **LLM에 원본 식별정보를 보내지 않는다.** 계정 ID, IP, ARN, 리소스명은 `interpreter/masking.py`를 거친 뒤에만 LLM으로 전달한다.

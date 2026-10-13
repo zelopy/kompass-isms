@@ -157,6 +157,7 @@ class Rule(Protocol):
 `aws/guard.py`는 boto3 세션에 botocore `before-call` 이벤트 훅을 등록해서, 허용 목록에 없는 오퍼레이션 호출 시 예외를 발생시킨다.
 
 - 허용: 이름이 `Describe`, `Get`, `List`로 시작하는 오퍼레이션, `GenerateCredentialReport`
+- 예외: `sts:AssumeRole` (서비스까지 일치해야 함). 역할 기반 점검 세션에 필요하다 (ADR-020). `AssumeRoleWithSAML`, `AssumeRoleWithWebIdentity` 등 변형은 허용하지 않는다
 - 그 외 모든 오퍼레이션은 `ReadOnlyViolation` 예외. 요청이 나가기 전에 막으며 paginator, waiter, resource API도 같은 경로로 막힌다
 - 모든 collector와 에이전트 도구는 가드가 적용된 세션만 사용한다
 - 세션은 `read_only_session()`으로만 만든다. botocore client는 생성 시점의 이벤트 훅만 복사하므로, 이미 있는 세션에 나중에 가드를 걸면 그 전에 만든 client는 보호되지 않는다 (확인됨). 그래서 기존 세션에 가드를 "설치"하는 함수는 두지 않는다

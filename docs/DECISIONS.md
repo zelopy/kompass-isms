@@ -121,3 +121,9 @@
   - 보고서는 UTC로 저장된 시각을 표시할 때 KST로 변환한다.
   - `data`·`evidence` dict 자체는 파이썬에서 완전히 얼리지 않는다. 생성 시 복사로 원본과 분리하고, 생성 후 수정하지 않는 것은 코드 규칙으로 지킨다.
   - 5단계 Prowler 어댑터의 체크 ID(`s3_bucket_public_access` 등)는 이 형식을 통과하지 못한다. 어댑터 구현 시 출처 접두사(예: `PROWLER:...`)를 허용하도록 형식을 확장할지 결정한다.
+
+## ADR-020 읽기 전용 가드에 sts:AssumeRole만 예외로 허용한다
+- 상태: 채택
+- 결정: 가드 허용 목록에 `sts:AssumeRole` 하나를 서비스·오퍼레이션 이름이 모두 일치할 때만 허용한다. `AssumeRoleWithSAML`, `AssumeRoleWithWebIdentity`, `AssumeRoot`나 다른 서비스의 같은 이름은 허용하지 않는다.
+- 이유: 조직에서는 계정마다 점검 전용 역할을 두고 AssumeRole로 들어가는 방식이 일반적이다. AssumeRole은 대상 계정의 설정을 바꾸지 않고 임시 자격증명만 발급받는다. botocore의 역할 자격증명 공급자도 가드가 걸린 세션의 이벤트 훅을 거치므로, 허용하지 않으면 역할 기반 프로필을 쓸 수 없다.
+- 결과: CLAUDE.md 원칙 2에 예외를 명시한다. 허용 목록을 늘리는 이후의 변경도 사용자 확인 후 ADR로 기록한다. 역할에는 여전히 `SecurityAudit`만 부여한다 (ADR-004).

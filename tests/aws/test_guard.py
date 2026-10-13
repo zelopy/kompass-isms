@@ -11,7 +11,7 @@ import boto3
 import pytest
 from moto import mock_aws
 
-from kompass.aws.guard import ReadOnlyViolation, is_read_only_operation, read_only_session
+from kompass.aws.guard import ReadOnlyViolation, is_allowed_operation, read_only_session
 
 FAKE_CREDENTIALS = {
     "aws_access_key_id": "testing",
@@ -54,7 +54,7 @@ def unguarded(aws: None) -> Any:
     ],
 )
 def test_read_only_operations_are_allowed(operation: str) -> None:
-    assert is_read_only_operation(operation)
+    assert is_allowed_operation("iam", operation)
 
 
 @pytest.mark.parametrize(
@@ -68,19 +68,46 @@ def test_read_only_operations_are_allowed(operation: str) -> None:
         "UpdateTrail",
         "StopLogging",
         "TagResource",
-        "AssumeRole",
         "GenerateDataKey",  # GenerateCredentialReport 외의 Generate*는 허용하지 않는다
         "PutBucketPolicy",
         "",
     ],
 )
 def test_other_operations_are_blocked(operation: str) -> None:
-    assert not is_read_only_operation(operation)
+    assert not is_allowed_operation("iam", operation)
 
 
 def test_prefix_match_is_case_sensitive() -> None:
-    assert not is_read_only_operation("describeInstances")
-    assert not is_read_only_operation("listUsers")
+    assert not is_allowed_operation("ec2", "describeInstances")
+    assert not is_allowed_operation("iam", "listUsers")
+
+
+# --- sts:AssumeRole 예외 (ADR-020) ---
+
+
+def test_sts_assume_role_is_allowed() -> None:
+    assert is_allowed_operation("sts", "AssumeRole")
+
+
+@pytest.mark.parametrize(
+    ("service", "operation"),
+    [
+        ("sts", "AssumeRoleWithSAML"),
+        ("sts", "AssumeRoleWithWebIdentity"),
+        ("sts", "AssumeRoot"),
+        ("iam", "AssumeRole"),  # 서비스까지 일치해야 한다
+        ("sso", "AssumeRole"),
+    ],
+)
+def test_assume_role_exception_is_exact(service: str, operation: str) -> None:
+    assert not is_allowed_operation(service, operation)
+
+
+def test_assume_role_call_passes_guard(guarded: Any) -> None:
+    credentials = guarded.client("sts").assume_role(
+        RoleArn="arn:aws:iam::123456789012:role/kompass-audit", RoleSessionName="kompass"
+    )["Credentials"]
+    assert credentials["AccessKeyId"]
 
 
 # --- 허용 호출 ---

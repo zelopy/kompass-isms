@@ -31,7 +31,7 @@
 ## 1단계 — 수집과 판정 (2~3주)
 
 - [x] `models.py`: `Snapshot`, `Finding`, `Status`, `Severity` (+ `CollectError`, `Mappings`, `Automation`, 항목 집계 `aggregate_status`)
-- [ ] `aws/session.py`: 프로필·역할 기반 세션, 활성 리전 조회
+- [ ] `aws/session.py`: 프로필·역할 기반 세션(`sts:AssumeRole`, ADR-020), 활성 리전 조회
 - [x] `aws/guard.py`: 읽기 전용 가드 (botocore `before-call` 이벤트 훅) + 테스트
 - [ ] collector: `iam.py` (계정 요약, 비밀번호 정책, 자격증명 보고서, 사용자·그룹 정책)
 - [ ] collector: `s3.py` (계정/버킷 퍼블릭 액세스 차단, 정책 상태, 암호화, 로깅)
