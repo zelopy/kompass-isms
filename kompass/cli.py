@@ -159,6 +159,13 @@ def _open(
     typer.echo(f"점검 계정: {scan.account_id} ({scan.partition})")
     typer.echo(f"호출자: {scan.caller_arn}")
     typer.echo(f"기본 리전: {scan.home_region}, 점검 리전: {len(scan.regions)}개")
+    if scan.excluded_regions:
+        names = ", ".join(region for region, _ in scan.excluded_regions)
+        typer.echo(
+            f"경고: 접근이 거부된 리전 {len(scan.excluded_regions)}개를 점검 범위에서 뺐다 "
+            f"(보고서에 범위 밖으로 표시): {names}",
+            err=True,
+        )
     return scan
 
 

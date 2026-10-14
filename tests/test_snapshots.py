@@ -248,3 +248,19 @@ def test_default_root_from_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
 def test_store_without_root_uses_default(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv(STORE_ENV, str(tmp_path / "custom"))
     assert SnapshotStore().root == tmp_path / "custom"
+
+
+def test_manifest_records_excluded_regions(store: SnapshotStore) -> None:
+    scan = ScanContext(
+        session=None,
+        account_id=ACCOUNT,
+        partition="aws",
+        caller_arn="arn:aws:iam::123456789012:user/x",
+        home_region="ap-northeast-2",
+        regions=("ap-northeast-2",),
+        excluded_regions=(("eu-west-1", "AccessDenied: scp"),),
+    )
+    writer = store.begin(scan, T0)
+    writer.write(_snapshot())
+    manifest, _ = load_scan(writer.finish())
+    assert manifest.excluded_regions == {"eu-west-1": "AccessDenied: scp"}

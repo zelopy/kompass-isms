@@ -41,6 +41,20 @@ def _finding_rows(findings: list[Finding]) -> list[str]:
     return rows
 
 
+def _excluded_notice(report: AuditReport) -> list[str]:
+    excluded = report.scan.excluded_regions
+    if not excluded:
+        return []
+    lines = [
+        f"> **점검 범위 밖 리전 {len(excluded)}개**: 리전 전체가 접근 거부되어(SCP 리전 제한 등) "
+        "EC2·VPC를 점검하지 않았다. 이 리전의 리소스는 양호가 아니라 확인하지 않은 것이다. "
+        "예외 권한으로 만든 리소스가 있을 수 있으니 필요하면 해당 리전 권한으로 다시 점검한다.",
+        "",
+    ]
+    lines += [f"- {_cell(region)}: {_cell(reason)}" for region, reason in excluded.items()]
+    return [*lines, ""]
+
+
 def render_markdown(report: AuditReport) -> str:
     scan, evaluation = report.scan, report.evaluation
     lines: list[str] = [
@@ -55,6 +69,10 @@ def render_markdown(report: AuditReport) -> str:
         _row("계정", f"{scan.account_id} ({scan.partition})"),
         _row("점검 수행 주체", scan.caller_arn),
         _row("점검 리전 (EC2·VPC)", ", ".join(scan.regions)),
+        _row(
+            "점검 제외 리전 (접근 거부)",
+            ", ".join(scan.excluded_regions) or "없음",
+        ),
         _row("점검 ID", scan.scan_id),
         _row("수집 시각", f"{kst(scan.started_at)} ~ {kst(scan.finished_at)}"),
         _row("판정 시각", kst(evaluation.evaluated_at)),
@@ -62,6 +80,7 @@ def render_markdown(report: AuditReport) -> str:
         _row("kompass 버전", evaluation.kompass_version),
         _row("매핑 데이터", report.mapping_digest[:12]),
         "",
+        *_excluded_notice(report),
         "판정 기준값 (kompass.yaml 형식):",
         "",
         "```yaml",

@@ -93,3 +93,22 @@ def test_skipped_rules() -> None:
 def test_empty_report_renders() -> None:
     text = render_markdown(sample_report())
     assert "조치가 필요한 결과가 없다" in text
+
+
+def test_excluded_regions_are_shown_as_out_of_scope() -> None:
+    from kompass.models import AuditReport
+
+    scan = DEFAULT.scan.model_validate(
+        {**DEFAULT.scan.model_dump(), "excluded_regions": {"eu-west-1": "AccessDenied: scp|deny"}}
+    )
+    report = AuditReport.model_validate({**DEFAULT.model_dump(), "scan": scan})
+    text = render_markdown(report)
+    assert "| 점검 제외 리전 (접근 거부) | eu-west-1 |" in text
+    assert "점검 범위 밖 리전 1개" in text
+    assert "양호가 아니라 확인하지 않은 것" in text
+    assert r"scp\|deny" in text  # 표 구분자 이스케이프
+
+
+def test_no_excluded_regions() -> None:
+    assert "| 점검 제외 리전 (접근 거부) | 없음 |" in MD
+    assert "점검 범위 밖 리전" not in MD

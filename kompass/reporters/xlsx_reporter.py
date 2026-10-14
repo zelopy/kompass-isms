@@ -81,6 +81,10 @@ def _summary(sheet: Any, report: AuditReport) -> None:
         ("파티션", scan.partition),
         ("점검 수행 주체", scan.caller_arn),
         ("점검 리전 (EC2·VPC)", ", ".join(scan.regions)),
+        (
+            "점검 제외 리전 (접근 거부, 범위 밖)",
+            "; ".join(f"{r}: {m}" for r, m in scan.excluded_regions.items()) or "없음",
+        ),
         ("점검 ID", scan.scan_id),
         ("수집 시각", f"{kst(scan.started_at)} ~ {kst(scan.finished_at)}"),
         ("판정 시각", kst(evaluation.evaluated_at)),

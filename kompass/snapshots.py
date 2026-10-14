@@ -81,6 +81,7 @@ class ScanWriter:
             started_at=self._started_at,
             finished_at=finished_at or datetime.now(UTC),
             snapshots=self._hashes,
+            excluded_regions=dict(self._scan.excluded_regions),
         )
         _write_atomic(self.path / MANIFEST_NAME, manifest.model_dump_json(indent=2))
         self._finished = True

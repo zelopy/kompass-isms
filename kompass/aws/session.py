@@ -10,12 +10,15 @@
   대화형 실행에서만 쓴다.
 - 모든 client는 점검 도구용 기본 설정을 쓴다: 재시도 standard 방식(호출 제한 대응), 연결 대기 10초,
   요청 식별자 `kompass/<버전>`(점검 대상 계정의 CloudTrail에서 kompass의 호출을 구분할 수 있다).
+- `--regions`를 지정하지 않으면 리전마다 EC2 조회를 한 번 시도해, 기본 리전은 되는데 접근이
+  거부되는 리전(SCP 리전 제한 등)은 점검 범위에서 빼고 `excluded_regions`에 기록한다 (ADR-028).
 - 세션 단계의 실패(자격증명 없음, 리전 없음, 잘못된 리전 지정)는 finding이 아니라
   `SessionError`로 실행을 중단한다. 계정 ID조차 모르는 상태라 스냅샷을 만들 수 없기 때문이다.
   개별 API의 권한 오류를 ERROR finding으로 기록하는 것(ADR-005)은 collector의 몫이다.
 """
 
 from collections.abc import Iterable, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from importlib.metadata import version
 from typing import Any
@@ -51,6 +54,50 @@ class ScanContext:
     regions: tuple[str, ...]  # 리전 리소스(EC2·VPC 등)를 점검할 리전
     # 계정의 활성 리전 전체. --regions와 관계없이 계정 단위 조회(Identity Center 등)에 쓴다
     enabled_regions: tuple[str, ...] = ()
+    # 리전 전체가 접근 거부되어 점검 범위에서 뺀 리전 → 거부 메시지 (ADR-028)
+    excluded_regions: tuple[tuple[str, str], ...] = ()
+
+
+# 리전 전체 접근 거부(SCP 리전 제한 등)를 뜻하는 오류 코드
+_ACCESS_DENIED_CODES = frozenset({"AccessDenied", "AccessDeniedException", "UnauthorizedOperation"})
+
+
+def region_denial(client: Any) -> str | None:
+    """리전의 EC2 client로 조회를 한 번 시도한다. 접근이 거부되면 거부 메시지, 아니면 None.
+
+    연결 실패 같은 다른 오류는 None이다. 그 리전은 점검 대상에 남아 collector 단계에서
+    ERROR로 드러난다.
+    """
+    try:
+        client.describe_vpcs(MaxResults=5)
+    except ClientError as exc:
+        error = exc.response.get("Error", {})
+        if error.get("Code") in _ACCESS_DENIED_CODES:
+            return f"{error.get('Code')}: {error.get('Message', '')}"
+    except BotoCoreError:
+        pass
+    return None
+
+
+def partition_denied_regions(
+    home_region: str, regions: Sequence[str], denial: Any
+) -> tuple[tuple[str, ...], tuple[tuple[str, str], ...]]:
+    """접근이 거부되는 리전을 점검 범위에서 뺀다 (ADR-028).
+
+    `denial(region)`은 거부 메시지 또는 None을 돌려준다. 기본 리전까지 거부되면 리전 제한이
+    아니라 점검 권한 부족이므로 아무것도 빼지 않는다. 빼면 EC2 점검이 조용히 통째로 사라진다.
+    """
+    if denial(home_region) is not None:
+        return tuple(regions), ()
+    kept: list[str] = []
+    excluded: list[tuple[str, str]] = []
+    for region in regions:
+        message = None if region == home_region else denial(region)
+        if message is None:
+            kept.append(region)
+        else:
+            excluded.append((region, message))
+    return tuple(kept), tuple(excluded)
 
 
 def enabled_regions(describe_regions_response: dict[str, Any]) -> tuple[set[str], set[str]]:
@@ -153,6 +200,12 @@ def open_scan(
         raise SessionError(f"리전 목록 조회(ec2:DescribeRegions) 실패: {exc}") from exc
 
     known, enabled = enabled_regions(response)
+    selected = select_regions(known, enabled, regions)
+    excluded: tuple[tuple[str, str], ...] = ()
+    if regions is None:
+        # 사용자가 직접 지정한 리전은 빼지 않는다. 기본(활성 리전 전체)일 때만 확인한다
+        denials = _probe_regions(session, (home_region, *selected))
+        selected, excluded = partition_denied_regions(home_region, selected, denials.get)
     caller_arn: str = identity["Arn"]
     return ScanContext(
         session=session,
@@ -160,9 +213,25 @@ def open_scan(
         partition=caller_arn.split(":")[1],
         caller_arn=caller_arn,
         home_region=home_region,
-        regions=select_regions(known, enabled, regions),
+        regions=selected,
         enabled_regions=tuple(sorted(enabled)),
+        excluded_regions=excluded,
     )
+
+
+_PROBE_WORKERS = 8
+
+
+def _probe_regions(session: Any, regions: Sequence[str]) -> dict[str, str | None]:
+    """리전별 접근 거부 여부를 동시에 확인한다.
+
+    boto3 세션에서 client를 만드는 일은 스레드 안전하지 않으므로 client는 먼저 차례로 만들고,
+    만들어진 client의 호출만 동시에 보낸다 (17개 리전을 차례로 확인하면 20초 넘게 걸린다).
+    """
+    unique = list(dict.fromkeys(regions))
+    clients = [session.client("ec2", region_name=region) for region in unique]
+    with ThreadPoolExecutor(max_workers=_PROBE_WORKERS) as pool:
+        return dict(zip(unique, pool.map(region_denial, clients), strict=True))
 
 
 def _unreachable(home_region: str) -> str:

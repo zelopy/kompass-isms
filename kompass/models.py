@@ -168,6 +168,8 @@ class ScanManifest(_Frozen):
     started_at: UtcDatetime
     finished_at: UtcDatetime
     snapshots: dict[str, str]
+    # 리전 전체 접근 거부로 점검 범위에서 뺀 리전 → 거부 메시지 (ADR-028). 양호가 아니라 범위 밖이다
+    excluded_regions: dict[str, str] = {}
 
 
 class EvaluationReport(_Frozen):

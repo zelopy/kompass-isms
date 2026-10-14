@@ -5,13 +5,16 @@ from typing import Any
 
 import pytest
 from botocore.exceptions import EndpointConnectionError
+from botocore.stub import Stubber
 from moto import mock_aws
 
-from kompass.aws.guard import ReadOnlyViolation
+from kompass.aws.guard import ReadOnlyViolation, read_only_session
 from kompass.aws.session import (
     SessionError,
     enabled_regions,
     open_scan,
+    partition_denied_regions,
+    region_denial,
     select_regions,
 )
 from tests.conftest import AwsFiles
@@ -23,6 +26,13 @@ MOTO_ACCOUNT = "123456789012"
 def aws() -> Iterator[None]:
     with mock_aws():
         yield
+
+
+@pytest.fixture(autouse=True)
+def fast_region_probe(monkeypatch: pytest.MonkeyPatch) -> None:
+    # moto는 요청을 차례로 처리해 38개 리전 확인에 테스트마다 2초가 걸린다.
+    # 접근 거부 판별은 아래 전용 테스트가 검증하며, 그 테스트는 이 값을 다시 바꾼다
+    monkeypatch.setattr("kompass.aws.session.region_denial", lambda client: None)
 
 
 def _write_profiles(files: AwsFiles, config: str, credentials: str = "") -> None:
@@ -227,3 +237,82 @@ def test_open_scan_records_all_enabled_regions(aws: None, audit_profile: str) ->
     assert scan.regions == ("ap-northeast-2",)
     assert "us-east-1" in scan.enabled_regions
     assert list(scan.enabled_regions) == sorted(scan.enabled_regions)
+
+
+# --- 리전 전체 접근 거부 (ADR-028) ---
+
+HOME = "ap-northeast-2"
+DENIED = "UnauthorizedOperation: explicit deny in a service control policy"
+
+
+def _denial(denied: set[str]) -> Any:
+    return lambda region: DENIED if region in denied else None
+
+
+def test_partition_excludes_denied_regions() -> None:
+    kept, excluded = partition_denied_regions(
+        HOME, (HOME, "us-east-1", "eu-west-1"), _denial({"eu-west-1"})
+    )
+    assert kept == (HOME, "us-east-1")
+    assert excluded == (("eu-west-1", DENIED),)
+
+
+def test_partition_keeps_all_when_home_denied() -> None:
+    # 기본 리전까지 거부되면 리전 제한이 아니라 권한 부족이다. 빼면 EC2 점검이 통째로 사라진다
+    regions = (HOME, "us-east-1")
+    kept, excluded = partition_denied_regions(HOME, regions, _denial({HOME, "us-east-1"}))
+    assert kept == regions
+    assert excluded == ()
+
+
+def test_partition_never_excludes_home_region() -> None:
+    kept, _ = partition_denied_regions(HOME, (HOME,), _denial(set()))
+    assert kept == (HOME,)
+
+
+@pytest.mark.parametrize("code", ["AccessDenied", "AccessDeniedException", "UnauthorizedOperation"])
+def test_region_denial_detects_access_denied(aws: None, code: str) -> None:
+    session = read_only_session(region_name=HOME)
+    client = session.client("ec2", region_name="eu-west-1")
+    with Stubber(client) as stub:
+        stub.add_client_error("describe_vpcs", service_error_code=code, service_message="denied")
+        message = region_denial(client)
+    assert message == f"{code}: denied"
+
+
+def test_region_denial_ignores_other_errors(aws: None) -> None:
+    session = read_only_session(region_name=HOME)
+    client = session.client("ec2", region_name="eu-west-1")
+    with Stubber(client) as stub:
+        stub.add_client_error("describe_vpcs", service_error_code="Throttling")
+        assert region_denial(client) is None
+
+
+def test_region_denial_none_when_accessible(aws: None) -> None:
+    assert region_denial(read_only_session(region_name=HOME).client("ec2")) is None
+
+
+def test_open_scan_excludes_denied_regions_by_default(
+    aws: None, audit_profile: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        "kompass.aws.session.region_denial",
+        lambda client: DENIED if client.meta.region_name == "eu-west-1" else None,
+    )
+    scan = open_scan(profile=audit_profile)
+    assert "eu-west-1" not in scan.regions
+    assert ("eu-west-1", DENIED) in scan.excluded_regions
+    assert HOME in scan.regions
+
+
+def test_open_scan_does_not_probe_explicit_regions(
+    aws: None, audit_profile: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # 사용자가 직접 지정한 리전은 빼지 않는다
+    def fail(client: Any) -> None:
+        raise AssertionError("명시한 리전은 확인하지 않아야 한다")
+
+    monkeypatch.setattr("kompass.aws.session.region_denial", fail)
+    scan = open_scan(profile=audit_profile, regions=["eu-west-1"])
+    assert scan.regions == ("eu-west-1",)
+    assert scan.excluded_regions == ()
