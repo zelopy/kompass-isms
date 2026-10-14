@@ -55,7 +55,7 @@ _STATUS_ORDER = (Status.FAIL, Status.ERROR, Status.REVIEW, Status.PASS, Status.N
 
 app = typer.Typer(
     name="kompass",
-    help="AWS 계정을 읽기 전용으로 점검해 KISA·ISMS-P 기준 보고서를 만든다.",
+    help="AWS 계정을 읽기 전용으로 점검해 KISA·ISMS-P 기준 보고서를 만듭니다.",
     no_args_is_help=True,
     add_completion=False,
 )
@@ -103,12 +103,12 @@ def main(
     show_version: bool = typer.Option(
         False,
         "--version",
-        help="버전을 출력하고 종료한다.",
+        help="버전을 출력하고 종료합니다.",
         callback=_version_callback,
         is_eager=True,
     ),
 ) -> None:
-    """AWS 계정을 읽기 전용으로 점검해 KISA·ISMS-P 기준 보고서를 만든다."""
+    """AWS 계정을 읽기 전용으로 점검해 KISA·ISMS-P 기준 보고서를 만듭니다."""
     _configure_output()
 
 
@@ -124,7 +124,7 @@ RegionsOption = typer.Option(
     ),
 )
 AccountOption = typer.Option(
-    None, "--account-id", help="점검 대상 계정 ID. 실제 계정이 다르면 중단한다."
+    None, "--account-id", help="점검 대상 계정 ID. 실제 계정이 다르면 중단합니다."
 )
 ServiceOption = typer.Option(
     None, "--service", help=f"수집할 서비스 ({', '.join(COLLECTORS)}). 여러 번 지정. 없으면 전체."
@@ -169,7 +169,7 @@ def _open(
     if scan.excluded_regions:
         names = ", ".join(region for region, _ in scan.excluded_regions)
         typer.echo(
-            f"경고: 접근이 거부된 리전 {len(scan.excluded_regions)}개를 점검 범위에서 뺐다 "
+            f"경고: 접근이 거부된 리전 {len(scan.excluded_regions)}개를 점검 범위에서 뺐습니다 "
             f"(보고서에 범위 밖으로 표시): {names}",
             err=True,
         )
@@ -242,7 +242,7 @@ def _findings_path(store: SnapshotStore, findings: Path | None, account_id: str 
     except ValueError as exc:
         _abort(str(exc), EXIT_USAGE)
     if latest is None:
-        _abort(f"판정 결과가 없다: {store.root}", EXIT_SNAPSHOT)
+        _abort(f"판정 결과가 없습니다: {store.root}", EXIT_SNAPSHOT)
     typer.echo(f"판정 결과: {latest}")
     return latest
 
@@ -279,7 +279,7 @@ def collect_command(
     service: list[str] | None = ServiceOption,
     store: Path | None = StoreOption,
 ) -> None:
-    """설정을 수집해 스냅샷으로 저장한다."""
+    """설정을 수집해 스냅샷으로 저장합니다."""
     scan = _open(profile, region, regions, account_id)
     _collect(scan, SnapshotStore(store), service)
 
@@ -295,7 +295,7 @@ def evaluate_command(
     output: Path | None = OutputOption,
     fail_on: FailOn | None = FailOnOption,
 ) -> None:
-    """저장된 스냅샷을 판정해 결과 파일을 쓴다."""
+    """저장된 스냅샷을 판정해 결과 파일을 씁니다."""
     snapshot_store = SnapshotStore(store)
     if scan_path is None:
         try:
@@ -303,7 +303,7 @@ def evaluate_command(
         except ValueError as exc:
             _abort(str(exc), EXIT_USAGE)
         if scan_path is None:
-            _abort(f"완료된 점검이 없다: {snapshot_store.root}", EXIT_SNAPSHOT)
+            _abort(f"완료된 점검이 없습니다: {snapshot_store.root}", EXIT_SNAPSHOT)
         typer.echo(f"점검: {scan_path}")
     _, exceeded = _evaluate(scan_path, snapshot_store, _settings(config), output, fail_on)
     if exceeded:
@@ -322,10 +322,10 @@ def scan_command(
     output: Path | None = OutputOption,
     fail_on: FailOn | None = FailOnOption,
     report: list[ReportFormat] | None = typer.Option(
-        None, "--report", help="판정 후 이 형식의 보고서도 만든다 (md, xlsx, json). 여러 번 지정."
+        None, "--report", help="판정 후 이 형식의 보고서도 만듭니다 (md, xlsx, json). 여러 번 지정."
     ),
 ) -> None:
-    """수집과 판정을 이어서 실행한다."""
+    """수집과 판정을 이어서 실행합니다."""
     settings = _settings(config)  # 설정 오류는 AWS를 호출하기 전에 드러낸다
     scan = _open(profile, region, regions, account_id)
     snapshot_store = SnapshotStore(store)
@@ -348,7 +348,7 @@ def report_command(
         None, "--format", help="보고서 형식 (md, xlsx, json). 여러 번 지정. 없으면 md와 xlsx."
     ),
 ) -> None:
-    """판정 결과에 KISA·ISMS-P 매핑(과 해설이 있으면 해설)을 붙여 보고서를 만든다."""
+    """판정 결과에 KISA·ISMS-P 매핑(해설이 있으면 해설도)을 붙여 보고서를 만듭니다."""
     snapshot_store = SnapshotStore(store)
     findings = _findings_path(snapshot_store, findings, account_id)
     _reports(snapshot_store, findings, list(formats or DEFAULT_REPORT_FORMATS))
@@ -363,19 +363,20 @@ def explain_command(
     store: Path | None = StoreOption,
     config: Path | None = ConfigOption,
     dry_run: bool = typer.Option(
-        False, "--dry-run", help="해설을 요청하지 않고 대상과 예상 비용만 보여준다."
+        False, "--dry-run", help="해설을 요청하지 않고 대상과 예상 비용만 보여줍니다."
     ),
-    yes: bool = typer.Option(False, "--yes", "-y", help="비용 확인 없이 진행한다."),
+    yes: bool = typer.Option(False, "--yes", "-y", help="비용 확인 없이 진행합니다."),
     no_assessment: bool = typer.Option(
-        False, "--no-assessment", help="룰을 엮은 종합 위험 평가(LLM 1회 추가)를 하지 않는다."
+        False, "--no-assessment", help="룰을 엮은 종합 위험 평가(LLM 1회 추가)를 하지 않습니다."
     ),
     report: list[ReportFormat] | None = typer.Option(
-        None, "--report", help="해설 후 이 형식의 보고서도 다시 만든다 (md, xlsx, json)."
+        None, "--report", help="해설 후 이 형식의 보고서도 다시 만듭니다 (md, xlsx, json)."
     ),
 ) -> None:
-    """조치가 필요한 결과를 룰별로 묶어 LLM 해설을 만든다. 판정은 바꾸지 않는다.
+    """조치가 필요한 결과를 룰별로 묶어 LLM 해설을 만듭니다. 판정은 바꾸지 않습니다.
 
-    LLM에는 계정 ID·IP·ARN·리소스 이름을 가린 값만 보낸다. API 키는 ANTHROPIC_API_KEY.
+    LLM에는 계정 ID·IP·ARN·리소스 이름을 가린 값만 보냅니다.
+    API 키는 환경 변수 ANTHROPIC_API_KEY에서 읽습니다.
     """
     settings = _settings(config)
     snapshot_store = SnapshotStore(store)
@@ -388,7 +389,7 @@ def explain_command(
 
     groups = select_groups(audit)
     if not groups:
-        typer.echo("조치가 필요한 결과(취약·확인 불가·검토 필요)가 없어 해설할 것이 없다.")
+        typer.echo("조치가 필요한 결과(취약·확인 불가·검토 필요)가 없어 해설할 것이 없습니다.")
         return
     try:
         provider = make_provider(settings.llm)
@@ -400,7 +401,7 @@ def explain_command(
             f"경고: 마스킹 검증에 실패해 보내지 않을 룰: {', '.join(estimate.blocked)}", err=True
         )
     if not estimate.rules:
-        _abort("마스킹 검증을 통과한 룰이 없어 해설을 요청하지 않는다", EXIT_LLM)
+        _abort("마스킹 검증을 통과한 룰이 없어 해설을 요청하지 않습니다", EXIT_LLM)
     typer.echo(
         f"해설 대상: 룰 {estimate.rules}개, finding {estimate.findings}건 "
         f"(모델 {provider.model}, effort {settings.llm.effort})"
@@ -416,8 +417,8 @@ def explain_command(
         )
     if dry_run:
         return
-    if not yes and not typer.confirm("해설을 요청할까?"):
-        typer.echo("취소했다.")
+    if not yes and not typer.confirm("해설을 요청하시겠습니까?"):
+        typer.echo("취소했습니다.")
         return
 
     result = explain_report(

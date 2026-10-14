@@ -312,7 +312,7 @@ def test_explain_asks_before_spending(
     _scanned(store)
     result = runner.invoke(app, ["explain", "--store", str(store)], input="n\n")
     assert result.exit_code == 0
-    assert "취소했다" in result.output and fake_llm.calls == []
+    assert "취소했습니다" in result.output and fake_llm.calls == []
 
 
 def test_report_attaches_existing_explanations(
