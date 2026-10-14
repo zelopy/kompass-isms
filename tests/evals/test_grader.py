@@ -197,3 +197,10 @@ def test_null_scores_zero_on_quality_metrics() -> None:
                        "action_cover", "style_ok"):  # fmt: skip
             assert scores[metric] in (0.0, None), (case.id, metric, scores[metric])
         assert scores["leak_free"] == 1.0  # 마스킹은 공급자와 무관하다
+
+
+def test_boolean_value_structures_are_flags() -> None:
+    # 파일럿에서 발견: CLI는 {Value: boolean} 구조체를 --x / --no-x 플래그로 받는다
+    for flag in ("--no-map-public-ip-on-launch", "--map-public-ip-on-launch"):
+        [command] = parse_cli([f"aws ec2 modify-subnet-attribute --subnet-id subnet-1 {flag}"])
+        assert command.status == "valid", flag

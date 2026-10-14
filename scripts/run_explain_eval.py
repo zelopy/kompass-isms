@@ -18,7 +18,7 @@ from kompass.config import load_settings
 from kompass.evals.cases import case_report, load_cases
 from kompass.evals.grader import load_golden
 from kompass.evals.providers import NullProvider, OracleProvider
-from kompass.evals.runner import RunConfig, harness_digest, run, summarize, write_state
+from kompass.evals.runner import RunConfig, harness_digest, regrade, run, summarize, write_state
 from kompass.interpreter.explainer import estimate_explanation
 from kompass.interpreter.llm import ClaudeProvider, LLMError, LLMProvider, Usage, estimate_cost
 from kompass.interpreter.sources import SourceIndexError, SourceLookup, load_index
@@ -47,6 +47,9 @@ def main() -> int:
     parser.add_argument("--config", type=Path, help="kompass.yaml (llm 설정)")
     parser.add_argument(
         "--dry-run", action="store_true", help="해설을 요청하지 않고 입력 토큰만 센다"
+    )
+    parser.add_argument(
+        "--regrade", action="store_true", help="기록된 응답을 재생해 다시 채점한다 (API 호출 없음)"
     )
     args = parser.parse_args()
 
@@ -98,6 +101,14 @@ def main() -> int:
         return 0
 
     harness = harness_digest(HARNESS)
+    if args.regrade:
+        variant_dir = OUT_DIR / args.variant
+        count = regrade(variant_dir, cases, lookup, golden, harness)
+        summary = summarize(variant_dir)
+        (variant_dir / "metrics.md").write_text(summary, encoding="utf-8")
+        print(f"다시 채점 {count}건")
+        print(summary)
+        return 0
     write_state(OUT_DIR, harness)
     config = RunConfig(OUT_DIR, args.variant, args.reps, args.concurrency, args.timeout_s,
                        settings.llm.effort)  # fmt: skip

@@ -21,7 +21,7 @@ from typing import Any
 
 from kompass.evals.cases import case_report
 from kompass.evals.grader import METRICS, CaseOutcome, grade
-from kompass.evals.providers import RecordingProvider
+from kompass.evals.providers import RecordingProvider, ReplayProvider
 from kompass.interpreter.explainer import SYSTEM_PROMPT, explain_report
 from kompass.interpreter.llm import LLMProvider, Usage, estimate_cost
 from kompass.interpreter.sources import SourceLookup
@@ -322,3 +322,36 @@ def _rows(path: Path) -> list[dict[str, Any]]:
     if not path.is_file():
         return []
     return [json.loads(line) for line in path.read_text("utf-8").splitlines() if line.strip()]
+
+
+def regrade(
+    variant_dir: Path,
+    cases: Sequence[EvalCase],
+    lookup: SourceLookup,
+    golden: Golden,
+    harness: str,
+) -> int:
+    """기록된 응답(traces)을 재생해 다시 채점한다. 사용량·비용·지연은 처음 기록을 유지한다."""
+    by_id = {case.id: case for case in cases}
+    rows = _rows(variant_dir / "results.jsonl")
+    for row in rows:
+        case = by_id[row["prompt_id"]]
+        trace_path = variant_dir / "traces" / f"{case.id}_rep{row['rep']}.json"
+        trace = json.loads(trace_path.read_text("utf-8"))
+        recorder = RecordingProvider(ReplayProvider(trace))
+        result = explain_report(case_report(case), recorder, lookup, effort="replay")
+        [explanation] = result.explanations
+        outcome = CaseOutcome(
+            case=case,
+            explanation=explanation,
+            first_draft=recorder.attempts[0].parsed,  # type: ignore[arg-type]
+            prompts=[a.prompt for a in recorder.attempts],
+        )
+        graded = grade(outcome, golden, lookup)
+        row["grade"] = graded.scores
+        row["meta"] = {**row["meta"], **graded.details, "harness_sha": harness}
+    path = variant_dir / "results.jsonl"
+    temp = path.with_name(path.name + ".tmp")
+    temp.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), "utf-8")
+    temp.replace(path)
+    return len(rows)

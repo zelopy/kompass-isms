@@ -10,7 +10,15 @@ from pydantic import BaseModel
 from kompass.evals.cases import load_cases
 from kompass.evals.grader import METRICS, load_golden
 from kompass.evals.providers import OracleProvider
-from kompass.evals.runner import RunConfig, done_keys, harness_digest, run, summarize, write_state
+from kompass.evals.runner import (
+    RunConfig,
+    done_keys,
+    harness_digest,
+    regrade,
+    run,
+    summarize,
+    write_state,
+)
 from kompass.interpreter.llm import LLMError, LLMResponse
 from kompass.interpreter.sources import SourceIndexError, SourceLookup, load_index
 
@@ -95,3 +103,17 @@ def test_harness_digest_changes_with_files(tmp_path: Path) -> None:
     before = harness_digest([tmp_path])
     (tmp_path / "a.py").write_text("x = 2", "utf-8")
     assert harness_digest([tmp_path]) != before
+
+
+def test_regrade_replays_traces_without_calling_the_model(
+    tmp_path: Path, lookup: SourceLookup
+) -> None:
+    variant = run(
+        CASES, lambda: OracleProvider(GOLDEN), lookup, GOLDEN, RunConfig(tmp_path, reps=1), "old"
+    )
+    before = _rows(variant / "results.jsonl")
+    assert regrade(variant, CASES, lookup, GOLDEN, "new") == len(CASES)
+    after = _rows(variant / "results.jsonl")
+    assert [r["grade"] for r in after] == [r["grade"] for r in before]
+    assert [r["usage"] for r in after] == [r["usage"] for r in before]  # 원래 사용량 유지
+    assert {r["meta"]["harness_sha"] for r in after} == {"new"}

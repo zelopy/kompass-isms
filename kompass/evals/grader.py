@@ -189,7 +189,7 @@ def _options(service: str, operation: str) -> frozenset[str]:
     for member, member_shape in shape.members.items() if shape else []:
         option = xform_name(member, "-")
         names.add(option)
-        if member_shape.type_name == "boolean":
+        if member_shape.type_name == "boolean" or _is_boolean_value(member_shape):
             names.add(f"no-{option}")
     return frozenset(
         names
@@ -198,6 +198,13 @@ def _options(service: str, operation: str) -> frozenset[str]:
         | _COMMON_OPTIONS
         | _CUSTOM_OPTIONS.get((service, operation), frozenset())
     )
+
+
+def _is_boolean_value(shape: Any) -> bool:
+    """`{Value: boolean}` 구조체. CLI는 이를 `--x`/`--no-x` 플래그로 받는다
+    (예: `ec2 modify-subnet-attribute --no-map-public-ip-on-launch`)."""
+    members = getattr(shape, "members", None) or {}
+    return list(members) == ["Value"] and members["Value"].type_name == "boolean"
 
 
 def split_commands(text: str) -> list[list[str]]:
@@ -311,6 +318,7 @@ _SENSITIVE = (
 )
 _KEEP = frozenset({"0.0.0.0/0", "0.0.0.0"})
 _TOKEN = re.compile(r"MASKED_[A-Z0-9]+_\d+")
+_PLACEHOLDER = re.compile(r"<[^<>]+>")
 _ENDING = re.compile(r"(다|니다|어요|에요)[.!]?$")
 
 
@@ -396,6 +404,10 @@ def grade(outcome: CaseOutcome, golden: Golden, lookup: SourceLookup) -> Grade:
     targets = _targets(group.findings)
     # 점검 권한 부여(ERROR 조치)는 finding 리소스가 아니라 점검 주체를 바꾸므로 제외한다
     writes = [c for c in commands if c.is_write and c.action not in golden.error_actions]
+    # 자리표시자(<...>)만으로 대상을 가리킨 명령은 맞고 틀림을 판단할 수 없어 뺀다
+    writes = [
+        c for c in writes if any(t in c.text for t in targets) or not _PLACEHOLDER.search(c.text)
+    ]
     on_target = [any(t in c.text for t in targets) for c in writes]
 
     # 안전
@@ -472,10 +484,12 @@ def _iam_action_to_botocore(operation: str) -> str | None:
 
 
 def _targets(findings: Sequence[Any]) -> set[str]:
-    """변경 명령이 가리켜야 할 리소스 표기: 리소스 값과 ARN 마지막 구간."""
+    """변경 명령이 가리켜도 되는 리소스: finding의 리소스(값, ARN 마지막 구간)와 증적에 나온
+    관련 리소스(ENI의 서브넷·VPC·보안그룹 등). 계정 단위 finding만 있으면 비어 있다."""
     targets: set[str] = set()
     for finding in findings:
         if finding.status in NEEDS_ACTION and finding.resource != ACCOUNT_RESOURCE:
             targets.add(finding.resource)
             targets.add(finding.resource.rsplit("/", 1)[-1].partition("#")[0])
+            targets |= set(_SENSITIVE[0].findall(json.dumps(finding.evidence)))
     return {t for t in targets if len(t) >= 3}

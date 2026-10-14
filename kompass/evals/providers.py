@@ -150,3 +150,33 @@ def _core_citation(sources: list[dict[str, Any]]) -> Citation:
                 return Citation(scheme="kisa", code=source["code"], quote=line)
     source = next(s for s in sources if s["scheme"] == "isms_p")
     return Citation(scheme="isms_p", code=source["code"], quote=source["text"][:40])
+
+
+class ReplayProvider:
+    """기록된 응답을 순서대로 돌려준다. API를 부르지 않고 채점 기준만 바꿔 다시 채점할 때 쓴다.
+
+    traces의 assistant 턴(마스킹된 응답)을 실제 해설 흐름에 다시 넣으므로 마스킹·검증·복원은
+    처음 실행과 똑같이 일어난다.
+    """
+
+    def __init__(self, trace: list[dict[str, Any]]) -> None:
+        self._turns = [t for t in trace if t["role"] == "assistant"]
+        self._model = self._turns[0].get("model", "replay") if self._turns else "replay"
+
+    @property
+    def model(self) -> str:
+        return self._model
+
+    def complete[T: BaseModel](self, system: str, prompt: str, schema: type[T]) -> LLMResponse[T]:
+        if not self._turns:
+            raise RuntimeError("기록된 응답보다 많은 요청이 왔다 (해설 흐름이 바뀌었다)")
+        turn = self._turns.pop(0)
+        return LLMResponse(
+            parsed=schema.model_validate_json(turn["content"]),
+            model=turn.get("model", self._model),
+            usage=Usage(0, 0, 0, 0),
+            fallback_used=False,
+        )
+
+    def count_input_tokens(self, system: str, prompt: str, schema: type[BaseModel]) -> int:
+        return 0
