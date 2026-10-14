@@ -156,11 +156,14 @@ def _assessment_section(report: AuditReport) -> list[str]:
     ]
     for scenario in draft.scenarios:
         keys = ", ".join(f"`{k.replace('`', '')}`" for k in scenario.finding_keys)
-        lines += [
-            f"- **{_text(scenario.title)}** (영향 {PRIORITY_LABELS[scenario.impact]}): "
-            f"{_text(scenario.description)}",
-            f"  - 관련 finding: {keys}",
-        ]
+        heading = f"- **{_text(scenario.title)}** (영향 {PRIORITY_LABELS[scenario.impact]})"
+        # 여러 줄(개조식 목록) 설명은 하위 목록으로, 한 줄이면 제목 뒤에 붙인다
+        [first, *rest] = _labeled("", scenario.description)
+        if rest:
+            lines += [f"{heading}:", *rest]
+        else:
+            lines.append(f"{heading}: {first.removeprefix('- : ')}")
+        lines.append(f"  - 관련 finding: {keys}")
     lines += ["", "조치 순서:", ""]
     for n, step in enumerate(draft.action_order, start=1):
         title = _text(RULE_TITLES.get(step.rule_id, ""))

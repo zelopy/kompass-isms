@@ -196,3 +196,22 @@ def test_assessment_failure_is_shown() -> None:
         }
     )  # fmt: skip
     assert "- 만들지 못함: 모델이 요청을 거부함" in _assessment_section(failed)
+
+
+def test_multiline_scenario_description_becomes_nested_list() -> None:
+    from kompass.reporters.markdown_reporter import _assessment_section
+
+    explained = EXPLAINED.explanations
+    assert explained is not None and explained.assessment is not None
+    data = EXPLAINED.model_dump()
+    data["explanations"]["assessment"]["assessment"]["scenarios"][0]["description"] = (
+        "- 관리 포트 개방\n- 버킷 노출"
+    )
+    lines = _assessment_section(EXPLAINED.model_validate(data))
+    i = next(n for n, line in enumerate(lines) if line.startswith("- **공개 SSH"))
+    assert lines[i].endswith("(영향 긴급):")
+    assert lines[i + 1 : i + 4] == [
+        "  - 관리 포트 개방",
+        "  - 버킷 노출",
+        "  - 관련 finding: `SG-001:ap-northeast-2:sg-1`, `S3-004:ap-northeast-2:bucket-a`",
+    ]
