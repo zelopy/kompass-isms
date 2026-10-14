@@ -51,7 +51,7 @@
 - [x] 매핑 데이터: `kisa_items.yaml`, `rules.yaml`, `isms_p_controls.yaml` + 문서·레지스트리 대조 테스트 (ADR-025)
 - [x] 매퍼: finding에 매핑 정보 부착, 매핑 누락 검증 테스트, KISA 항목 집계 (ADR-026)
 - [ ] ISMS-P 커버리지 리포트 (자동 점검 / 부분 / 수동 항목 현황) — 집계 데이터 완료, 보고서 출력은 리포터에서
-- [ ] 리포터: JSON, Markdown (UTC로 저장된 시각은 KST로 표시, ADR-019)
+- [x] 리포터: JSON, Markdown (UTC로 저장된 시각은 KST로 표시, ADR-019)
 - [ ] 리포터: 엑셀 점검표 (항목별 결과, 대상 리소스, 증적 요약)
 - [ ] CLI: `kompass report --format md|xlsx`
 - [ ] README에 사용법과 출력 예시 추가
