@@ -34,7 +34,6 @@ from kompass.pipeline import (
     write_reports,
 )
 from kompass.snapshots import (
-    DEFAULT_ROOT,
     IncompleteScanError,
     SnapshotIntegrityError,
     SnapshotStore,
@@ -123,7 +122,11 @@ AccountOption = typer.Option(
 ServiceOption = typer.Option(
     None, "--service", help=f"수집할 서비스 ({', '.join(COLLECTORS)}). 여러 번 지정. 없으면 전체."
 )
-StoreOption = typer.Option(DEFAULT_ROOT, "--store", help="스냅샷·결과 저장 위치.")
+StoreOption = typer.Option(
+    None,
+    "--store",
+    help="결과 저장 위치. 없으면 KOMPASS_STORE, 그다음 kompass 저장소 최상위의 reports/.",
+)
 ConfigOption = typer.Option(
     None, "--config", help="판정 기준값 파일. 없으면 현재 디렉터리의 kompass.yaml(있을 때)."
 )
@@ -236,7 +239,7 @@ def collect_command(
     regions: list[str] | None = RegionsOption,
     account_id: str | None = AccountOption,
     service: list[str] | None = ServiceOption,
-    store: Path = StoreOption,
+    store: Path | None = StoreOption,
 ) -> None:
     """설정을 수집해 스냅샷으로 저장한다."""
     scan = _open(profile, region, regions, account_id)
@@ -249,7 +252,7 @@ def evaluate_command(
         None, "--scan", help="판정할 점검 폴더. 없으면 가장 최근의 완료된 점검."
     ),
     account_id: str | None = AccountOption,
-    store: Path = StoreOption,
+    store: Path | None = StoreOption,
     config: Path | None = ConfigOption,
     output: Path | None = OutputOption,
     fail_on: FailOn | None = FailOnOption,
@@ -276,7 +279,7 @@ def scan_command(
     regions: list[str] | None = RegionsOption,
     account_id: str | None = AccountOption,
     service: list[str] | None = ServiceOption,
-    store: Path = StoreOption,
+    store: Path | None = StoreOption,
     config: Path | None = ConfigOption,
     output: Path | None = OutputOption,
     fail_on: FailOn | None = FailOnOption,
@@ -302,7 +305,7 @@ def report_command(
         None, "--findings", help="판정 결과 파일. 없으면 가장 최근에 판정한 결과."
     ),
     account_id: str | None = AccountOption,
-    store: Path = StoreOption,
+    store: Path | None = StoreOption,
     formats: list[ReportFormat] | None = typer.Option(
         None, "--format", help="보고서 형식 (md, xlsx, json). 여러 번 지정. 없으면 md와 xlsx."
     ),

@@ -195,7 +195,7 @@ def test_evaluate_incomplete_scan(store: Path) -> None:
 def test_scan_with_reports(aws: None, store: Path) -> None:
     result = runner.invoke(app, _scan_args(store, "--report", "md", "--report", "xlsx"))
     assert result.exit_code == 0, result.output
-    reports = store / "reports" / "123456789012"
+    reports = store / "123456789012"
     assert len(list(reports.glob("*.md"))) == 1
     assert len(list(reports.glob("*.xlsx"))) == 1
     md = next(reports.glob("*.md")).read_text(encoding="utf-8")
@@ -207,7 +207,7 @@ def test_report_from_latest_findings(aws: None, store: Path) -> None:
     result = runner.invoke(app, ["report", "--store", str(store), "--format", "json"])
     assert result.exit_code == 0, result.output
     assert "판정 결과: " in result.output
-    [report] = (store / "reports" / "123456789012").glob("*.report.json")
+    [report] = (store / "123456789012").glob("*.report.json")
     data = json.loads(report.read_text(encoding="utf-8"))
     assert len(data["kisa_items"]) == 19
 
@@ -215,7 +215,7 @@ def test_report_from_latest_findings(aws: None, store: Path) -> None:
 def test_report_defaults_to_md_and_xlsx(aws: None, store: Path) -> None:
     assert runner.invoke(app, _scan_args(store)).exit_code == 0
     assert runner.invoke(app, ["report", "--store", str(store)]).exit_code == 0
-    suffixes = sorted(p.suffix for p in (store / "reports" / "123456789012").iterdir())
+    suffixes = sorted(p.suffix for p in (store / "123456789012").iterdir())
     assert suffixes == [".md", ".xlsx"]
 
 

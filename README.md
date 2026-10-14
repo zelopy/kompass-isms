@@ -45,10 +45,10 @@ uv run kompass report --format md --format xlsx
 | `--fail-on` | `fail`·`error`·`review` 이상의 결과가 있으면 종료 코드 1 (CI용) |
 | `--report` / `--format` | 보고서 형식: `md`(Markdown), `xlsx`(Excel 점검표), `json`(전체 데이터) |
 
-결과는 `.kompass/` 아래에 저장된다. 실제 계정 데이터이므로 `.kompass/.gitignore`가 자동으로 만들어진다.
-- 스냅샷: `.kompass/snapshots/<계정>/<점검 ID>/` (파일별 SHA-256 기록)
-- 판정 결과: `.kompass/findings/<계정>/<점검 ID>.findings.json`
-- 보고서: `.kompass/reports/<계정>/<점검 ID>.md`, `.xlsx`, `.report.json`
+결과는 어느 폴더에서 실행하든 저장소 최상위의 `reports/` 아래에 저장된다. 다른 위치를 쓰려면 `--store` 옵션이나 `KOMPASS_STORE` 환경 변수를 지정한다. 실제 계정 데이터이므로 `reports/`는 `.gitignore` 대상이며, 폴더 안에도 `.gitignore`가 자동으로 만들어진다.
+- 보고서: `reports/<계정>/<점검 ID>.md`, `.xlsx`, `.report.json`
+- 판정 결과: `reports/findings/<계정>/<점검 ID>.findings.json`
+- 스냅샷: `reports/snapshots/<계정>/<점검 ID>/` (파일별 SHA-256 기록)
 
 종료 코드: 0 완료(취약 결과가 있어도 0), 1 `--fail-on` 해당, 2 사용법·설정 오류, 3 세션 오류, 4 스냅샷 오류.
 

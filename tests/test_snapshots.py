@@ -10,9 +10,11 @@ import pytest
 from kompass.aws.session import ScanContext
 from kompass.models import CollectError, Snapshot
 from kompass.snapshots import (
+    STORE_ENV,
     IncompleteScanError,
     SnapshotIntegrityError,
     SnapshotStore,
+    default_store_root,
     load_scan,
 )
 
@@ -206,3 +208,43 @@ def test_latest_scan_requires_account_when_ambiguous(store: SnapshotStore) -> No
 def test_latest_scan_none_when_empty(store: SnapshotStore) -> None:
     assert store.latest_scan() is None
     assert store.latest_scan(ACCOUNT) is None
+
+
+# --- 기본 저장 위치 (ADR-027) ---
+
+
+def _project(tmp_path: Path, name: str = "kompass-isms") -> Path:
+    root = tmp_path / "repo"
+    (root / "lab").mkdir(parents=True)
+    (root / "pyproject.toml").write_text(
+        "\n".join(["[project]", f'name = "{name}"', ""]), encoding="utf-8"
+    )
+    return root
+
+
+def test_default_root_is_project_reports_from_subfolder(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # lab/ 같은 하위 폴더에서 실행해도 저장소 최상위의 reports/에 모인다
+    monkeypatch.delenv(STORE_ENV, raising=False)
+    root = _project(tmp_path)
+    assert default_store_root(root / "lab") == (root / "reports").resolve()
+    assert default_store_root(root) == (root / "reports").resolve()
+
+
+def test_default_root_ignores_other_projects(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv(STORE_ENV, raising=False)
+    root = _project(tmp_path, name="something-else")
+    assert default_store_root(root / "lab") == (root / "lab" / "reports").resolve()
+
+
+def test_default_root_from_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv(STORE_ENV, str(tmp_path / "custom"))
+    assert default_store_root(_project(tmp_path)) == tmp_path / "custom"
+
+
+def test_store_without_root_uses_default(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv(STORE_ENV, str(tmp_path / "custom"))
+    assert SnapshotStore().root == tmp_path / "custom"

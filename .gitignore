@@ -6,7 +6,8 @@ __pycache__/
 .ruff_cache/
 .pytest_cache/
 
-# 실제 계정 데이터 — 절대 커밋 금지
+# 실제 계정 데이터 — 절대 커밋 금지 (스냅샷·판정 결과·보고서)
+reports/
 .kompass/
 output/
 *.findings.json

@@ -169,11 +169,15 @@ class Rule(Protocol):
 
 ## 스냅샷 저장
 
-`snapshots.py`가 점검 결과를 파일로 남긴다 (ADR-003, ADR-022).
+`snapshots.py`가 점검 결과를 파일로 남긴다 (ADR-003, ADR-022, ADR-027).
+
+저장 위치는 `--store` → `KOMPASS_STORE` 환경 변수 → 현재 폴더에서 위로 찾은 kompass 저장소 최상위의 `reports/` → (저장소 밖이면) 현재 폴더의 `reports/` 순서로 정한다. 어느 폴더에서 실행해도 결과가 한곳에 모인다.
 
 ```
-.kompass/
+reports/
 ├── .gitignore                 # "*" (자동 생성, 실제 계정 데이터 커밋 방지)
+├── <account_id>/<scan_id>.md, .xlsx, .report.json   # 사람이 보는 보고서
+├── findings/<account_id>/<scan_id>.findings.json     # 판정 결과
 └── snapshots/<account_id>/<scan_id>/   # scan_id = 20261013T120000Z-a1b2
     ├── iam.json, s3.json, ...  # 서비스별 Snapshot
     └── scan.json               # ScanManifest: 계정, 호출자, 리전, kompass 버전, 시작·종료 시각, 파일별 SHA-256

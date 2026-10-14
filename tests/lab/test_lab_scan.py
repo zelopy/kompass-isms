@@ -90,7 +90,7 @@ def expected() -> dict[str, Any]:
 def test_lab_scan_matches_expected(expected: dict[str, Any], tmp_path: Path) -> None:
     profile = os.environ.get("KOMPASS_LAB_PROFILE", expected["profile"])
     scan = open_scan(profile=profile, regions=expected["regions"])
-    store = SnapshotStore(tmp_path / ".kompass")
+    store = SnapshotStore(tmp_path / "reports")
 
     result = collect(scan, store)
     _, snapshots = load_scan(result.scan_path)

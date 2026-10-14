@@ -34,7 +34,6 @@ COLLECTORS: dict[str, Callable[[], Collector]] = {
     "s3": S3Collector,
 }
 FINDINGS_DIR = "findings"
-REPORTS_DIR = "reports"
 SNAPSHOTS_DIR = "snapshots"
 
 # 보고서 형식 → (파일 확장자, 렌더러)
@@ -176,4 +175,5 @@ def write_reports(report: AuditReport, formats: Sequence[str], out_dir: Path) ->
 
 
 def default_reports_dir(store: SnapshotStore, report: AuditReport) -> Path:
-    return store.root / REPORTS_DIR / report.scan.account_id
+    """사람이 보는 보고서는 저장 위치 바로 아래 계정 폴더에 둔다 (ADR-027)."""
+    return store.root / report.scan.account_id

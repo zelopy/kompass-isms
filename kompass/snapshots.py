@@ -1,4 +1,7 @@
-"""스냅샷 저장·로드 (ADR-003, ADR-022).
+"""스냅샷 저장·로드 (ADR-003, ADR-022, ADR-027).
+
+저장 위치(`<root>`)는 `default_store_root()`가 정한다: `KOMPASS_STORE` 환경 변수, 없으면 kompass
+저장소 최상위의 `reports/`, 저장소 밖이면 현재 디렉터리의 `reports/`.
 
 배치: `<root>/snapshots/<account_id>/<scan_id>/`
 - `<service>.json`: 서비스별 스냅샷
@@ -20,7 +23,9 @@ from pathlib import Path
 from kompass.aws.session import ScanContext
 from kompass.models import ScanManifest, Snapshot
 
-DEFAULT_ROOT = Path(".kompass")
+STORE_ENV = "KOMPASS_STORE"
+STORE_DIR_NAME = "reports"
+_PROJECT_MARKER = 'name = "kompass-isms"'
 MANIFEST_NAME = "scan.json"
 _SERVICE_NAME = re.compile(r"^[a-z][a-z0-9_]*$")
 _PRIVATE_DIR_MODE = 0o700  # POSIX 전용. Windows에서는 무시된다
@@ -82,11 +87,26 @@ class ScanWriter:
         return self.path
 
 
-class SnapshotStore:
-    """스냅샷 저장소. 기본 위치는 현재 디렉터리의 `.kompass/`."""
+def default_store_root(cwd: Path | None = None) -> Path:
+    """결과 저장 위치. 어느 폴더에서 실행해도 같은 곳에 모이도록 저장소 최상위를 찾는다."""
+    configured = os.environ.get(STORE_ENV)
+    if configured:
+        return Path(configured)
+    start = (cwd or Path.cwd()).resolve()
+    for directory in (start, *start.parents):
+        pyproject = directory / "pyproject.toml"
+        if pyproject.is_file() and _PROJECT_MARKER in pyproject.read_text(
+            encoding="utf-8", errors="ignore"
+        ):
+            return directory / STORE_DIR_NAME
+    return start / STORE_DIR_NAME
 
-    def __init__(self, root: Path = DEFAULT_ROOT):
-        self.root = root
+
+class SnapshotStore:
+    """스냅샷·판정 결과·보고서 저장소. 기본 위치는 `default_store_root()`."""
+
+    def __init__(self, root: Path | None = None):
+        self.root = root if root is not None else default_store_root()
 
     def begin(self, scan: ScanContext, started_at: datetime | None = None) -> ScanWriter:
         """새 점검 폴더를 만든다. 같은 이름의 폴더가 있으면 덮어쓰지 않고 실패한다."""
