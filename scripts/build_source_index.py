@@ -47,12 +47,12 @@ def _read_pages(path: Path, first: int | None = None, last: int | None = None) -
 def _document(knowledge: Path, relative: str, expected_sha256: str) -> tuple[Path, SourceDocument]:
     path = knowledge / relative
     if not path.is_file():
-        raise SourceIndexError(f"원문 파일이 없다: {path} (knowledge/SOURCES.md 참고)")
+        raise SourceIndexError(f"원문 파일이 없습니다: {path} (knowledge/SOURCES.md 참고)")
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
     if digest != expected_sha256:
         raise SourceIndexError(
-            f"원문 파일 해시가 기록과 다르다: {path.name} ({digest}). "
-            "판이 바뀌었으면 SOURCES.md와 매핑을 먼저 갱신한다"
+            f"원문 파일 해시가 기록과 다릅니다: {path.name} ({digest}). "
+            "판이 바뀌었으면 SOURCES.md와 매핑을 먼저 갱신해 주십시오"
         )
     return path, SourceDocument(file=relative, sha256=digest)
 

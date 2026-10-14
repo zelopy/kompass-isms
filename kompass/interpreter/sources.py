@@ -94,12 +94,12 @@ def default_index_path(cwd: Path | None = None) -> Path:
 def load_index(path: Path | None = None) -> SourceIndex:
     path = path or default_index_path()
     if not path.is_file():
-        raise SourceIndexError(f"원문 색인이 없다: {path}. `{BUILD_COMMAND}`로 만든다")
+        raise SourceIndexError(f"원문 색인이 없습니다: {path}. `{BUILD_COMMAND}`로 만들어 주십시오")
     try:
         return SourceIndex.model_validate_json(path.read_bytes())
     except ValidationError as exc:
         raise SourceIndexError(
-            f"원문 색인 형식이 맞지 않는다: {path}. 다시 만든다 ({exc})"
+            f"원문 색인 형식이 맞지 않습니다: {path}. 다시 만들어 주십시오 ({exc})"
         ) from exc
 
 
@@ -140,13 +140,13 @@ def split_kisa(pages: Sequence[Page], titles: Mapping[str, str]) -> dict[str, So
         end = starts[position + 1] if position + 1 < len(starts) else len(lines)
         page, code = lines[start]
         if code in entries:
-            raise SourceIndexError(f"KISA 항목 {code}가 원문에 두 번 나온다")
+            raise SourceIndexError(f"KISA 항목 {code}가 원문에 두 번 나옵니다")
         if code not in titles:
-            raise SourceIndexError(f"kisa_items.yaml에 없는 KISA 항목이 원문에 있다: {code}")
+            raise SourceIndexError(f"kisa_items.yaml에 없는 KISA 항목이 원문에 있습니다: {code}")
         body = [line for _, line in lines[start:end]]
         head = normalize_for_match("".join(body[: _TITLE_WINDOW + 2]))
         if normalize_for_match(titles[code]) not in head:
-            raise SourceIndexError(f"KISA 항목 {code}의 이름이 원문과 다르다: {titles[code]}")
+            raise SourceIndexError(f"KISA 항목 {code}의 이름이 원문과 다릅니다: {titles[code]}")
         entries[code] = SourceEntry(title=titles[code], page=page, text="\n".join(body))
     _require_all("KISA 항목", titles, entries)
     return entries
@@ -187,7 +187,7 @@ def split_isms_p(pages: Sequence[Page], titles: Mapping[str, str]) -> dict[str, 
         name = r"\s*".join(_char_pattern(char) for char in title.replace(" ", ""))
         matches = list(re.finditer(rf"(?<![\d.]){re.escape(code)}\s+{name}", text))
         if len(matches) > 1:
-            raise SourceIndexError(f"ISMS-P 통제항목 {code}가 원문에 두 번 나온다")
+            raise SourceIndexError(f"ISMS-P 통제항목 {code}가 원문에 두 번 나옵니다")
         if matches:
             found.append((matches[0].start(), matches[0].end(), code))
     _require_all("ISMS-P 통제항목", titles, {code for _, _, code in found})

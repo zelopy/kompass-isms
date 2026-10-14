@@ -83,12 +83,12 @@ def load_settings(path: Path | None) -> Settings:
     try:
         raw = yaml.safe_load(path.read_text(encoding="utf-8"))
     except (OSError, yaml.YAMLError) as exc:
-        raise ConfigError(f"설정 파일을 읽을 수 없다: {path}: {exc}") from exc
+        raise ConfigError(f"설정 파일을 읽을 수 없습니다: {path}: {exc}") from exc
     if raw is None:
         return Settings()
     if not isinstance(raw, dict):
-        raise ConfigError(f"설정 파일의 최상위는 키-값 형식이어야 한다: {path}")
+        raise ConfigError(f"설정 파일의 최상위는 키-값 형식이어야 합니다: {path}")
     try:
         return Settings.model_validate(raw)
     except ValidationError as exc:
-        raise ConfigError(f"설정 파일 형식이 틀리다: {path}\n{exc}") from exc
+        raise ConfigError(f"설정 파일 형식이 맞지 않습니다: {path}\n{exc}") from exc

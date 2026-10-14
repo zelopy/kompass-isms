@@ -109,8 +109,8 @@ class ClaudeProvider:
             client = anthropic.Anthropic()
             if client.api_key is None and client.auth_token is None:
                 raise LLMError(
-                    "Claude API 키가 없음. 환경 변수 ANTHROPIC_API_KEY 설정 필요 "
-                    "(설정 파일에 키를 두지 않음)"
+                    "Claude API 키가 없습니다. 환경 변수 ANTHROPIC_API_KEY를 설정해 주십시오 "
+                    "(설정 파일에는 키를 두지 않습니다)"
                 )
         self._client = client
 

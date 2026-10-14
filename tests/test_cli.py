@@ -336,7 +336,7 @@ def test_report_warns_about_stale_explanations(
     assert runner.invoke(app, evaluate).exit_code == 0  # 다시 판정
     result = runner.invoke(app, ["report", "--store", str(store), "--format", "md"])
     assert result.exit_code == 0
-    assert "kompass explain을 다시 실행한다" in result.output
+    assert "kompass explain을 다시 실행해 주십시오" in result.output
     [md] = store.rglob("*.md")
     assert "## AI 해설" not in md.read_text(encoding="utf-8")
 

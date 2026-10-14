@@ -125,12 +125,12 @@ def select_regions(
     """
     if isinstance(requested, str):
         # 문자열도 Sequence[str]이라 타입 검사로 걸러지지 않는다. 글자 단위로 쪼개지는 것을 막는다
-        raise TypeError("requested는 리전 이름의 리스트여야 한다 (문자열 하나가 아니라)")
+        raise TypeError("requested는 리전 이름의 리스트여야 합니다 (문자열 하나가 아님)")
     known_set, enabled_set = set(known), set(enabled)
     if requested is None:
         return tuple(sorted(enabled_set))
     if not requested:
-        raise SessionError("점검할 리전을 하나 이상 지정해야 한다")
+        raise SessionError("점검할 리전을 하나 이상 지정해 주십시오")
     unique = tuple(dict.fromkeys(requested))
     unknown = [r for r in unique if r not in known_set]
     if unknown:
@@ -170,17 +170,17 @@ def open_scan(
         session = read_only_session(botocore_session=core, profile_name=profile, region_name=region)
         home_region = session.region_name
     except ProfileNotFound as exc:
-        raise SessionError(f"AWS 프로필을 찾을 수 없다: {profile}") from exc
+        raise SessionError(f"AWS 프로필을 찾을 수 없습니다: {profile}") from exc
 
     if not home_region:
         raise SessionError(
-            "기본 리전을 정할 수 없다. --region을 지정하거나 프로필에 region을 설정해야 한다"
+            "기본 리전을 정할 수 없습니다. --region을 지정하거나 프로필에 region을 설정해 주십시오"
         )
 
     try:
         identity = session.client("sts", region_name=home_region).get_caller_identity()
     except NoCredentialsError as exc:
-        raise SessionError(f"AWS 자격증명을 찾을 수 없다 (프로필: {profile})") from exc
+        raise SessionError(f"AWS 자격증명을 찾을 수 없습니다 (프로필: {profile})") from exc
     except EndpointConnectionError as exc:
         raise SessionError(_unreachable(home_region)) from exc
     except (ClientError, BotoCoreError) as exc:
@@ -189,7 +189,7 @@ def open_scan(
     account_id: str = identity["Account"]
     if expected_account_id is not None and account_id != expected_account_id:
         raise SessionError(
-            f"점검 대상 계정이 예상과 다르다: 예상 {expected_account_id}, 실제 {account_id}"
+            f"점검 대상 계정이 예상과 다릅니다: 예상 {expected_account_id}, 실제 {account_id}"
         )
 
     try:
@@ -235,4 +235,6 @@ def _probe_regions(session: Any, regions: Sequence[str]) -> dict[str, str | None
 
 
 def _unreachable(home_region: str) -> str:
-    return f"기본 리전 {home_region}에 연결할 수 없다. 리전 이름과 네트워크 연결을 확인해야 한다"
+    return (
+        f"기본 리전 {home_region}에 연결할 수 없습니다. 리전 이름과 네트워크 연결을 확인해 주십시오"
+    )

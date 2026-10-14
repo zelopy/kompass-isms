@@ -192,15 +192,15 @@ def _require_output_member(client: Any, method: str, result_key: str) -> None:
     members = operation.output_shape.members if operation.output_shape else {}
     if result_key not in members:
         raise ValueError(
-            f"{_operation_name(client, method)} 응답에 {result_key!r} 필드가 없다. "
+            f"{_operation_name(client, method)} 응답에 {result_key!r} 필드가 없습니다. "
             f"가능한 필드: {', '.join(sorted(members))}"
         )
 
 
 def _abort(client: Any, method: str, code: str, exc: Exception) -> NoReturn:
     raise SessionError(
-        f"점검 중 자격증명을 쓸 수 없게 되었다 ({code}, {_operation_name(client, method)}). "
-        "자격증명을 갱신한 뒤 다시 실행해야 한다"
+        f"점검 중 자격증명을 쓸 수 없게 되었습니다 ({code}, {_operation_name(client, method)}). "
+        "자격증명을 갱신한 뒤 다시 실행해 주십시오"
     ) from exc
 
 

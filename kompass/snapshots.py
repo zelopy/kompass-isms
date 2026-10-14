@@ -52,7 +52,7 @@ class ScanWriter:
 
     def write(self, snapshot: Snapshot) -> None:
         if self._finished:
-            raise RuntimeError("이미 완료된 점검에는 스냅샷을 추가할 수 없다")
+            raise RuntimeError("이미 완료된 점검에는 스냅샷을 추가할 수 없습니다")
         if not _SERVICE_NAME.match(snapshot.service):
             raise ValueError(f"파일 이름으로 쓸 수 없는 서비스 이름: {snapshot.service!r}")
         if snapshot.service in self._hashes:
@@ -69,7 +69,7 @@ class ScanWriter:
     def finish(self, finished_at: datetime | None = None) -> Path:
         """`scan.json`을 써서 점검을 완료한다. 완료된 폴더 경로를 돌려준다."""
         if self._finished:
-            raise RuntimeError("이미 완료된 점검이다")
+            raise RuntimeError("이미 완료된 점검입니다")
         manifest = ScanManifest(
             scan_id=self._scan_id,
             account_id=self._scan.account_id,
@@ -139,7 +139,8 @@ class SnapshotStore:
             accounts = [p.name for p in snapshots_dir.iterdir() if p.is_dir()]
             if len(accounts) > 1:
                 raise ValueError(
-                    f"여러 계정의 점검이 있다 ({', '.join(sorted(accounts))}). 계정을 지정해야 한다"
+                    f"여러 계정의 점검이 있습니다 ({', '.join(sorted(accounts))}). "
+                    "--account-id로 계정을 지정해 주십시오"
                 )
             if not accounts:
                 return None
@@ -168,10 +169,12 @@ def load_scan(path: Path) -> tuple[ScanManifest, dict[str, Snapshot]]:
     for service, expected_hash in manifest.snapshots.items():
         file = path / f"{service}.json"
         if not file.is_file():
-            raise SnapshotIntegrityError(f"스냅샷 파일이 없다: {service}")
+            raise SnapshotIntegrityError(f"스냅샷 파일이 없습니다: {service}")
         content = file.read_bytes()
         if hashlib.sha256(content).hexdigest() != expected_hash:
-            raise SnapshotIntegrityError(f"스냅샷 파일이 기록과 다르다 (손상 또는 수정): {service}")
+            raise SnapshotIntegrityError(
+                f"스냅샷 파일이 기록과 다릅니다 (손상 또는 수정): {service}"
+            )
         snapshots[service] = Snapshot.model_validate_json(content.decode("utf-8"))
     return manifest, snapshots
 

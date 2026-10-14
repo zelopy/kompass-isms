@@ -139,7 +139,10 @@ def latest_findings(store: SnapshotStore, account_id: str | None = None) -> Path
         accounts = [p.name for p in root.iterdir() if p.is_dir()]
         if len(accounts) > 1:
             listed = ", ".join(sorted(accounts))
-            raise ValueError(f"여러 계정의 판정 결과가 있다 ({listed}). 계정을 지정해야 한다")
+            raise ValueError(
+                f"여러 계정의 판정 결과가 있습니다 ({listed}). "
+                "--account-id로 계정을 지정해 주십시오"
+            )
         if not accounts:
             return None
         account_id = accounts[0]
@@ -207,13 +210,13 @@ def attach_explanations(
         explanations = ExplanationReport.model_validate_json(path.read_bytes())
     except (OSError, ValidationError):
         return report, (
-            f"해설 파일({path.name})을 읽을 수 없어 보고서에 붙이지 않았다. "
-            "kompass explain을 다시 실행한다"
+            f"해설 파일({path.name})을 읽을 수 없어 보고서에 붙이지 않았습니다. "
+            "kompass explain을 다시 실행해 주십시오"
         )
     try:
         return report.with_explanations(explanations), None
     except ValueError:
         return report, (
-            f"해설({path.name})이 이전 판정 결과를 대상으로 해 보고서에 붙이지 않았다. "
-            "kompass explain을 다시 실행한다"
+            f"해설({path.name})이 이전 판정 결과를 대상으로 해 보고서에 붙이지 않았습니다. "
+            "kompass explain을 다시 실행해 주십시오"
         )

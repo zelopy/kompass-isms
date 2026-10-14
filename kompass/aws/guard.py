@@ -31,7 +31,7 @@ class ReadOnlyViolation(Exception):
     def __init__(self, service: str, operation: str) -> None:
         self.service = service
         self.operation = operation
-        super().__init__(f"읽기 전용 가드가 {service}:{operation} 호출을 차단했다")
+        super().__init__(f"읽기 전용 가드가 {service}:{operation} 호출을 차단했습니다")
 
 
 def is_allowed_operation(service: str, operation: str) -> bool:

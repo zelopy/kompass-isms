@@ -28,7 +28,7 @@ from kompass.snapshots import SnapshotStore, project_root
 
 ROOT = project_root()
 if ROOT is None:
-    sys.exit("kompass 저장소 안에서 실행한다")
+    sys.exit("kompass 저장소 안에서 실행해 주십시오")
 sys.path.insert(0, str(ROOT))  # tests/의 스냅샷 헬퍼를 쓴다
 
 from tests.rules.ec2 import data as ec2  # noqa: E402
@@ -113,16 +113,16 @@ class Anonymizer:
     def check(self, output: str) -> None:
         leaked = [orig for orig in self.table if orig in output and orig != self.table[orig]]
         if leaked:
-            raise SystemExit(f"가공 뒤에도 원본 식별자 {len(leaked)}개가 남아 있어 중단한다")
+            raise SystemExit(f"가공 뒤에도 원본 식별자 {len(leaked)}개가 남아 있어 중단합니다")
         if re.search(r"(?<!\d)(?!123456789012)\d{12}(?!\d)", output):
-            raise SystemExit("가공 결과에 계정 ID로 보이는 12자리 숫자가 남아 있어 중단한다")
+            raise SystemExit("가공 결과에 계정 ID로 보이는 12자리 숫자가 남아 있어 중단합니다")
 
 
 def lab_cases() -> list[EvalCase]:
     store = SnapshotStore()
     path = latest_findings(store)
     if path is None:
-        raise SystemExit("실습 판정 결과가 없다. --no-lab으로 보강 케이스만 만든다")
+        raise SystemExit("실습 판정 결과가 없습니다. --no-lab으로 보강 케이스만 만들어 주십시오")
     report = make_report(store, path)
     anonymizer = Anonymizer(report.scan.account_id)
     by_rule: dict[str, list[Finding]] = {}
