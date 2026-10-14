@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from kompass.evals.cases import case_report, load_cases
+from kompass.evals.cases import EVAL_TIME, case_report, load_cases
 from kompass.evals.grader import (
     METRICS,
     CaseOutcome,
@@ -204,3 +204,30 @@ def test_boolean_value_structures_are_flags() -> None:
     for flag in ("--no-map-public-ip-on-launch", "--map-public-ip-on-launch"):
         [command] = parse_cli([f"aws ec2 modify-subnet-attribute --subnet-id subnet-1 {flag}"])
         assert command.status == "valid", flag
+
+
+def test_core_quote_may_include_section_label() -> None:
+    # 기준선에서 발견: 모델이 "조치 방법 …"처럼 구간 이름까지 인용한다
+    from kompass.evals.grader import is_core_quote
+    from kompass.models import SourceEntry, SourceIndex
+
+    index = SourceIndex(
+        built_at=EVAL_TIME,
+        documents={},
+        kisa={"CA-01": SourceEntry(title="t", page=1, text=KISA_TEXT)},
+        isms_p={},
+    )
+    lookup = SourceLookup(index)
+    assert is_core_quote(lookup, "CA-01", "조치 방법 불필요한 계정 삭제 또는 비활성화")
+    assert is_core_quote(lookup, "CA-01", "불필요한 계정 삭제 또는 비활성화")
+    assert not is_core_quote(lookup, "CA-01", "조치 시 영향 일반적인 경우 영향 없음")
+
+
+def test_account_scoped_writes_are_not_target_judged() -> None:
+    from kompass.evals.grader import _PLACEHOLDER  # noqa: F401  (형식 확인용)
+
+    [command] = parse_cli(
+        ["aws s3control put-public-access-block --account-id 123456789012 "
+         "--public-access-block-configuration BlockPublicAcls=true"]
+    )  # fmt: skip
+    assert command.is_write and "--account-id" in command.text

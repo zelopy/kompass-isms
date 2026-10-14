@@ -898,7 +898,15 @@
 
 ```json
 {
- "errors": []
+ "errors": [
+  {
+   "operation": "s3control:GetPublicAccessBlock",
+   "region": "ap-northeast-2",
+   "error_code": "AccessDenied",
+   "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: s3:GetAccountPublicAccessBlock because no identity-based policy allows the s3:GetAccountPublicAccessBlock action",
+   "resource": null
+  }
+ ]
 }
 ```
 
@@ -911,7 +919,15 @@
 {
  "public_access_block": null,
  "account_public_access_block": null,
- "errors": []
+ "errors": [
+  {
+   "operation": "s3:GetPublicAccessBlock",
+   "region": "ap-northeast-2",
+   "error_code": "AccessDenied",
+   "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: s3:GetBucketPublicAccessBlock because no identity-based policy allows the s3:GetBucketPublicAccessBlock action",
+   "resource": "acme-billing-exports"
+  }
+ ]
 }
 ```
 
@@ -921,7 +937,15 @@
 {
  "public_access_block": null,
  "account_public_access_block": null,
- "errors": []
+ "errors": [
+  {
+   "operation": "s3:GetPublicAccessBlock",
+   "region": "ap-northeast-2",
+   "error_code": "AccessDenied",
+   "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: s3:GetBucketPublicAccessBlock because no identity-based policy allows the s3:GetBucketPublicAccessBlock action",
+   "resource": "acme-hr-documents"
+  }
+ ]
 }
 ```
 

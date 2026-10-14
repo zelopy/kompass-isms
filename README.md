@@ -38,6 +38,11 @@ uv run kompass report --format md --format xlsx
 # LLM 해설 (선택, 비용 발생. ANTHROPIC_API_KEY 필요, 원문 색인을 먼저 만든다: knowledge/SOURCES.md)
 uv run kompass explain --dry-run          # 대상과 예상 비용만 확인
 uv run kompass explain --report md --report xlsx
+
+# 해설 평가셋 (개발용, docs/DECISIONS.md ADR-033)
+uv run python scripts/run_explain_eval.py --provider oracle --variant v0 --reps 1  # 무료 배선 점검
+uv run python scripts/run_explain_eval.py --dry-run                                # 예상 비용
+uv run python scripts/run_explain_eval.py --variant v1                             # 실행 (비용 발생)
 ```
 
 | 옵션 | 설명 |

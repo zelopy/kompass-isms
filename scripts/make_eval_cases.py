@@ -161,10 +161,15 @@ def evaluate(rule_id: str, snapshot: Snapshot, settings: Settings | None = None)
 
 
 def denied(
-    operation: str, region: str | None = "ap-northeast-2", resource: str | None = None
+    operation: str,
+    region: str | None = "ap-northeast-2",
+    resource: str | None = None,
+    action: str | None = None,
 ) -> CollectError:
-    """실제 AccessDenied 메시지 형태 (assumed-role ARN 포함 — 마스킹 경로 시험)."""
-    action = operation
+    """실제 AccessDenied 형태. `operation`은 수집기가 기록하는 API 작업 이름(botocore),
+    `action`은 메시지에 나오는 IAM 권한 이름이다 (S3는 둘이 다르다). 메시지에는 assumed-role
+    ARN이 들어간다 (마스킹 경로 시험)."""
+    action = action or operation
     return CollectError(
         operation=operation,
         region=region,
@@ -410,7 +415,11 @@ def synthetic_cases() -> list[tuple[str, str, str, tuple[str, ...], list[Finding
             s3.snapshot(
                 {b1: s3.details()},
                 account_missing=True,
-                errors=(denied("s3:GetAccountPublicAccessBlock"),),
+                errors=(
+                    denied(
+                        "s3control:GetPublicAccessBlock", action="s3:GetAccountPublicAccessBlock"
+                    ),
+                ),
             ),
         ),
     )
@@ -428,8 +437,16 @@ def synthetic_cases() -> list[tuple[str, str, str, tuple[str, ...], list[Finding
                     b3: s3.details(),
                 },
                 errors=(
-                    denied("s3:GetBucketPublicAccessBlock", resource=b1),
-                    denied("s3:GetBucketPublicAccessBlock", resource=b2),
+                    denied(
+                        "s3:GetPublicAccessBlock",
+                        resource=b1,
+                        action="s3:GetBucketPublicAccessBlock",
+                    ),
+                    denied(
+                        "s3:GetPublicAccessBlock",
+                        resource=b2,
+                        action="s3:GetBucketPublicAccessBlock",
+                    ),
                 ),
             ),
         ),

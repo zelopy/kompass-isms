@@ -18,7 +18,15 @@
    "evidence": {
     "public_access_block": null,
     "account_public_access_block": null,
-    "errors": []
+    "errors": [
+     {
+      "operation": "s3:GetPublicAccessBlock",
+      "region": "ap-northeast-2",
+      "error_code": "AccessDenied",
+      "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: s3:GetBucketPublicAccessBlock because no identity-based policy allows the s3:GetBucketPublicAccessBlock action",
+      "resource": "acme-billing-exports"
+     }
+    ]
    },
    "collected_at": "2026-10-13T12:00:00Z",
    "mappings": null
@@ -33,7 +41,15 @@
    "evidence": {
     "public_access_block": null,
     "account_public_access_block": null,
-    "errors": []
+    "errors": [
+     {
+      "operation": "s3:GetPublicAccessBlock",
+      "region": "ap-northeast-2",
+      "error_code": "AccessDenied",
+      "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: s3:GetBucketPublicAccessBlock because no identity-based policy allows the s3:GetBucketPublicAccessBlock action",
+      "resource": "acme-hr-documents"
+     }
+    ]
    },
    "collected_at": "2026-10-13T12:00:00Z",
    "mappings": null

@@ -301,7 +301,8 @@ def is_core_quote(lookup: SourceLookup, code: str, quote: str) -> bool:
     if entry is None:
         return False
     sections = kisa_sections(entry.text)
-    core = normalize_for_match("".join(sections.get(s, "") for s in CORE_SECTIONS))
+    # 구간 이름까지 인용한 경우("조치 방법 스토리지 …")도 인정한다
+    core = normalize_for_match("\n".join(s + sections[s] for s in CORE_SECTIONS if s in sections))
     needle = normalize_for_match(quote)
     return bool(needle) and needle in core
 
@@ -404,9 +405,13 @@ def grade(outcome: CaseOutcome, golden: Golden, lookup: SourceLookup) -> Grade:
     targets = _targets(group.findings)
     # 점검 권한 부여(ERROR 조치)는 finding 리소스가 아니라 점검 주체를 바꾸므로 제외한다
     writes = [c for c in commands if c.is_write and c.action not in golden.error_actions]
-    # 자리표시자(<...>)만으로 대상을 가리킨 명령은 맞고 틀림을 판단할 수 없어 뺀다
+    # 자리표시자(<...>)만으로 대상을 가리킨 명령과 계정 단위 변경(--account-id)은
+    # 리소스 대상의 맞고 틀림을 판단할 수 없어 뺀다
     writes = [
-        c for c in writes if any(t in c.text for t in targets) or not _PLACEHOLDER.search(c.text)
+        c
+        for c in writes
+        if any(t in c.text for t in targets)
+        or not (_PLACEHOLDER.search(c.text) or "--account-id" in c.text)
     ]
     on_target = [any(t in c.text for t in targets) for c in writes]
 
