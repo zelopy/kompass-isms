@@ -238,3 +238,13 @@
   - 각 finding의 KISA·ISMS-P 코드는 매핑으로 이미 정해져 있다. 코드로 조회하면 검색 오류가 없고 인용 검증(코드·구절이 원문에 있는가)이 단순하며, 무거운 의존성(chromadb, 임베딩 모델)이 필요 없다.
   - 룰 단위로 묶으면 같은 원문을 반복해 보내지 않아 비용이 줄고(실습 계정 기준 호출 28회 → 약 12회), 같은 룰의 해설이 일관된다.
 - 결과: PLAN.md의 RAG 항목을 "항목 코드 단위 색인"으로 바꾼다.
+
+## ADR-030 LLM 공급자 호출 방식과 설정 위치
+- 상태: 채택 (2026-10-14)
+- 결정:
+  - Claude 요청은 구조화된 출력(`beta.messages.parse`, `output_format=RuleExplanationDraft`)으로 받는다. 응답 스키마에는 `status`·`severity` 필드가 없다 (원칙 1, 테스트로 검사). 우선순위(`priority`)는 LLM의 의견이며 룰의 severity를 바꾸지 않는다.
+  - 안전 분류기 거부 시 서버 측 대체 모델(`fallbacks="default"`, beta `server-side-fallback-2026-07-01`)을 기본으로 켠다. 실제로 답한 모델과 대체 여부를 남긴다. 대체 모델까지 거부하면 `LLMRefusal`.
+  - 모델·effort·max_tokens는 `kompass.yaml`의 `llm` 섹션에 둔다 (기본 `claude-opus-5-5`, effort `high`, 16000). LLM 설정은 판정 기준값이 아니므로 findings 파일의 `settings`에서 뺀다 (`Settings.judgment_criteria()`).
+  - API 키는 환경 변수 `ANTHROPIC_API_KEY`로만 받는다. 설정 파일에 키 항목을 두지 않는다.
+  - 실제 API를 부르는 테스트는 `llm` 마커로 기본 실행에서 제외한다 (`pytest -m llm`). 보내는 내용은 가공한 가짜 finding뿐이다.
+- 이유: 판정과 해설 설정을 한 파일에서 관리하되, 판정 재현 정보에 판정과 무관한 값이 섞이지 않게 한다. effort는 인용 정확도를 위해 모델 기본값(medium)보다 높게 잡고, 비용이 문제면 설정으로 낮춘다.

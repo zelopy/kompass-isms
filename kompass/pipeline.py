@@ -92,7 +92,7 @@ def evaluate_scan(scan_path: Path, settings: Settings) -> tuple[ScanManifest, Ev
         account_id=manifest.account_id,
         kompass_version=version("kompass-isms"),
         evaluated_at=datetime.now(UTC),
-        settings=settings.model_dump(mode="json"),
+        settings=settings.judgment_criteria(),
         skipped_rules=result.skipped,
         findings=result.findings,
     )

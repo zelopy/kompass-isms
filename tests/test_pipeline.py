@@ -65,6 +65,7 @@ def test_collect_and_evaluate_selected_services(aws: None, store: SnapshotStore)
     assert {f.rule_id for f in report.findings} >= {"SG-001", "VPC-001"}
     assert "CT-001" in report.skipped_rules  # 수집하지 않은 서비스는 PASS가 아니라 건너뜀
     assert report.settings["ec2"]["admin_ports"] == [22, 3389]
+    assert "llm" not in report.settings  # LLM 설정은 판정 기준값이 아니다
 
 
 def test_collect_all_services_by_default(

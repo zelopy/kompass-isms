@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "anthropic>=1.13.0",
     "boto3>=1.35",
     "openpyxl>=3.1",
     "pydantic>=2.9",
@@ -79,7 +80,8 @@ warn_required_dynamic_aliases = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = ["-ra", "--strict-markers", "--strict-config", "-m", "not lab"]
+addopts = ["-ra", "--strict-markers", "--strict-config", "-m", "not lab and not llm"]
 markers = [
     "lab: 실제 실습 AWS 계정을 읽기 전용으로 스캔한다. 기본 실행에서 제외, pytest -m lab으로 실행",
+    "llm: 실제 Claude API를 호출한다 (비용 발생, ANTHROPIC_API_KEY 필요). 기본 실행에서 제외, pytest -m llm으로 실행",
 ]

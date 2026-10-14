@@ -5,9 +5,10 @@
 """
 
 from pathlib import Path
+from typing import Any, Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 
 class _Section(BaseModel):
@@ -46,11 +47,25 @@ class IamSettings(_Section):
     password_policy: PasswordPolicySettings = PasswordPolicySettings()
 
 
+class LlmSettings(_Section):
+    """LLM 해설 설정 (3단계, ADR-029). 판정에는 쓰이지 않으므로 판정 결과 파일에 남기지 않는다."""
+
+    model: str = "claude-opus-5-5"
+    # 추론 깊이. 인용 정확도가 중요해 high를 기본으로 한다 (모델 기본값은 medium)
+    effort: Literal["low", "medium", "high", "xhigh", "max"] = "high"
+    max_tokens: int = Field(default=16000, ge=1024)
+
+
 class Settings(_Section):
     cloudtrail: CloudTrailSettings = CloudTrailSettings()
     ec2: Ec2Settings = Ec2Settings()
     s3: S3Settings = S3Settings()
     iam: IamSettings = IamSettings()
+    llm: LlmSettings = LlmSettings()
+
+    def judgment_criteria(self) -> dict[str, Any]:
+        """판정 결과 파일에 남길 판정 기준값. LLM 설정은 판정과 무관하므로 뺀다."""
+        return self.model_dump(mode="json", exclude={"llm"})
 
 
 class ConfigError(Exception):

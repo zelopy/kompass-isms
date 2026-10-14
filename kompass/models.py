@@ -267,6 +267,42 @@ class SourceIndex(_Frozen):
     isms_p: dict[str, SourceEntry]  # "2.5.3" → 원문
 
 
+# --- LLM 해설 (3단계) ---
+# LLM 응답 스키마에는 판정 상태(status) 필드를 두지 않는다 (원칙 1). 판정은 룰이 이미 내렸고,
+# LLM은 그 결과를 설명·우선순위화·조치안 작성만 한다. 우선순위는 의견이며 severity를 바꾸지 않는다.
+
+
+class Citation(_Frozen):
+    """해설의 근거로 인용한 기준 문서 구절. 코드와 구절이 원문 색인에 있어야 검증된다."""
+
+    scheme: Literal["kisa", "isms_p"]
+    code: str  # "CA-03", "2.5.3"
+    quote: str  # 원문을 그대로 옮긴 구절
+
+
+class Remediation(_Frozen):
+    steps: list[str]  # 사람이 따라 할 조치 절차
+    aws_cli: list[str]  # 조치 명령 예시 (실행은 사람이 판단한다)
+    terraform: str | None  # Terraform 수정 예시. 해당 없으면 null
+
+
+class ResourceNote(_Frozen):
+    finding_key: str  # `Finding.key` (마스킹된 값)
+    note: str  # 이 리소스에만 해당하는 설명
+
+
+class RuleExplanationDraft(_Frozen):
+    """룰 하나(조치가 필요한 finding 묶음)에 대한 LLM 응답. 마스킹된 상태 그대로다."""
+
+    summary: str  # 무엇이 문제인지
+    risk: str  # 방치했을 때의 위험
+    priority: Literal["critical", "high", "medium", "low"]  # 조치 우선순위 의견
+    priority_reason: str
+    citations: list[Citation]
+    remediation: Remediation
+    resource_notes: list[ResourceNote]
+
+
 _PRECEDENCE = (Status.FAIL, Status.ERROR, Status.REVIEW)
 
 
