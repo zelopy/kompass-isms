@@ -83,6 +83,7 @@ def evaluate(
         if foreign:
             raise RuntimeError(f"{rule.id}가 다른 룰 ID의 finding을 냈다: {sorted(foreign)}")
         findings.extend(produced)
+    _require_unique_keys(findings)
     return Evaluation(findings=tuple(findings), skipped=tuple(skipped))
 
 
@@ -92,3 +93,12 @@ def _require_unique_ids(rules: Sequence[BaseRule]) -> None:
         if rule.id in seen:
             raise ValueError(f"룰 ID가 중복된다: {rule.id}")
         seen.add(rule.id)
+
+
+def _require_unique_keys(findings: Sequence[Finding]) -> None:
+    """finding 식별자(`Finding.key`)는 점검 안에서 유일해야 한다. 해설을 붙일 때 기준이 된다."""
+    seen: set[str] = set()
+    for finding in findings:
+        if finding.key in seen:
+            raise RuntimeError(f"finding 식별자가 중복된다: {finding.key}")
+        seen.add(finding.key)

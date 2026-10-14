@@ -56,6 +56,13 @@ class _WrongIdRule(_PassRule):
         return [Finding.model_validate({**finding.model_dump(), "rule_id": "TST-999"})]
 
 
+class _DuplicateKeyRule(_PassRule):
+    id: ClassVar[str] = "TST-004"
+
+    def evaluate(self, snapshot: Snapshot, settings: Settings) -> list[Finding]:
+        return super().evaluate(snapshot, settings) * 2
+
+
 # --- 실행기 ---
 
 
@@ -84,6 +91,22 @@ def test_rule_must_emit_at_least_one_finding() -> None:
 def test_rule_must_emit_its_own_id() -> None:
     with pytest.raises(RuntimeError, match="TST-003"):
         evaluate({"test": _snapshot("test")}, Settings(), rules=(_WrongIdRule(),))
+
+
+def test_finding_key_identifies_rule_region_resource() -> None:
+    [finding] = evaluate({"test": _snapshot("test")}, Settings(), rules=(_PassRule(),)).findings
+    assert finding.key == "TST-001:-:account"  # 전역 리소스는 리전 자리에 "-"
+    regional = Finding.model_validate(
+        {**finding.model_dump(), "region": "ap-northeast-2", "resource": "sg-1"}
+    )
+    assert regional.key == "TST-001:ap-northeast-2:sg-1"
+    assert "key" not in finding.model_dump()  # 저장 형식은 바뀌지 않는다
+
+
+def test_duplicate_finding_keys_rejected() -> None:
+    # 해설을 finding에 다시 붙이는 기준이므로 점검 안에서 유일해야 한다
+    with pytest.raises(RuntimeError, match="TST-004:-:account"):
+        evaluate({"test": _snapshot("test")}, Settings(), rules=(_DuplicateKeyRule(),))
 
 
 def test_duplicate_rule_ids_rejected() -> None:

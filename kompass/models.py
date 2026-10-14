@@ -145,6 +145,14 @@ class Finding(_Frozen):
     collected_at: UtcDatetime
     mappings: Mappings | None = None
 
+    @property
+    def key(self) -> str:
+        """점검 안에서 finding 하나를 가리키는 식별자 `룰:리전:리소스` (저장하지 않는다).
+
+        LLM 해설을 finding에 다시 붙일 때 쓴다. 전역 리소스는 리전 자리에 `-`를 쓴다.
+        """
+        return f"{self.rule_id}:{self.region or '-'}:{self.resource}"
+
     def with_mappings(self, mappings: Mappings) -> Self:
         """매핑을 붙인 새 finding을 돌려준다. 나머지 필드는 그대로 다시 검증한다."""
         return self.model_validate({**self.model_dump(), "mappings": mappings})
