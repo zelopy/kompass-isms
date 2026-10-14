@@ -396,3 +396,20 @@ class EvalCase(_Frozen):
     rule_id: RuleId
     tags: tuple[str, ...]
     findings: tuple[Finding, ...]
+
+
+class GoldenRule(_Frozen):
+    """룰 하나의 조치 정답 (`evals/explain/golden.yaml`)."""
+
+    fail: tuple[str, ...] = ()  # FAIL을 해소하는 작업 ("서비스:작업", botocore 이름)
+    review: tuple[str, ...] = ()  # REVIEW를 확인·조치하는 작업. 비어 있으면 fail을 쓴다
+    example: str  # 정답 예시 명령. {resource}는 대상 리소스 이름으로 바뀐다
+
+    def actions_for(self, status: Status) -> tuple[str, ...]:
+        return (self.review or self.fail) if status == Status.REVIEW else self.fail
+
+
+class Golden(_Frozen):
+    error_actions: tuple[str, ...]  # ERROR(수집 실패)를 해소하는 작업: 점검 권한 부여
+    error_example: str
+    rules: dict[str, GoldenRule]

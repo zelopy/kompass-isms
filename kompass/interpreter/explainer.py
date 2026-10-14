@@ -55,7 +55,7 @@ class RuleGroup:
 
 
 @dataclass(frozen=True)
-class _Prepared:
+class PreparedRequest:
     masker: Masker
     prompt: str
     allowed: frozenset[tuple[SourceScheme, str]]
@@ -92,7 +92,7 @@ def explain_report(
     failures: list[ExplanationFailure] = []
     total = Usage(0, 0, 0, 0)
     cost: float | None = 0.0
-    names = _report_names(report)
+    names = report_names(report)
     for group in select_groups(report):
         if on_progress:
             on_progress(group.rule_id)
@@ -134,13 +134,13 @@ def estimate_explanation(
 
     토큰 계산에도 마스킹한 프롬프트만 보낸다.
     """
-    names = _report_names(report)
+    names = report_names(report)
     prompts: list[str] = []
     blocked: list[str] = []
     groups = select_groups(report)
     for group in groups:
         try:
-            prompts.append(_prepare(group, lookup, names).prompt)
+            prompts.append(prepare_request(group, lookup, names).prompt)
         except MaskingError:
             blocked.append(group.rule_id)
     input_tokens = sum(
@@ -164,7 +164,7 @@ def estimate_explanation(
 def _explain_group(
     group: RuleGroup, provider: LLMProvider, lookup: SourceLookup, names: tuple[str, ...]
 ) -> tuple[RuleExplanation, list[tuple[str, Usage]]]:
-    prepared = _prepare(group, lookup, names)
+    prepared = prepare_request(group, lookup, names)
     prompt = prepared.prompt
     usages: list[tuple[str, Usage]] = []
     fallback_used = False
@@ -172,7 +172,7 @@ def _explain_group(
         response = provider.complete(SYSTEM_PROMPT, prompt, RuleExplanationDraft)
         usages.append((response.model, response.usage))
         fallback_used = fallback_used or response.fallback_used
-        problems = _check(response.parsed, prepared, lookup)
+        problems = check_draft(response.parsed, prepared, lookup)
         if not problems or attempt == MAX_ATTEMPTS:
             break
         prompt = prepared.prompt + _feedback(problems)
@@ -204,12 +204,14 @@ def _raw(finding: Finding) -> dict[str, Any]:
     }
 
 
-def _report_names(report: AuditReport) -> tuple[str, ...]:
+def report_names(report: AuditReport) -> tuple[str, ...]:
     """보고서 전체 finding의 이름. 다른 finding의 이름이 증적에서 참조되기 때문이다."""
     return Masker.for_values(_raw(f) for f in report.findings).names
 
 
-def _prepare(group: RuleGroup, lookup: SourceLookup, names: tuple[str, ...]) -> _Prepared:
+def prepare_request(
+    group: RuleGroup, lookup: SourceLookup, names: tuple[str, ...]
+) -> PreparedRequest:
     shown = group.findings[:MAX_FINDINGS_PER_REQUEST]
     raw = [_raw(f) for f in shown]
     masker = Masker(names)
@@ -242,7 +244,7 @@ def _prepare(group: RuleGroup, lookup: SourceLookup, names: tuple[str, ...]) -> 
     }
     body = json.dumps(payload, ensure_ascii=False, indent=1, sort_keys=True)
     prompt = f"다음 룰의 finding을 해설한다.\n\n```json\n{body}\n```"
-    return _Prepared(
+    return PreparedRequest(
         masker=masker,
         prompt=prompt,
         allowed=frozenset(allowed),
@@ -266,7 +268,9 @@ def _require_masked(masker: Masker, findings: Sequence[Finding], text: str) -> N
         raise MaskingError(f"마스킹 검증 실패로 전송하지 않음 ({', '.join(reasons)})")
 
 
-def _check(draft: RuleExplanationDraft, prepared: _Prepared, lookup: SourceLookup) -> list[str]:
+def check_draft(
+    draft: RuleExplanationDraft, prepared: PreparedRequest, lookup: SourceLookup
+) -> list[str]:
     problems: list[str] = []
     if not draft.citations:
         problems.append("인용이 없음. sources의 원문에서 근거 구절을 하나 이상 인용해야 함")

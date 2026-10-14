@@ -1,0 +1,146 @@
+# 해설 평가 정답: 룰·상태별로 "finding을 해소(또는 확인)하는 API 작업" (ADR-033)
+#
+# - 작업 이름은 botocore 형식 "서비스:작업" (예: ec2:RevokeSecurityGroupIngress). 테스트가 실제로 있는지 검사한다.
+# - fail: FAIL finding을 해소하는 작업. review: REVIEW finding을 사람이 확인·조치하는 작업 (없으면 fail을 쓴다).
+# - ERROR finding은 룰과 무관하게 error_actions(점검 권한 부여) 또는 거부됐던 조회 작업의 재실행이면 정답이다.
+# - example: 정답 예시 명령. 오라클 해설에 쓰며, 채점기가 유효하다고 판정해야 한다 (테스트로 검사).
+#   {resource}는 케이스의 대상 리소스 이름(ARN이면 마지막 구간)으로 바뀐다.
+#
+# 인용 정답은 여기 두지 않는다. KISA 매핑이 있는 룰은 그 항목의 판단 기준·조치 방법·점검 및 조치 사례
+# 구간을, KISA 매핑이 없는 룰은 매핑된 ISMS-P 통제 본문을 인용해야 한다 (채점기 규칙).
+
+error_actions:
+  - iam:AttachRolePolicy
+  - iam:PutRolePolicy
+  - iam:AttachUserPolicy
+  - iam:PutUserPolicy
+  - iam:AttachGroupPolicy
+  - iam:PutGroupPolicy
+error_example: >-
+  aws iam attach-role-policy --role-name kompass-audit-role
+  --policy-arn arn:aws:iam::aws:policy/SecurityAudit
+
+rules:
+  CT-001:
+    fail: [cloudtrail:CreateTrail, cloudtrail:UpdateTrail, cloudtrail:StartLogging, cloudtrail:PutEventSelectors]
+    example: >-
+      aws cloudtrail create-trail --name org-audit-trail --s3-bucket-name audit-log-bucket
+      --is-multi-region-trail
+  IAM-001:
+    # 루트 MFA는 루트로 콘솔에서 설정한다. CLI로는 설정 확인까지만 가능
+    fail: [iam:GetAccountSummary, iam:CreateVirtualMFADevice, iam:EnableMFADevice]
+    example: aws iam get-account-summary --query SummaryMap.AccountMFAEnabled
+  IAM-002:
+    fail: [iam:DeleteAccessKey, iam:UpdateAccessKey, iam:GetAccountSummary]
+    example: aws iam get-account-summary --query SummaryMap.AccountAccessKeysPresent
+  IAM-003:
+    fail: [iam:CreateVirtualMFADevice, iam:EnableMFADevice, iam:DeleteLoginProfile]
+    example: aws iam delete-login-profile --user-name {resource}
+  IAM-004:
+    fail: [iam:UpdateAccountPasswordPolicy]
+    example: >-
+      aws iam update-account-password-policy --minimum-password-length 10
+      --require-uppercase-characters --require-lowercase-characters --require-numbers --require-symbols
+  IAM-005:
+    fail: [iam:DeleteLoginProfile, iam:UpdateAccessKey, iam:DeleteAccessKey, iam:DeleteUser]
+    example: aws iam delete-login-profile --user-name {resource}
+  IAM-006:
+    fail: [iam:CreateAccessKey, iam:UpdateAccessKey, iam:DeleteAccessKey]
+    example: aws iam update-access-key --user-name {resource} --access-key-id <액세스_키_ID> --status Inactive
+  IAM-007:
+    fail: [iam:DetachUserPolicy, iam:DeleteUserPolicy, iam:RemoveUserFromGroup, iam:DetachGroupPolicy]
+    review:
+      - iam:DetachUserPolicy
+      - iam:DeleteUserPolicy
+      - iam:RemoveUserFromGroup
+      - iam:DetachGroupPolicy
+      - iam:GetPolicyVersion
+      - iam:GetUserPolicy
+      - iam:ListAttachedUserPolicies
+      - iam:ListGroupsForUser
+      - iam:SimulatePrincipalPolicy
+    example: >-
+      aws iam detach-user-policy --user-name {resource}
+      --policy-arn arn:aws:iam::aws:policy/AdministratorAccess
+  IAM-008:
+    review: [cloudtrail:LookupEvents, iam:GenerateCredentialReport, iam:GetCredentialReport]
+    example: >-
+      aws cloudtrail lookup-events --lookup-attributes AttributeKey=Username,AttributeValue=root
+      --max-results 50
+  IAM-009:
+    review:
+      - iam:GetSAMLProvider
+      - iam:ListSAMLProviders
+      - iam:GetOpenIDConnectProvider
+      - iam:ListOpenIDConnectProviders
+      - iam:ListRoles
+      - iam:GetRole
+      - sso-admin:ListInstances
+      - sso-admin:ListPermissionSets
+    example: aws iam list-saml-providers
+  S3-001:
+    fail: [s3control:PutPublicAccessBlock]
+    example: >-
+      aws s3control put-public-access-block --account-id 123456789012
+      --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+  S3-002:
+    fail: [s3:PutPublicAccessBlock, s3control:PutPublicAccessBlock]
+    example: >-
+      aws s3api put-public-access-block --bucket {resource}
+      --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+  S3-003:
+    fail: [s3:PutBucketPolicy, s3:DeleteBucketPolicy, s3:PutPublicAccessBlock, s3control:PutPublicAccessBlock]
+    example: aws s3api delete-bucket-policy --bucket {resource}
+  S3-004:
+    fail: [s3:PutBucketEncryption]
+    example: >-
+      aws s3api put-bucket-encryption --bucket {resource}
+      --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"aws:kms"}}]}'
+  S3-005:
+    fail: [s3:PutBucketLogging]
+    example: >-
+      aws s3api put-bucket-logging --bucket {resource}
+      --bucket-logging-status '{"LoggingEnabled":{"TargetBucket":"log-bucket","TargetPrefix":"s3/"}}'
+  S3-006:
+    fail: [s3:PutBucketAcl, s3:PutBucketOwnershipControls, s3:PutPublicAccessBlock, s3control:PutPublicAccessBlock]
+    example: aws s3api put-bucket-acl --bucket {resource} --acl private
+  SG-001:
+    fail: [ec2:RevokeSecurityGroupIngress, ec2:ModifySecurityGroupRules]
+    example: >-
+      aws ec2 revoke-security-group-ingress --group-id {resource} --protocol tcp --port 22
+      --cidr 0.0.0.0/0
+  SG-002:
+    fail: [ec2:RevokeSecurityGroupIngress, ec2:ModifySecurityGroupRules]
+    example: >-
+      aws ec2 revoke-security-group-ingress --group-id {resource}
+      --ip-permissions IpProtocol=-1,IpRanges=[{CidrIp=0.0.0.0/0}]
+  SG-003:
+    fail: [ec2:RevokeSecurityGroupIngress, ec2:ModifySecurityGroupRules]
+    example: >-
+      aws ec2 revoke-security-group-ingress --group-id {resource} --protocol tcp --port 3306
+      --cidr 0.0.0.0/0
+  SG-004:
+    fail:
+      - ec2:RevokeSecurityGroupIngress
+      - ec2:RevokeSecurityGroupEgress
+      - ec2:ModifyNetworkInterfaceAttribute
+      - ec2:ModifyInstanceAttribute
+    example: >-
+      aws ec2 revoke-security-group-ingress --group-id {resource}
+      --ip-permissions IpProtocol=-1,UserIdGroupPairs=[{GroupId={resource}}]
+  VPC-001:
+    fail:
+      - ec2:CreateSubnet
+      - ec2:CreateRouteTable
+      - ec2:AssociateRouteTable
+      - ec2:ReplaceRouteTableAssociation
+      - ec2:CreateNatGateway
+    example: aws ec2 create-subnet --vpc-id {resource} --cidr-block 10.0.128.0/24
+  VPC-002:
+    review:
+      - ec2:DisassociateAddress
+      - ec2:ReleaseAddress
+      - ec2:ModifyNetworkInterfaceAttribute
+      - ec2:DescribeNetworkInterfaces
+      - ec2:DescribeAddresses
+    example: aws ec2 describe-network-interfaces --network-interface-ids {resource}
