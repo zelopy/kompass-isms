@@ -199,6 +199,7 @@ reports/
 - 기본 리전은 `--region` → 프로필 리전 순서로 정하고, 없으면 중단한다. 다른 파티션에서 틀릴 수 있으므로 몰래 대체하지 않는다.
 - 점검 리전은 `DescribeRegions(AllRegions=True)`의 활성 리전(`opt-in-not-required`, `opted-in`) 중에서 고른다. `--regions`에 알 수 없거나 비활성인 리전이 있으면 점검 전에 중단한다.
 - 세션 단계 실패는 `SessionError`로 실행을 중단한다. 계정 ID조차 모르는 상태라 스냅샷을 만들 수 없기 때문이다. 개별 API의 권한 오류를 ERROR finding으로 기록하는 것(ADR-005)과 구분한다.
+- `--regions`를 지정하지 않으면 리전마다 EC2 조회(`DescribeVpcs`)를 동시에 한 번 시도한다. 기본 리전은 되는데 접근이 거부되는 리전(`AccessDenied`, `UnauthorizedOperation` 등, SCP 리전 제한)은 점검 범위에서 빼고 `scan.json`의 `excluded_regions`와 보고서에 "점검 범위 밖"으로 남긴다. 기본 리전까지 거부되면 권한 부족이므로 빼지 않는다. 직접 지정한 리전은 확인하지도 빼지도 않는다 (ADR-028).
 - `--regions`는 리전 리소스(EC2·VPC 등)에만 적용한다. S3 버킷은 버킷 목록이 전역이므로 리전과 관계없이 모두 점검하고 버킷 리전을 증적에 남긴다. IAM과 계정 단위 설정은 전역이다.
 - 모든 client는 점검 도구용 기본 설정을 쓴다: 재시도 `standard` 방식 최대 10회(호출 제한 대응), 연결 대기 10초, 요청 식별자 `kompass/<버전>`. 요청 식별자로 점검 대상 계정의 CloudTrail에서 kompass의 호출을 구분할 수 있다.
 - `expected_account_id`(CLI `--account-id`)를 주면 실제 계정이 다를 때 중단한다. 엉뚱한 프로필로 다른 계정을 점검하는 실수를 막는다.
