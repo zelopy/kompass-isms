@@ -44,7 +44,7 @@ class Ct001MultiRegionTrail(BaseRule):
                 self._account_finding(
                     snapshot,
                     Status.ERROR,
-                    "CloudTrail 추적 목록을 수집하지 못했다",
+                    "CloudTrail 추적 목록을 수집하지 못함",
                     {"errors": errors_evidence(errors_for(snapshot, "cloudtrail:DescribeTrails"))},
                 )
             ]
@@ -64,7 +64,7 @@ class Ct001MultiRegionTrail(BaseRule):
                 self._account_finding(
                     snapshot,
                     Status.PASS,
-                    f"조건을 만족하는 멀티 리전 추적이 있다: {', '.join(passing)}",
+                    f"조건을 만족하는 멀티 리전 추적이 있음: {', '.join(passing)}",
                     evidence,
                 )
             ]
@@ -75,14 +75,14 @@ class Ct001MultiRegionTrail(BaseRule):
                 self._account_finding(
                     snapshot,
                     Status.ERROR,
-                    f"멀티 리전 추적의 상태를 확인하지 못했다: {', '.join(unknown)}",
+                    f"멀티 리전 추적의 상태를 확인하지 못함: {', '.join(unknown)}",
                     evidence,
                 )
             ]
         message = (
-            "CloudTrail 추적이 없다"
+            "CloudTrail 추적이 없음"
             if not assessed
-            else "조건(멀티 리전, 로깅 중, 관리 이벤트 기록)을 만족하는 추적이 없다"
+            else "조건(멀티 리전, 로깅 중, 관리 이벤트 기록)을 만족하는 추적이 없음"
         )
         return [self._account_finding(snapshot, Status.FAIL, message, evidence)]
 
@@ -114,18 +114,18 @@ def _assess(trail: dict[str, Any], data: dict[str, Any], require_read: bool) -> 
 
     reasons: list[str] = []
     if not multi:
-        reasons.append("멀티 리전 추적이 아니다")
+        reasons.append("멀티 리전 추적이 아님")
     if status is None:
-        reasons.append("로깅 상태를 수집하지 못했다")
+        reasons.append("로깅 상태를 수집하지 못함")
     elif status.get("IsLogging") is not True:
-        reasons.append("로깅이 중지되어 있다")
+        reasons.append("로깅이 중지되어 있음")
     if coverage is None:
-        reasons.append("이벤트 선택기를 수집하지 못했다")
+        reasons.append("이벤트 선택기를 수집하지 못함")
     else:
         if not coverage.write:
-            reasons.append("관리 이벤트(쓰기)를 기록하지 않는다")
+            reasons.append("관리 이벤트(쓰기)를 기록하지 않음")
         if require_read and not coverage.read:
-            reasons.append("관리 이벤트(읽기)를 기록하지 않는다")
+            reasons.append("관리 이벤트(읽기)를 기록하지 않음")
 
     if not reasons:
         result = "pass"

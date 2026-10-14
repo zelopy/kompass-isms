@@ -53,8 +53,8 @@ def _excluded_notice(report: AuditReport) -> list[str]:
         return []
     lines = [
         f"> **점검 범위 밖 리전 {len(excluded)}개**: 리전 전체가 접근 거부되어(SCP 리전 제한 등) "
-        "EC2·VPC를 점검하지 않았다. 이 리전의 리소스는 양호가 아니라 확인하지 않은 것이다. "
-        "예외 권한으로 만든 리소스가 있을 수 있으니 필요하면 해당 리전 권한으로 다시 점검한다.",
+        "EC2·VPC를 점검하지 않음. 이 리전의 리소스는 양호가 아니라 확인하지 않은 것임. "
+        "예외 권한으로 만든 리소스가 있을 수 있으므로 필요 시 해당 리전 권한으로 재점검 필요.",
         "",
     ]
     lines += [f"- {_cell(region)}: {_cell(reason)}" for region, reason in excluded.items()]
@@ -94,7 +94,7 @@ def _explanation_rule(item: RuleExplanation) -> list[str]:
         f'- {SCHEME_LABELS[c.scheme]} {_text(c.code)}: "{_text(c.quote)}"' for c in draft.citations
     ] or ["- 없음"]
     if item.problems:
-        lines += ["", "검증 문제 (인용을 그대로 믿지 않는다):", ""]
+        lines += ["", "검증 문제 (인용을 그대로 믿지 않음):", ""]
         lines += [f"- {_text(p)}" for p in item.problems]
     lines += ["", "조치 절차:", ""]
     lines += [f"{n}. {_text(step)}" for n, step in enumerate(draft.remediation.steps, start=1)]
@@ -194,7 +194,7 @@ def render_markdown(report: AuditReport) -> str:
         "## KISA 항목별 결과",
         "",
         "2026 주요정보통신기반시설 기술적 취약점 분석·평가 방법 상세가이드 XII. 클라우드 기준. "
-        "partial 항목은 자동 점검만으로 양호가 되지 않는다.",
+        "partial 항목은 자동 점검만으로 양호가 되지 않음.",
         "",
         "| 코드 | 항목 | 중요도 | 분류 | 결과 | 룰 | finding |",
         "|---|---|---|---|---|---|---|",
@@ -218,7 +218,7 @@ def render_markdown(report: AuditReport) -> str:
         f for f in report.findings if f.status in ACTION_STATUSES and f.mappings and f.mappings.kisa
     ]
     if not actionable:
-        lines.append("조치가 필요한 결과가 없다.")
+        lines.append("조치가 필요한 결과가 없음.")
     for item in report.kisa_items:
         selected = [f for f in actionable if f.mappings and item.code in f.mappings.kisa]
         if selected:
@@ -240,7 +240,7 @@ def render_markdown(report: AuditReport) -> str:
         if flagged:
             lines += ["", *_finding_rows(flagged)]
     else:
-        lines.append("결과가 없다.")
+        lines.append("결과가 없음.")
 
     lines += _explanation_section(report)
 
@@ -250,8 +250,8 @@ def render_markdown(report: AuditReport) -> str:
         "",
         "## ISMS-P 통제항목 (초안)",
         "",
-        "자동 점검 결과는 통제항목 충족 여부의 참고 증적이다. 관리 절차를 포함하므로 자동으로 "
-        "양호가 되지 않는다. 매핑은 원문 검증 전 초안이다.",
+        "자동 점검 결과는 통제항목 충족 여부의 참고 증적임. 관리 절차를 포함하므로 자동으로 "
+        "양호가 되지 않음. 매핑은 원문 검증 전 초안임.",
         "",
         "| 번호 | 통제항목 | 결과 | KISA 항목 | 룰 |",
         "|---|---|---|---|---|",
@@ -270,8 +270,8 @@ def render_markdown(report: AuditReport) -> str:
 
     lines += ["", "## 건너뛴 룰", ""]
     lines.append(
-        "스냅샷이 없어 실행하지 않은 룰 (양호가 아니다): " + ", ".join(evaluation.skipped_rules)
+        "스냅샷이 없어 실행하지 않은 룰 (양호가 아님): " + ", ".join(evaluation.skipped_rules)
         if evaluation.skipped_rules
-        else "없다."
+        else "없음."
     )
     return "\n".join(lines) + "\n"

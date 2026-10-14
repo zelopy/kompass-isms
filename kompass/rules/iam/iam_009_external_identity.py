@@ -56,13 +56,13 @@ class Iam009ExternalIdentity(BaseRule):
                     self,
                     snapshot,
                     Status.ERROR,
-                    "외부 자격증명 공급자 조회 중 실패한 곳이 있다",
+                    "외부 자격증명 공급자 조회 중 실패한 곳이 있음",
                     {"errors": errors},
                 )
             ]
         return [
             _iam.account_finding(
-                self, snapshot, Status.NOT_APPLICABLE, "외부 자격증명 공급자가 없다", {}
+                self, snapshot, Status.NOT_APPLICABLE, "외부 자격증명 공급자가 없음", {}
             )
         ]
 
@@ -75,7 +75,7 @@ class Iam009ExternalIdentity(BaseRule):
             region=None,
             status=Status.REVIEW,
             message=(
-                f"외부 자격증명 공급자로 로그인하는 사용자의 MFA는 IdP에서 확인해야 한다 ({kind})"
+                f"외부 자격증명 공급자로 로그인하는 사용자의 MFA는 IdP에서 확인해야 함 ({kind})"
             ),
             evidence={"kind": kind, **extra},
         )

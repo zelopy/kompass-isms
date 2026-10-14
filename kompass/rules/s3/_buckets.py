@@ -63,7 +63,7 @@ class BucketRule(BaseRule):
                     resource=ACCOUNT_RESOURCE,
                     region=None,
                     status=Status.ERROR,
-                    message="S3 버킷 목록을 수집하지 못했다",
+                    message="S3 버킷 목록을 수집하지 못함",
                     evidence={"errors": errors_evidence(errors_for(snapshot, "s3:ListBuckets"))},
                 )
             ]
@@ -74,7 +74,7 @@ class BucketRule(BaseRule):
                     resource=ACCOUNT_RESOURCE,
                     region=None,
                     status=Status.NOT_APPLICABLE,
-                    message="S3 버킷이 없다",
+                    message="S3 버킷이 없음",
                     evidence={},
                 )
             ]
@@ -115,6 +115,6 @@ class BucketRule(BaseRule):
             name,
             region,
             Status.ERROR,
-            f"{what}을(를) 수집하지 못했다: {name}",
+            f"{what}을(를) 수집하지 못함: {name}",
             {"errors": errors_evidence(errors_for(snapshot, operation, name))},
         )

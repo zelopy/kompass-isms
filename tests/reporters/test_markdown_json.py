@@ -23,7 +23,7 @@ def test_json_keeps_korean_readable() -> None:
 
 
 def test_disclaimers() -> None:
-    assert "인증 심사 결과를 보장하지 않는다" in MD
+    assert "인증 심사 결과를 보장하지 않음" in MD
     assert "ISMS-P 매핑은 원문 검증 전 초안" in MD
 
 
@@ -92,7 +92,7 @@ def test_skipped_rules() -> None:
 
 def test_empty_report_renders() -> None:
     text = render_markdown(sample_report())
-    assert "조치가 필요한 결과가 없다" in text
+    assert "조치가 필요한 결과가 없음" in text
 
 
 def test_excluded_regions_are_shown_as_out_of_scope() -> None:

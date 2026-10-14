@@ -31,7 +31,7 @@ class OpenPortRule(BaseRule):
                         snapshot,
                         region,
                         Status.ERROR,
-                        "보안그룹 목록을 수집하지 못했다",
+                        "보안그룹 목록을 수집하지 못함",
                         {"errors": net.region_errors(snapshot, region, ("security_groups",))},
                     )
                 )
@@ -39,7 +39,7 @@ class OpenPortRule(BaseRule):
             if not groups:
                 findings.append(
                     self._region_finding(
-                        snapshot, region, Status.NOT_APPLICABLE, "보안그룹이 없다", {}
+                        snapshot, region, Status.NOT_APPLICABLE, "보안그룹이 없음", {}
                     )
                 )
                 continue
@@ -87,7 +87,7 @@ class OpenPortRule(BaseRule):
         if open_rules:
             status, message = Status.FAIL, f"{self._violation}: {group_id}"
         else:
-            status, message = Status.PASS, f"{self._violation} 규칙이 없다: {group_id}"
+            status, message = Status.PASS, f"{self._violation} 규칙이 없음: {group_id}"
         return self.finding(
             snapshot,
             resource=group_id,

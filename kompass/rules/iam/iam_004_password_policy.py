@@ -48,7 +48,7 @@ class Iam004PasswordPolicy(BaseRule):
             evidence["character_types"] = 0
             return [
                 _iam.account_finding(
-                    self, snapshot, Status.FAIL, "비밀번호 정책이 설정되지 않았다", evidence
+                    self, snapshot, Status.FAIL, "비밀번호 정책이 설정되지 않음", evidence
                 )
             ]
 
@@ -58,11 +58,11 @@ class Iam004PasswordPolicy(BaseRule):
         required = {3: criteria.min_length_three_types, 2: criteria.min_length_two_types}.get(types)
         if required is not None and length >= required:
             status = Status.PASS
-            message = f"비밀번호 정책이 기준을 충족한다 ({types}종 {length}자)"
+            message = f"비밀번호 정책이 기준을 충족함 ({types}종 {length}자)"
         elif required is None:
             status = Status.FAIL
-            message = f"요구 문자 종류가 부족하다 ({types}종, 2종 이상 필요)"
+            message = f"요구 문자 종류가 부족함 ({types}종, 2종 이상 필요)"
         else:
             status = Status.FAIL
-            message = f"최소 길이가 부족하다 ({types}종 {length}자, {required}자 이상 필요)"
+            message = f"최소 길이가 부족함 ({types}종 {length}자, {required}자 이상 필요)"
         return [_iam.account_finding(self, snapshot, status, message, evidence)]

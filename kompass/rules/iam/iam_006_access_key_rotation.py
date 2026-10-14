@@ -26,7 +26,7 @@ class Iam006AccessKeyRotation(BaseRule):
         if not keys:
             return [
                 _iam.account_finding(
-                    self, snapshot, Status.NOT_APPLICABLE, "활성 액세스 키가 없다", {}
+                    self, snapshot, Status.NOT_APPLICABLE, "활성 액세스 키가 없음", {}
                 )
             ]
         limit = settings.iam.access_key_rotation_days
@@ -38,11 +38,11 @@ class Iam006AccessKeyRotation(BaseRule):
         days = None if when is None else _iam.days_between(when, snapshot.collected_at)
         label = f"{row['user']} access_key_{slot}"
         if days is None:
-            status, message = Status.ERROR, f"액세스 키의 교체일을 확인하지 못했다: {label}"
+            status, message = Status.ERROR, f"액세스 키의 교체일을 확인하지 못함: {label}"
         elif days > limit:
-            status, message = Status.FAIL, f"액세스 키를 {days}일째 교체하지 않았다: {label}"
+            status, message = Status.FAIL, f"액세스 키를 {days}일째 교체하지 않음: {label}"
         else:
-            status, message = Status.PASS, f"액세스 키를 {limit}일 안에 교체했다: {label}"
+            status, message = Status.PASS, f"액세스 키를 {limit}일 안에 교체함: {label}"
         return self.finding(
             snapshot,
             resource=f"{row['arn']}#access_key_{slot}",

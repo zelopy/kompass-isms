@@ -42,10 +42,10 @@ class S3004DefaultEncryption(BucketRule):
         )
         evidence: dict[str, Any] = {"algorithms": algorithms, "require_kms": require_kms}
         if not algorithms:
-            status, message = Status.FAIL, f"기본 암호화가 설정되지 않았다: {name}"
+            status, message = Status.FAIL, f"기본 암호화가 설정되지 않음: {name}"
         elif require_kms and not _KMS_ALGORITHMS & set(algorithms):
-            status, message = Status.FAIL, f"기본 암호화가 SSE-KMS가 아니다: {name}"
+            status, message = Status.FAIL, f"기본 암호화가 SSE-KMS가 아님: {name}"
         else:
             status = Status.PASS
-            message = f"기본 암호화가 설정되어 있다 ({', '.join(algorithms)}): {name}"
+            message = f"기본 암호화가 설정되어 있음 ({', '.join(algorithms)}): {name}"
         return self.bucket_finding(snapshot, name, region, status, message, evidence)

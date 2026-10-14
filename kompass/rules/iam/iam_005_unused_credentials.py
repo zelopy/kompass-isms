@@ -42,7 +42,7 @@ class Iam005UnusedCredentials(BaseRule):
         if not users:
             return [
                 _iam.account_finding(
-                    self, snapshot, Status.NOT_APPLICABLE, "활성 자격증명을 가진 사용자가 없다", {}
+                    self, snapshot, Status.NOT_APPLICABLE, "활성 자격증명을 가진 사용자가 없음", {}
                 )
             ]
         limit = settings.iam.unused_credential_days
@@ -65,13 +65,13 @@ class Iam005UnusedCredentials(BaseRule):
         user = row["user"]
         if stale:
             status = Status.FAIL
-            message = f"{limit}일 넘게 쓰지 않은 자격증명이 있다: {user}"
+            message = f"{limit}일 넘게 쓰지 않은 자격증명이 있음: {user}"
         elif unknown:
             status = Status.ERROR
-            message = f"자격증명의 마지막 사용일을 확인하지 못했다: {user}"
+            message = f"자격증명의 마지막 사용일을 확인하지 못함: {user}"
         else:
             status = Status.PASS
-            message = f"모든 활성 자격증명을 최근 {limit}일 안에 사용했다: {user}"
+            message = f"모든 활성 자격증명을 최근 {limit}일 안에 사용함: {user}"
         return self.finding(
             snapshot,
             resource=row["arn"],

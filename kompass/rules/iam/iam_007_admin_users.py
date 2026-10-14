@@ -85,7 +85,7 @@ class Iam007AdminUsers(BaseRule):
         ]
         return findings or [
             _iam.account_finding(
-                self, snapshot, Status.PASS, "관리자 권한을 가진 IAM 사용자가 없다", {}
+                self, snapshot, Status.PASS, "관리자 권한을 가진 IAM 사용자가 없음", {}
             )
         ]
 
@@ -108,13 +108,13 @@ class Iam007AdminUsers(BaseRule):
         name = user["UserName"]
         direct_admin = any(s["via"] == "user" and s["kind"] == ADMIN for s in sources)
         if direct_admin:
-            status, message = Status.FAIL, f"사용자에게 관리자 권한이 직접 연결되어 있다: {name}"
+            status, message = Status.FAIL, f"사용자에게 관리자 권한이 직접 연결되어 있음: {name}"
         elif any(s["kind"] == ADMIN for s in sources):
             status, message = Status.REVIEW, f"그룹을 통해 관리자 권한을 가진 사용자: {name}"
         else:
             status, message = (
                 Status.REVIEW,
-                f"관리자 권한 여부를 확정할 수 없는 정책이 있다: {name}",
+                f"관리자 권한 여부를 확정할 수 없는 정책이 있음: {name}",
             )
         return self.finding(
             snapshot,

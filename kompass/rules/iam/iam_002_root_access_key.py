@@ -21,7 +21,7 @@ class Iam002RootAccessKey(BaseRule):
         present = summary.get("AccountAccessKeysPresent")
         evidence = {"AccountAccessKeysPresent": present}
         if present == 0:
-            status, message = Status.PASS, "루트 계정에 액세스 키가 없다"
+            status, message = Status.PASS, "루트 계정에 액세스 키가 없음"
         else:
-            status, message = Status.FAIL, "루트 계정에 액세스 키가 있다"
+            status, message = Status.FAIL, "루트 계정에 액세스 키가 있음"
         return [_iam.account_finding(self, snapshot, status, message, evidence)]

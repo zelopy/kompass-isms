@@ -31,14 +31,14 @@ class Vpc001SubnetSeparation(BaseRule):
                         snapshot,
                         region,
                         Status.ERROR,
-                        f"VPC 판정에 필요한 데이터를 수집하지 못했다: {', '.join(missing)}",
+                        f"VPC 판정에 필요한 데이터를 수집하지 못함: {', '.join(missing)}",
                         {"errors": net.region_errors(snapshot, region, missing)},
                     )
                 )
                 continue
             if not data["vpcs"]:
                 findings.append(
-                    self._region(snapshot, region, Status.NOT_APPLICABLE, "VPC가 없다", {})
+                    self._region(snapshot, region, Status.NOT_APPLICABLE, "VPC가 없음", {})
                 )
                 continue
             classifier = net.SubnetClassifier(data["route_tables"])
@@ -72,14 +72,14 @@ class Vpc001SubnetSeparation(BaseRule):
 
         publics = [s["public"] for s in subnets.values()]
         if not subnets:
-            status, message = Status.NOT_APPLICABLE, f"VPC에 네트워크 인터페이스가 없다: {vpc_id}"
+            status, message = Status.NOT_APPLICABLE, f"VPC에 네트워크 인터페이스가 없음: {vpc_id}"
         elif False in publics:
-            status, message = Status.PASS, f"프라이빗 서브넷에 리소스가 있다: {vpc_id}"
+            status, message = Status.PASS, f"프라이빗 서브넷에 리소스가 있음: {vpc_id}"
         elif None in publics:
             status = Status.ERROR
-            message = f"서브넷의 라우팅을 판별하지 못했다: {vpc_id}"
+            message = f"서브넷의 라우팅을 판별하지 못함: {vpc_id}"
         else:
-            status, message = Status.FAIL, f"리소스가 퍼블릭 서브넷에만 있다: {vpc_id}"
+            status, message = Status.FAIL, f"리소스가 퍼블릭 서브넷에만 있음: {vpc_id}"
         return self.finding(
             snapshot,
             resource=vpc_id,

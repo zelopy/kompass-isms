@@ -30,13 +30,13 @@ class Iam008RootRecentUse(BaseRule):
         if root is None:
             return [
                 _iam.account_finding(
-                    self, snapshot, Status.ERROR, "자격증명 보고서에 루트 계정 행이 없다", {}
+                    self, snapshot, Status.ERROR, "자격증명 보고서에 루트 계정 행이 없음", {}
                 )
             ]
         if not _iam.has_credentials(root):
             return [
                 _iam.account_finding(
-                    self, snapshot, Status.NOT_APPLICABLE, "루트 계정에 자격증명이 없다", {}
+                    self, snapshot, Status.NOT_APPLICABLE, "루트 계정에 자격증명이 없음", {}
                 )
             ]
 
@@ -60,11 +60,11 @@ class Iam008RootRecentUse(BaseRule):
         }
         if days is not None and days <= limit:
             status = Status.REVIEW
-            message = f"루트 계정을 최근 {days}일 전에 사용했다. 운영 목적 사용인지 확인이 필요하다"
+            message = f"루트 계정을 최근 {days}일 전에 사용함. 운영 목적 사용인지 확인이 필요함"
         elif password_unknown:
             status = Status.REVIEW
-            message = "루트 비밀번호 사용 이력을 자격증명 보고서로 확인할 수 없다"
+            message = "루트 비밀번호 사용 이력을 자격증명 보고서로 확인할 수 없음"
         else:
             status = Status.PASS
-            message = f"루트 계정을 최근 {limit}일 안에 사용하지 않았다"
+            message = f"루트 계정을 최근 {limit}일 안에 사용하지 않음"
         return [_iam.account_finding(self, snapshot, status, message, evidence)]

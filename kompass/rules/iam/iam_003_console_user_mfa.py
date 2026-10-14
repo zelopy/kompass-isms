@@ -26,7 +26,7 @@ class Iam003ConsoleUserMfa(BaseRule):
         if not console:
             return [
                 _iam.account_finding(
-                    self, snapshot, Status.NOT_APPLICABLE, "콘솔 비밀번호가 있는 사용자가 없다", {}
+                    self, snapshot, Status.NOT_APPLICABLE, "콘솔 비밀번호가 있는 사용자가 없음", {}
                 )
             ]
         return [self._judge(snapshot, row) for row in console]
@@ -40,9 +40,9 @@ class Iam003ConsoleUserMfa(BaseRule):
             region=None,
             status=Status.PASS if mfa else Status.FAIL,
             message=(
-                f"콘솔 사용자에 MFA가 설정되어 있다: {user}"
+                f"콘솔 사용자에 MFA가 설정되어 있음: {user}"
                 if mfa
-                else f"콘솔 사용자에 MFA가 설정되지 않았다: {user}"
+                else f"콘솔 사용자에 MFA가 설정되지 않음: {user}"
             ),
             evidence={
                 "user": user,

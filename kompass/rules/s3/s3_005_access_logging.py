@@ -46,9 +46,9 @@ class S3005AccessLogging(BucketRule):
             "log_target_for": log_target_for,
         }
         if log_target_for and settings.s3.exclude_log_target_buckets:
-            status, message = Status.NOT_APPLICABLE, f"로그 저장 버킷이라 제외한다: {name}"
+            status, message = Status.NOT_APPLICABLE, f"로그 저장 버킷이라 제외함: {name}"
         elif logging:
-            status, message = Status.PASS, f"서버 액세스 로깅이 켜져 있다: {name}"
+            status, message = Status.PASS, f"서버 액세스 로깅이 켜져 있음: {name}"
         else:
-            status, message = Status.FAIL, f"서버 액세스 로깅이 꺼져 있다: {name}"
+            status, message = Status.FAIL, f"서버 액세스 로깅이 꺼져 있음: {name}"
         return self.bucket_finding(snapshot, name, region, status, message, evidence)

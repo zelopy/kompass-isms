@@ -30,7 +30,7 @@ class Sg004DefaultGroupInUse(BaseRule):
                         snapshot,
                         region,
                         Status.ERROR,
-                        "보안그룹 목록을 수집하지 못했다",
+                        "보안그룹 목록을 수집하지 못함",
                         {"errors": net.region_errors(snapshot, region, ("security_groups",))},
                     )
                 )
@@ -39,7 +39,7 @@ class Sg004DefaultGroupInUse(BaseRule):
             if not defaults:
                 findings.append(
                     self._region(
-                        snapshot, region, Status.NOT_APPLICABLE, "기본 보안그룹이 없다", {}
+                        snapshot, region, Status.NOT_APPLICABLE, "기본 보안그룹이 없음", {}
                     )
                 )
                 continue
@@ -65,17 +65,17 @@ class Sg004DefaultGroupInUse(BaseRule):
             "attached_interfaces": count,
         }
         if not has_rules:
-            status, message = Status.PASS, f"기본 보안그룹에 규칙이 없다: {group_id}"
+            status, message = Status.PASS, f"기본 보안그룹에 규칙이 없음: {group_id}"
         elif count is None:
             evidence["errors"] = net.region_errors(snapshot, region, ("network_interfaces",))
             status = Status.ERROR
-            message = f"기본 보안그룹의 사용 여부를 확인하지 못했다: {group_id}"
+            message = f"기본 보안그룹의 사용 여부를 확인하지 못함: {group_id}"
         elif count > 0:
-            status, message = Status.FAIL, f"사용 중인 기본 보안그룹에 규칙이 있다: {group_id}"
+            status, message = Status.FAIL, f"사용 중인 기본 보안그룹에 규칙이 있음: {group_id}"
         else:
             status, message = (
                 Status.PASS,
-                f"기본 보안그룹에 규칙이 있지만 사용하지 않는다: {group_id}",
+                f"기본 보안그룹에 규칙이 있지만 사용하지 않음: {group_id}",
             )
         return self.finding(
             snapshot,

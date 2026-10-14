@@ -100,7 +100,7 @@ def test_iam008_review_when_password_use_unknown() -> None:
     # 직후에도 no_information이었다
     finding = _one(IAM008, rows=[root_row(password_last_used="no_information")])
     assert finding.status == Status.REVIEW
-    assert "확인할 수 없다" in finding.message
+    assert "확인할 수 없음" in finding.message
 
 
 def test_iam008_not_applicable_without_root_credentials() -> None:

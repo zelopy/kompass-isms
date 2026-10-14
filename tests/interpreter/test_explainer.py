@@ -162,7 +162,7 @@ def test_missing_citation_is_a_problem() -> None:
         REPORT, FakeProvider(lambda payload, _: _draft(payload, [])), LOOKUP, effort="high"
     )
     assert all(not e.verified for e in result.explanations)
-    assert all(any("인용이 없다" in p for p in e.problems) for e in result.explanations)
+    assert all(any("인용이 없음" in p for p in e.problems) for e in result.explanations)
 
 
 def test_invented_placeholder_is_a_problem() -> None:

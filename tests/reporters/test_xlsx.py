@@ -26,7 +26,7 @@ def test_sheets() -> None:
 
 def test_summary_sheet() -> None:
     values = [v for row in _rows(_book()["요약"]) for v in row if v is not None]
-    assert any("인증 심사 결과를 보장하지 않는다" in str(v) for v in values)
+    assert any("인증 심사 결과를 보장하지 않음" in str(v) for v in values)
     assert "123456789012" in values
     assert "2026-10-14 08:07:54 KST ~ 2026-10-14 08:07:54 KST" in values
 

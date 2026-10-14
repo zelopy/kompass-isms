@@ -44,7 +44,7 @@ class S3006PublicBucketAcl(BucketRule):
         evidence: dict[str, Any] = {"object_ownership": ownership}
         if ownership == _ACL_DISABLED:
             return self.bucket_finding(
-                snapshot, name, region, Status.PASS, f"ACL이 비활성화되어 있다: {name}", evidence
+                snapshot, name, region, Status.PASS, f"ACL이 비활성화되어 있음: {name}", evidence
             )
         acl = details.get("acl", MISSING)
         if acl is MISSING:
@@ -60,7 +60,7 @@ class S3006PublicBucketAcl(BucketRule):
                 "bucket": block_value(details.get("public_access_block"), "IgnorePublicAcls"),
                 "account": block_value(account_block(snapshot), "IgnorePublicAcls"),
             }
-            status, message = Status.FAIL, f"ACL이 모든 사용자에게 권한을 부여한다: {name}"
+            status, message = Status.FAIL, f"ACL이 모든 사용자에게 권한을 부여함: {name}"
         else:
-            status, message = Status.PASS, f"ACL에 전체 공개 권한이 없다: {name}"
+            status, message = Status.PASS, f"ACL에 전체 공개 권한이 없음: {name}"
         return self.bucket_finding(snapshot, name, region, status, message, evidence)

@@ -106,8 +106,8 @@ class ClaudeProvider:
             client = anthropic.Anthropic()
             if client.api_key is None and client.auth_token is None:
                 raise LLMError(
-                    "Claude API 키가 없다. 환경 변수 ANTHROPIC_API_KEY를 설정한다 "
-                    "(설정 파일에 키를 두지 않는다)"
+                    "Claude API 키가 없음. 환경 변수 ANTHROPIC_API_KEY 설정 필요 "
+                    "(설정 파일에 키를 두지 않음)"
                 )
         self._client = client
 
@@ -133,12 +133,12 @@ class ClaudeProvider:
         if response.stop_reason == "refusal":
             details = response.stop_details
             category = getattr(details, "category", None) or "unknown"
-            raise LLMRefusal(f"모델이 요청을 거부했다 (분류: {category})")
+            raise LLMRefusal(f"모델이 요청을 거부함 (분류: {category})")
         if response.stop_reason == "max_tokens":
-            raise LLMError("응답이 max_tokens에서 잘렸다. llm.max_tokens를 늘린다")
+            raise LLMError("응답이 max_tokens에서 잘림. llm.max_tokens를 늘려야 함")
         parsed = response.parsed_output
         if parsed is None:
-            raise LLMError(f"응답을 스키마로 해석하지 못했다 (stop_reason={response.stop_reason})")
+            raise LLMError(f"응답을 스키마로 해석하지 못함 (stop_reason={response.stop_reason})")
         return LLMResponse(
             parsed=parsed,
             model=response.model,

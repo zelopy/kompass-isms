@@ -32,8 +32,8 @@ STATUS_LABELS = {
 ACTION_STATUSES = (Status.FAIL, Status.ERROR, Status.REVIEW)
 STATUS_ORDER = (*ACTION_STATUSES, Status.PASS, Status.NOT_APPLICABLE)
 DISCLAIMER = (
-    "이 보고서는 점검 보조 자료이며 ISMS-P 인증 심사 결과를 보장하지 않는다. "
-    "ISMS-P 매핑은 원문 검증 전 초안이다."
+    "이 보고서는 점검 보조 자료이며 ISMS-P 인증 심사 결과를 보장하지 않음. "
+    "ISMS-P 매핑은 원문 검증 전 초안임."
 )
 
 
@@ -53,9 +53,9 @@ RULE_TITLES = {rule.id: rule.title for rule in RULES}
 PRIORITY_LABELS = {"critical": "긴급", "high": "높음", "medium": "보통", "low": "낮음"}
 SCHEME_LABELS = {"kisa": "KISA", "isms_p": "ISMS-P"}
 EXPLANATION_NOTICE = (
-    "LLM이 판정 결과를 설명한 참고 자료다. 판정과 심각도는 룰이 정했고 해설은 이를 바꾸지 않는다. "
+    "LLM이 판정 결과를 설명한 참고 자료임. 판정과 심각도는 룰이 정했고 해설은 이를 바꾸지 않음. "
     '"검증됨"은 인용 구절이 KISA·ISMS-P 원문에 있음을 확인했다는 뜻이며 설명이나 조치 명령의 '
-    "정확성을 보장하지 않는다. 명령은 실행 전에 검토한다."
+    "정확성을 보장하지 않음. 명령은 실행 전 검토 필요."
 )
 
 

@@ -31,9 +31,9 @@ class Iam001RootMfa(BaseRule):
             "root_has_credentials": root_has_credentials,
         }
         if root_has_credentials is False:
-            status, message = Status.NOT_APPLICABLE, "루트 계정에 자격증명이 없다"
+            status, message = Status.NOT_APPLICABLE, "루트 계정에 자격증명이 없음"
         elif summary.get("AccountMFAEnabled") == 1:
-            status, message = Status.PASS, "루트 계정에 MFA가 설정되어 있다"
+            status, message = Status.PASS, "루트 계정에 MFA가 설정되어 있음"
         else:
-            status, message = Status.FAIL, "루트 계정에 MFA가 설정되지 않았다"
+            status, message = Status.FAIL, "루트 계정에 MFA가 설정되지 않음"
         return [_iam.account_finding(self, snapshot, status, message, evidence)]

@@ -234,7 +234,7 @@ def _prepare(group: RuleGroup, lookup: SourceLookup) -> _Prepared:
 def _check(draft: RuleExplanationDraft, prepared: _Prepared, lookup: SourceLookup) -> list[str]:
     problems: list[str] = []
     if not draft.citations:
-        problems.append("인용이 없다. sources의 원문에서 근거 구절을 하나 이상 인용한다")
+        problems.append("인용이 없음. sources의 원문에서 근거 구절을 하나 이상 인용해야 함")
     for citation in draft.citations:
         if (citation.scheme, citation.code) not in prepared.allowed:
             problems.append(f"매핑에 없는 항목 인용: {citation.scheme} {citation.code}")

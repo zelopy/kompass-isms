@@ -38,9 +38,9 @@ class S3003PublicBucketPolicy(BucketRule):
             },
         }
         if policy_status is not None and policy_status.get("IsPublic") is True:
-            status, message = Status.FAIL, f"버킷 정책이 퍼블릭 접근을 허용한다: {name}"
+            status, message = Status.FAIL, f"버킷 정책이 퍼블릭 접근을 허용함: {name}"
         elif policy_status is None:
-            status, message = Status.PASS, f"버킷 정책이 없다: {name}"
+            status, message = Status.PASS, f"버킷 정책이 없음: {name}"
         else:
-            status, message = Status.PASS, f"버킷 정책이 퍼블릭이 아니다: {name}"
+            status, message = Status.PASS, f"버킷 정책이 퍼블릭이 아님: {name}"
         return self.bucket_finding(snapshot, name, region, status, message, evidence)

@@ -19,10 +19,10 @@ class S3001AccountPublicAccessBlock(BaseRule):
         evidence: dict[str, Any]
         if config is MISSING:
             errors = errors_for(snapshot, "s3control:GetPublicAccessBlock")
-            status, message = Status.ERROR, "계정 수준 퍼블릭 액세스 차단 설정을 수집하지 못했다"
+            status, message = Status.ERROR, "계정 수준 퍼블릭 액세스 차단 설정을 수집하지 못함"
             evidence = {"errors": errors_evidence(errors)}
         elif all_blocked(config):
-            status, message = Status.PASS, "계정 수준 퍼블릭 액세스 차단 4개 설정이 모두 켜져 있다"
+            status, message = Status.PASS, "계정 수준 퍼블릭 액세스 차단 4개 설정이 모두 켜져 있음"
             evidence = {"public_access_block": config}
         else:
             disabled = (
@@ -32,7 +32,7 @@ class S3001AccountPublicAccessBlock(BaseRule):
             )
             status = Status.FAIL
             message = (
-                "계정 수준 퍼블릭 액세스 차단이 설정되지 않았다"
+                "계정 수준 퍼블릭 액세스 차단이 설정되지 않음"
                 if config is None
                 else f"계정 수준 퍼블릭 액세스 차단 중 꺼진 설정: {', '.join(disabled)}"
             )

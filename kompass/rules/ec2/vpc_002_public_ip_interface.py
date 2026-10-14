@@ -39,7 +39,7 @@ class Vpc002PublicIpInterface(BaseRule):
                         snapshot,
                         region,
                         Status.ERROR,
-                        "네트워크 인터페이스 목록을 수집하지 못했다",
+                        "네트워크 인터페이스 목록을 수집하지 못함",
                         {"errors": net.region_errors(snapshot, region, ("network_interfaces",))},
                     )
                 )
@@ -53,7 +53,7 @@ class Vpc002PublicIpInterface(BaseRule):
                         snapshot,
                         region,
                         Status.PASS,
-                        "검토 대상인 공인 IP 인터페이스가 없다",
+                        "검토 대상인 공인 IP 인터페이스가 없음",
                         {"excluded_interfaces": excluded},
                     )
                 )

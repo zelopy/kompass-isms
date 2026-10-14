@@ -79,6 +79,6 @@ def missing_section(rule: BaseRule, snapshot: Snapshot, key: str, what: str) -> 
         rule,
         snapshot,
         Status.ERROR,
-        f"{what}을(를) 수집하지 못했다",
+        f"{what}을(를) 수집하지 못함",
         {"errors": section_errors(snapshot, key)},
     )
