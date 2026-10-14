@@ -312,9 +312,9 @@ def is_core_quote(lookup: SourceLookup, code: str, quote: str) -> bool:
 
 _SENSITIVE = (
     re.compile(
-        r"(?<![\w.-])(?:sg|vpc|subnet|eni|igw|rtb|nat|i|vol|acl|pl)-[0-9a-f]{8,17}(?![\w-])"
+        r"(?<![A-Za-z0-9_.-])(?:sg|vpc|subnet|eni|igw|rtb|nat|i|vol|acl|pl)-[0-9a-f]{8,17}(?![A-Za-z0-9_-])"
     ),
-    re.compile(r"\b(?:AIDA|AROA|AKIA|ASIA|AGPA|ANPA)[A-Z0-9]{12,20}\b"),
+    re.compile(r"(?<![A-Za-z0-9])(?:AIDA|AROA|AKIA|ASIA|AGPA|ANPA)[A-Z0-9]{12,20}(?![A-Za-z0-9])"),
     re.compile(r"(?<!\d)\d{12}(?!\d)"),
     re.compile(r"(?<![\d.])\d{1,3}(?:\.\d{1,3}){3}(?:/\d{1,2})?(?![\d.])"),
 )

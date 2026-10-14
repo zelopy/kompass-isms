@@ -274,3 +274,17 @@ def test_two_digit_token_numbers_are_not_partial() -> None:
     masker = Masker.for_values([])
     assert not masker.partially_masked("user/MASKED_NAME_10, MASKED_SG_123")
     assert masker.partially_masked("MASKED_NAME_10-prod")
+
+
+def test_ids_followed_by_korean_particles_are_masked() -> None:
+    # 회귀: 파이썬 \w가 한글도 단어 문자로 봐서 "vpc-…의"의 ID를 가리지 못했다
+    # (LLM이 쓴 해설 요약을 종합 평가에 다시 넣을 때 드러남, 전송 직전 검사가 차단)
+    masker = Masker.for_values([])
+    text = (
+        "VPC vpc-0a1b2c3d4e5f60718의 리소스, 인터페이스 eni-0f1e2d3c4b5a69788에 공인 IP, "
+        "사용자 AIDAEXAMPLEUSERID0001는"
+    )
+    masked = masker.mask_text(text)
+    for raw in ("vpc-0a1b2c3d4e5f60718", "eni-0f1e2d3c4b5a69788", "AIDAEXAMPLEUSERID0001"):
+        assert raw not in masked
+    assert "MASKED_VPC_1의" in masked and masker.unmask_text(masked) == text

@@ -50,11 +50,13 @@ def rid(kind: str, length: int = 17) -> str:
 
 # --- 1. 실습 가공 ---
 
-_SUFFIX = re.compile(r"(?<=kompass-lab-)[a-z-]+?-([0-9a-f]{8})\b")
+_SUFFIX = re.compile(r"(?<=kompass-lab-)[a-z-]+?-([0-9a-f]{8})(?![A-Za-z0-9])")
 _RESOURCE_ID = re.compile(
-    r"(?<![\w.-])(sg|vpc|subnet|eni|igw|rtb|nat|i|vol|acl|pl)-([0-9a-f]{8,17})(?![\w-])"
+    r"(?<![A-Za-z0-9_.-])(sg|vpc|subnet|eni|igw|rtb|nat|i|vol|acl|pl)-([0-9a-f]{8,17})(?![A-Za-z0-9_-])"
 )
-_UNIQUE_ID = re.compile(r"\b(AIDA|AROA|AKIA|ASIA|AGPA|ANPA)([A-Z0-9]{12,20})\b")
+_UNIQUE_ID = re.compile(
+    r"(?<![A-Za-z0-9])(AIDA|AROA|AKIA|ASIA|AGPA|ANPA)([A-Z0-9]{12,20})(?![A-Za-z0-9])"
+)
 _IPV4 = re.compile(r"(?<![\d.])(\d{1,3}(?:\.\d{1,3}){3})(?![\d.])")
 _PRIVATE = re.compile(r"^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|0\.0\.0\.0$|127\.)")
 
