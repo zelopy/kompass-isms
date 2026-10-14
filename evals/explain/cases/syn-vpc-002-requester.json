@@ -1,0 +1,59 @@
+{
+ "id": "syn-vpc-002-requester",
+ "title": "공인 IP ENI 2개 (인스턴스, 요청자 ID가 있는 관리형)",
+ "source": "synthetic",
+ "rule_id": "VPC-002",
+ "tags": [
+  "ec2",
+  "review",
+  "masking"
+ ],
+ "findings": [
+  {
+   "rule_id": "VPC-002",
+   "resource": "eni-3fe55ff4281e2967b",
+   "region": "ap-northeast-2",
+   "status": "REVIEW",
+   "severity": "medium",
+   "message": "공인 IP가 할당된 네트워크 인터페이스: eni-3fe55ff4281e2967b",
+   "evidence": {
+    "public_ip": "198.51.100.24",
+    "interface_type": "interface",
+    "requester_id": null,
+    "requester_managed": false,
+    "description": "",
+    "instance_id": "i-34cab1bfd74f3adf6",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "subnet_id": "subnet-4a820cd4954e510ad",
+    "subnet_public": null,
+    "security_groups": [
+     "sg-9c20dcb2ea23a46cb"
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "VPC-002",
+   "resource": "eni-08ccf2e03bfd1c8b7",
+   "region": "ap-northeast-2",
+   "status": "REVIEW",
+   "severity": "medium",
+   "message": "공인 IP가 할당된 네트워크 인터페이스: eni-08ccf2e03bfd1c8b7",
+   "evidence": {
+    "public_ip": "198.51.100.77",
+    "interface_type": "interface",
+    "requester_id": "AIDAJQABLZS4A3QDU576Q",
+    "requester_managed": false,
+    "description": "kompass lab: managed endpoint",
+    "instance_id": null,
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "subnet_id": "subnet-4a820cd4954e510ad",
+    "subnet_public": null,
+    "security_groups": []
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

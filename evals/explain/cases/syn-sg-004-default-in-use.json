@@ -1,0 +1,31 @@
+{
+ "id": "syn-sg-004-default-in-use",
+ "title": "규칙이 있는 기본 보안그룹을 인스턴스가 사용",
+ "source": "synthetic",
+ "rule_id": "SG-004",
+ "tags": [
+  "ec2",
+  "variant",
+  "isms-only",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "SG-004",
+   "resource": "sg-a9904f908ca768f0d",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "low",
+   "message": "사용 중인 기본 보안그룹에 규칙이 있음: sg-a9904f908ca768f0d",
+   "evidence": {
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "has_rules": true,
+    "ingress_rules": 1,
+    "egress_rules": 1,
+    "attached_interfaces": 1
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

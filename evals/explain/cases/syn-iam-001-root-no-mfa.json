@@ -1,0 +1,27 @@
+{
+ "id": "syn-iam-001-root-no-mfa",
+ "title": "루트 계정 MFA 미설정",
+ "source": "synthetic",
+ "rule_id": "IAM-001",
+ "tags": [
+  "iam",
+  "unseen-rule",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "IAM-001",
+   "resource": "account",
+   "region": null,
+   "status": "FAIL",
+   "severity": "critical",
+   "message": "루트 계정에 MFA가 설정되지 않음",
+   "evidence": {
+    "AccountMFAEnabled": 0,
+    "root_has_credentials": true
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

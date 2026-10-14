@@ -1,0 +1,118 @@
+{
+ "id": "lab-iam-007",
+ "title": "실습 결과 IAM-007 (관리자 권한 사용자 현황)",
+ "source": "lab",
+ "rule_id": "IAM-007",
+ "tags": [
+  "iam",
+  "fail",
+  "review"
+ ],
+ "findings": [
+  {
+   "rule_id": "IAM-007",
+   "resource": "arn:aws:iam::123456789012:user/kompass-lab-admin",
+   "region": null,
+   "status": "REVIEW",
+   "severity": "high",
+   "message": "그룹을 통해 관리자 권한을 가진 사용자: kompass-lab-admin",
+   "evidence": {
+    "user": "kompass-lab-admin",
+    "sources": [
+     {
+      "via": "group:admin",
+      "policy": "arn:aws:iam::aws:policy/AdministratorAccess",
+      "kind": "admin"
+     }
+    ],
+    "permissions_boundary": null
+   },
+   "collected_at": "2026-10-14T01:09:46.801088Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-007",
+   "resource": "arn:aws:iam::123456789012:user/kompass-lab-direct-admin",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "사용자에게 관리자 권한이 직접 연결되어 있음: kompass-lab-direct-admin",
+   "evidence": {
+    "user": "kompass-lab-direct-admin",
+    "sources": [
+     {
+      "via": "user",
+      "policy": "arn:aws:iam::aws:policy/AdministratorAccess",
+      "kind": "admin"
+     }
+    ],
+    "permissions_boundary": null
+   },
+   "collected_at": "2026-10-14T01:09:46.801088Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-007",
+   "resource": "arn:aws:iam::123456789012:user/kompass-lab-group-admin",
+   "region": null,
+   "status": "REVIEW",
+   "severity": "high",
+   "message": "그룹을 통해 관리자 권한을 가진 사용자: kompass-lab-group-admin",
+   "evidence": {
+    "user": "kompass-lab-group-admin",
+    "sources": [
+     {
+      "via": "group:kompass-lab-admins",
+      "policy": "arn:aws:iam::aws:policy/AdministratorAccess",
+      "kind": "admin"
+     }
+    ],
+    "permissions_boundary": null
+   },
+   "collected_at": "2026-10-14T01:09:46.801088Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-007",
+   "resource": "arn:aws:iam::123456789012:user/kompass-lab-notaction",
+   "region": null,
+   "status": "REVIEW",
+   "severity": "high",
+   "message": "관리자 권한 여부를 확정할 수 없는 정책이 있음: kompass-lab-notaction",
+   "evidence": {
+    "user": "kompass-lab-notaction",
+    "sources": [
+     {
+      "via": "user",
+      "policy": "inline:kompass-lab-notaction",
+      "kind": "ambiguous"
+     }
+    ],
+    "permissions_boundary": null
+   },
+   "collected_at": "2026-10-14T01:09:46.801088Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-007",
+   "resource": "arn:aws:iam::123456789012:user/kompass-lab-wildcard-admin",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "사용자에게 관리자 권한이 직접 연결되어 있음: kompass-lab-wildcard-admin",
+   "evidence": {
+    "user": "kompass-lab-wildcard-admin",
+    "sources": [
+     {
+      "via": "user",
+      "policy": "arn:aws:iam::123456789012:policy/kompass-lab-wildcard",
+      "kind": "admin"
+     }
+    ],
+    "permissions_boundary": null
+   },
+   "collected_at": "2026-10-14T01:09:46.801088Z",
+   "mappings": null
+  }
+ ]
+}

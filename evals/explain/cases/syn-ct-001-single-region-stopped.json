@@ -1,0 +1,49 @@
+{
+ "id": "syn-ct-001-single-region-stopped",
+ "title": "단일 리전 추적, 로깅 중지",
+ "source": "synthetic",
+ "rule_id": "CT-001",
+ "tags": [
+  "cloudtrail",
+  "unseen-rule",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "CT-001",
+   "resource": "account",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "조건(멀티 리전, 로깅 중, 관리 이벤트 기록)을 만족하는 추적이 없음",
+   "evidence": {
+    "require_read_events": true,
+    "trails": [
+     {
+      "arn": "arn:aws:cloudtrail:ap-northeast-2:123456789012:trail/acme-audit-trail",
+      "name": "acme-audit-trail",
+      "home_region": "ap-northeast-2",
+      "is_multi_region": false,
+      "is_organization_trail": false,
+      "is_logging": false,
+      "latest_delivery_error": null,
+      "latest_delivery_time": null,
+      "management_events": {
+       "read": true,
+       "write": true
+      },
+      "excluded_event_sources": [],
+      "result": "fail",
+      "reasons": [
+       "멀티 리전 추적이 아님",
+       "로깅이 중지되어 있음"
+      ]
+     }
+    ],
+    "passing_trails": []
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

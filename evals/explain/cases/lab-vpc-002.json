@@ -1,0 +1,37 @@
+{
+ "id": "lab-vpc-002",
+ "title": "실습 결과 VPC-002 (공인 IP가 할당된 네트워크 인터페이스)",
+ "source": "lab",
+ "rule_id": "VPC-002",
+ "tags": [
+  "ec2",
+  "review"
+ ],
+ "findings": [
+  {
+   "rule_id": "VPC-002",
+   "resource": "eni-64c35375558e21c5c",
+   "region": "ap-northeast-2",
+   "status": "REVIEW",
+   "severity": "medium",
+   "message": "공인 IP가 할당된 네트워크 인터페이스: eni-64c35375558e21c5c",
+   "evidence": {
+    "public_ip": "203.0.113.11",
+    "interface_type": "interface",
+    "requester_id": "AIDAF63UR7CT5BUXZMQJJ",
+    "requester_managed": false,
+    "description": "kompass lab: workload in public-only VPC",
+    "instance_id": null,
+    "vpc_id": "vpc-36b846400effe0fe9",
+    "subnet_id": "subnet-aadd25710cee947b5",
+    "subnet_public": true,
+    "security_groups": [
+     "sg-7dc2a3c1045d997ae",
+     "sg-3f06056a7b9064367"
+    ]
+   },
+   "collected_at": "2026-10-14T01:09:46.167904Z",
+   "mappings": null
+  }
+ ]
+}

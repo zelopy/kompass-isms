@@ -1,0 +1,67 @@
+{
+ "id": "syn-sg-001-ipv6-rdp",
+ "title": "IPv6 전체(::/0)에 RDP 개방",
+ "source": "synthetic",
+ "rule_id": "SG-001",
+ "tags": [
+  "ec2",
+  "variant",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "SG-001",
+   "resource": "sg-9c20dcb2ea23a46cb",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "critical",
+   "message": "관리 포트가 전체 개방된 인바운드 규칙: sg-9c20dcb2ea23a46cb",
+   "evidence": {
+    "group_name": "win-jump",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3389,
+      "to_port": 3389,
+      "cidrs": [
+       "::/0"
+      ],
+      "matched_ports": [
+       3389
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "admin_ports": [
+     22,
+     3389
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-001",
+   "resource": "sg-7126be7dcea28a019",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "critical",
+   "message": "관리 포트가 전체 개방된 인바운드 규칙 규칙이 없음: sg-7126be7dcea28a019",
+   "evidence": {
+    "group_name": "internal",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "admin_ports": [
+     22,
+     3389
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

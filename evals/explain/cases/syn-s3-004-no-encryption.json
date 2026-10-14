@@ -1,0 +1,58 @@
+{
+ "id": "syn-s3-004-no-encryption",
+ "title": "기본 암호화 없는 버킷 2개 (KISA 매핑 없음)",
+ "source": "synthetic",
+ "rule_id": "S3-004",
+ "tags": [
+  "s3",
+  "unseen-rule",
+  "isms-only",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "S3-004",
+   "resource": "acme-billing-exports",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "기본 암호화가 설정되지 않음: acme-billing-exports",
+   "evidence": {
+    "algorithms": [],
+    "require_kms": false
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "S3-004",
+   "resource": "acme-hr-documents",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "기본 암호화가 설정되지 않음: acme-hr-documents",
+   "evidence": {
+    "algorithms": [],
+    "require_kms": false
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "S3-004",
+   "resource": "acme-static-site",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "medium",
+   "message": "기본 암호화가 설정되어 있음 (AES256): acme-static-site",
+   "evidence": {
+    "algorithms": [
+     "AES256"
+    ],
+    "require_kms": false
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

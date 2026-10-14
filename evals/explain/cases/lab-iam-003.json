@@ -1,0 +1,29 @@
+{
+ "id": "lab-iam-003",
+ "title": "실습 결과 IAM-003 (콘솔 사용자 MFA 미설정)",
+ "source": "lab",
+ "rule_id": "IAM-003",
+ "tags": [
+  "iam",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/kompass-lab-console-no-mfa",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: kompass-lab-console-no-mfa",
+   "evidence": {
+    "user": "kompass-lab-console-no-mfa",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "no_information",
+    "report_generated_time": "2026-10-13T22:21:51Z"
+   },
+   "collected_at": "2026-10-14T01:09:46.801088Z",
+   "mappings": null
+  }
+ ]
+}

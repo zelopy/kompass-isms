@@ -1,0 +1,87 @@
+{
+ "id": "lab-s3-006",
+ "title": "실습 결과 S3-006 (버킷 ACL에 의한 전체 공개)",
+ "source": "lab",
+ "rule_id": "S3-006",
+ "tags": [
+  "s3",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "S3-006",
+   "resource": "kompass-lab-logs-54fabab4",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "high",
+   "message": "ACL이 비활성화되어 있음: kompass-lab-logs-54fabab4",
+   "evidence": {
+    "object_ownership": "BucketOwnerEnforced"
+   },
+   "collected_at": "2026-10-14T01:10:11.650166Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "S3-006",
+   "resource": "kompass-lab-private-54fabab4",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "high",
+   "message": "ACL이 비활성화되어 있음: kompass-lab-private-54fabab4",
+   "evidence": {
+    "object_ownership": "BucketOwnerEnforced"
+   },
+   "collected_at": "2026-10-14T01:10:11.650166Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "S3-006",
+   "resource": "kompass-lab-public-acl-54fabab4",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "ACL이 모든 사용자에게 권한을 부여함: kompass-lab-public-acl-54fabab4",
+   "evidence": {
+    "object_ownership": "BucketOwnerPreferred",
+    "public_grants": [
+     {
+      "grantee": "http://acs.amazonaws.com/groups/global/AllUsers",
+      "permission": "READ"
+     }
+    ],
+    "ignore_public_acls": {
+     "bucket": false,
+     "account": null
+    }
+   },
+   "collected_at": "2026-10-14T01:10:11.650166Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "S3-006",
+   "resource": "kompass-lab-public-policy-54fabab4",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "high",
+   "message": "ACL이 비활성화되어 있음: kompass-lab-public-policy-54fabab4",
+   "evidence": {
+    "object_ownership": "BucketOwnerEnforced"
+   },
+   "collected_at": "2026-10-14T01:10:11.650166Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "S3-006",
+   "resource": "kompass-lab-restricted-policy-54fabab4",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "high",
+   "message": "ACL이 비활성화되어 있음: kompass-lab-restricted-policy-54fabab4",
+   "evidence": {
+    "object_ownership": "BucketOwnerEnforced"
+   },
+   "collected_at": "2026-10-14T01:10:11.650166Z",
+   "mappings": null
+  }
+ ]
+}

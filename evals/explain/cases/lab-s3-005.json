@@ -1,0 +1,89 @@
+{
+ "id": "lab-s3-005",
+ "title": "실습 결과 S3-005 (서버 액세스 로깅 미설정)",
+ "source": "lab",
+ "rule_id": "S3-005",
+ "tags": [
+  "s3",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "S3-005",
+   "resource": "kompass-lab-logs-54fabab4",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "low",
+   "message": "서버 액세스 로깅이 꺼져 있음: kompass-lab-logs-54fabab4",
+   "evidence": {
+    "target_bucket": null,
+    "target_prefix": null,
+    "log_target_for": [
+     "kompass-lab-private-54fabab4"
+    ]
+   },
+   "collected_at": "2026-10-14T01:10:11.650166Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "S3-005",
+   "resource": "kompass-lab-private-54fabab4",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "low",
+   "message": "서버 액세스 로깅이 켜져 있음: kompass-lab-private-54fabab4",
+   "evidence": {
+    "target_bucket": "kompass-lab-logs-54fabab4",
+    "target_prefix": "s3-access/kompass-lab-private-54fabab4/",
+    "log_target_for": []
+   },
+   "collected_at": "2026-10-14T01:10:11.650166Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "S3-005",
+   "resource": "kompass-lab-public-acl-54fabab4",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "low",
+   "message": "서버 액세스 로깅이 꺼져 있음: kompass-lab-public-acl-54fabab4",
+   "evidence": {
+    "target_bucket": null,
+    "target_prefix": null,
+    "log_target_for": []
+   },
+   "collected_at": "2026-10-14T01:10:11.650166Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "S3-005",
+   "resource": "kompass-lab-public-policy-54fabab4",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "low",
+   "message": "서버 액세스 로깅이 꺼져 있음: kompass-lab-public-policy-54fabab4",
+   "evidence": {
+    "target_bucket": null,
+    "target_prefix": null,
+    "log_target_for": []
+   },
+   "collected_at": "2026-10-14T01:10:11.650166Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "S3-005",
+   "resource": "kompass-lab-restricted-policy-54fabab4",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "low",
+   "message": "서버 액세스 로깅이 꺼져 있음: kompass-lab-restricted-policy-54fabab4",
+   "evidence": {
+    "target_bucket": null,
+    "target_prefix": null,
+    "log_target_for": []
+   },
+   "collected_at": "2026-10-14T01:10:11.650166Z",
+   "mappings": null
+  }
+ ]
+}

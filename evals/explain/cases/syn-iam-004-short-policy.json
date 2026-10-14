@@ -1,0 +1,38 @@
+{
+ "id": "syn-iam-004-short-policy",
+ "title": "비밀번호 최소 길이 부족 (3종 6자)",
+ "source": "synthetic",
+ "rule_id": "IAM-004",
+ "tags": [
+  "iam",
+  "variant",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "IAM-004",
+   "resource": "account",
+   "region": null,
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "최소 길이가 부족함 (2종 6자, 10자 이상 필요)",
+   "evidence": {
+    "password_policy": {
+     "MinimumPasswordLength": 6,
+     "RequireUppercaseCharacters": true,
+     "RequireLowercaseCharacters": true,
+     "RequireNumbers": true,
+     "RequireSymbols": false
+    },
+    "criteria": {
+     "min_length_two_types": 10,
+     "min_length_three_types": 8
+    },
+    "login_attempt_limit": "IAM 비밀번호 정책으로 확인할 수 없음",
+    "character_types": 2
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

@@ -1,0 +1,107 @@
+{
+ "id": "lab-s3-002",
+ "title": "실습 결과 S3-002 (버킷 수준 퍼블릭 액세스 차단 미설정)",
+ "source": "lab",
+ "rule_id": "S3-002",
+ "tags": [
+  "s3",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "S3-002",
+   "resource": "kompass-lab-logs-54fabab4",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "high",
+   "message": "버킷 수준 퍼블릭 액세스 차단이 모두 켜져 있음: kompass-lab-logs-54fabab4",
+   "evidence": {
+    "public_access_block": {
+     "BlockPublicAcls": true,
+     "IgnorePublicAcls": true,
+     "BlockPublicPolicy": true,
+     "RestrictPublicBuckets": true
+    },
+    "account_public_access_block": null
+   },
+   "collected_at": "2026-10-14T01:10:11.650166Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "S3-002",
+   "resource": "kompass-lab-private-54fabab4",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "high",
+   "message": "버킷 수준 퍼블릭 액세스 차단이 모두 켜져 있음: kompass-lab-private-54fabab4",
+   "evidence": {
+    "public_access_block": {
+     "BlockPublicAcls": true,
+     "IgnorePublicAcls": true,
+     "BlockPublicPolicy": true,
+     "RestrictPublicBuckets": true
+    },
+    "account_public_access_block": null
+   },
+   "collected_at": "2026-10-14T01:10:11.650166Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "S3-002",
+   "resource": "kompass-lab-public-acl-54fabab4",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "버킷과 계정 모두 퍼블릭 액세스 차단이 다 켜져 있지 않음: kompass-lab-public-acl-54fabab4",
+   "evidence": {
+    "public_access_block": {
+     "BlockPublicAcls": false,
+     "IgnorePublicAcls": false,
+     "BlockPublicPolicy": true,
+     "RestrictPublicBuckets": true
+    },
+    "account_public_access_block": null
+   },
+   "collected_at": "2026-10-14T01:10:11.650166Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "S3-002",
+   "resource": "kompass-lab-public-policy-54fabab4",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "버킷과 계정 모두 퍼블릭 액세스 차단이 다 켜져 있지 않음: kompass-lab-public-policy-54fabab4",
+   "evidence": {
+    "public_access_block": {
+     "BlockPublicAcls": false,
+     "IgnorePublicAcls": false,
+     "BlockPublicPolicy": false,
+     "RestrictPublicBuckets": false
+    },
+    "account_public_access_block": null
+   },
+   "collected_at": "2026-10-14T01:10:11.650166Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "S3-002",
+   "resource": "kompass-lab-restricted-policy-54fabab4",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "버킷과 계정 모두 퍼블릭 액세스 차단이 다 켜져 있지 않음: kompass-lab-restricted-policy-54fabab4",
+   "evidence": {
+    "public_access_block": {
+     "BlockPublicAcls": true,
+     "IgnorePublicAcls": true,
+     "BlockPublicPolicy": false,
+     "RestrictPublicBuckets": true
+    },
+    "account_public_access_block": null
+   },
+   "collected_at": "2026-10-14T01:10:11.650166Z",
+   "mappings": null
+  }
+ ]
+}

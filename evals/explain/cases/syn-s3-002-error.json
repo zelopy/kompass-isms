@@ -1,0 +1,61 @@
+{
+ "id": "syn-s3-002-error",
+ "title": "버킷 퍼블릭 액세스 차단 조회 권한 없음 (ERROR 2)",
+ "source": "synthetic",
+ "rule_id": "S3-002",
+ "tags": [
+  "s3",
+  "error"
+ ],
+ "findings": [
+  {
+   "rule_id": "S3-002",
+   "resource": "acme-billing-exports",
+   "region": "ap-northeast-2",
+   "status": "ERROR",
+   "severity": "high",
+   "message": "퍼블릭 액세스 차단 설정을 확인하지 못함: acme-billing-exports",
+   "evidence": {
+    "public_access_block": null,
+    "account_public_access_block": null,
+    "errors": []
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "S3-002",
+   "resource": "acme-hr-documents",
+   "region": "ap-northeast-2",
+   "status": "ERROR",
+   "severity": "high",
+   "message": "퍼블릭 액세스 차단 설정을 확인하지 못함: acme-hr-documents",
+   "evidence": {
+    "public_access_block": null,
+    "account_public_access_block": null,
+    "errors": []
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "S3-002",
+   "resource": "acme-static-site",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "high",
+   "message": "버킷 수준 퍼블릭 액세스 차단이 모두 켜져 있음: acme-static-site",
+   "evidence": {
+    "public_access_block": {
+     "BlockPublicAcls": true,
+     "IgnorePublicAcls": true,
+     "BlockPublicPolicy": true,
+     "RestrictPublicBuckets": true
+    },
+    "account_public_access_block": null
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

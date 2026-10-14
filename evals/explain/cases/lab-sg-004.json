@@ -1,0 +1,63 @@
+{
+ "id": "lab-sg-004",
+ "title": "실습 결과 SG-004 (사용 중인 기본 보안그룹에 규칙 존재)",
+ "source": "lab",
+ "rule_id": "SG-004",
+ "tags": [
+  "ec2",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "SG-004",
+   "resource": "sg-8792cfbb4ddf9ffc7",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "low",
+   "message": "기본 보안그룹에 규칙이 있지만 사용하지 않음: sg-8792cfbb4ddf9ffc7",
+   "evidence": {
+    "vpc_id": "vpc-cd9bc37e56c14ba8f",
+    "has_rules": true,
+    "ingress_rules": 1,
+    "egress_rules": 1,
+    "attached_interfaces": 0
+   },
+   "collected_at": "2026-10-14T01:09:46.167904Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-004",
+   "resource": "sg-7dc2a3c1045d997ae",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "low",
+   "message": "기본 보안그룹에 규칙이 없음: sg-7dc2a3c1045d997ae",
+   "evidence": {
+    "vpc_id": "vpc-36b846400effe0fe9",
+    "has_rules": false,
+    "ingress_rules": 0,
+    "egress_rules": 0,
+    "attached_interfaces": 1
+   },
+   "collected_at": "2026-10-14T01:09:46.167904Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-004",
+   "resource": "sg-397eb526b306e73be",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "low",
+   "message": "사용 중인 기본 보안그룹에 규칙이 있음: sg-397eb526b306e73be",
+   "evidence": {
+    "vpc_id": "vpc-3c301b8c3dc2448b1",
+    "has_rules": true,
+    "ingress_rules": 1,
+    "egress_rules": 1,
+    "attached_interfaces": 1
+   },
+   "collected_at": "2026-10-14T01:09:46.167904Z",
+   "mappings": null
+  }
+ ]
+}

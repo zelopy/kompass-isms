@@ -1,0 +1,103 @@
+{
+ "id": "lab-s3-003",
+ "title": "실습 결과 S3-003 (버킷 정책에 의한 퍼블릭 노출)",
+ "source": "lab",
+ "rule_id": "S3-003",
+ "tags": [
+  "s3",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "S3-003",
+   "resource": "kompass-lab-logs-54fabab4",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "critical",
+   "message": "버킷 정책이 퍼블릭이 아님: kompass-lab-logs-54fabab4",
+   "evidence": {
+    "policy_status": {
+     "IsPublic": false
+    },
+    "restrict_public_buckets": {
+     "bucket": true,
+     "account": null
+    }
+   },
+   "collected_at": "2026-10-14T01:10:11.650166Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "S3-003",
+   "resource": "kompass-lab-private-54fabab4",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "critical",
+   "message": "버킷 정책이 없음: kompass-lab-private-54fabab4",
+   "evidence": {
+    "policy_status": null,
+    "restrict_public_buckets": {
+     "bucket": true,
+     "account": null
+    }
+   },
+   "collected_at": "2026-10-14T01:10:11.650166Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "S3-003",
+   "resource": "kompass-lab-public-acl-54fabab4",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "critical",
+   "message": "버킷 정책이 없음: kompass-lab-public-acl-54fabab4",
+   "evidence": {
+    "policy_status": null,
+    "restrict_public_buckets": {
+     "bucket": true,
+     "account": null
+    }
+   },
+   "collected_at": "2026-10-14T01:10:11.650166Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "S3-003",
+   "resource": "kompass-lab-public-policy-54fabab4",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "critical",
+   "message": "버킷 정책이 퍼블릭 접근을 허용함: kompass-lab-public-policy-54fabab4",
+   "evidence": {
+    "policy_status": {
+     "IsPublic": true
+    },
+    "restrict_public_buckets": {
+     "bucket": false,
+     "account": null
+    }
+   },
+   "collected_at": "2026-10-14T01:10:11.650166Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "S3-003",
+   "resource": "kompass-lab-restricted-policy-54fabab4",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "critical",
+   "message": "버킷 정책이 퍼블릭 접근을 허용함: kompass-lab-restricted-policy-54fabab4",
+   "evidence": {
+    "policy_status": {
+     "IsPublic": true
+    },
+    "restrict_public_buckets": {
+     "bucket": true,
+     "account": null
+    }
+   },
+   "collected_at": "2026-10-14T01:10:11.650166Z",
+   "mappings": null
+  }
+ ]
+}

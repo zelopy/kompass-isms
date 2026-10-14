@@ -1,0 +1,26 @@
+{
+ "id": "syn-iam-002-root-access-key",
+ "title": "루트 계정 액세스 키 존재",
+ "source": "synthetic",
+ "rule_id": "IAM-002",
+ "tags": [
+  "iam",
+  "unseen-rule",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "IAM-002",
+   "resource": "account",
+   "region": null,
+   "status": "FAIL",
+   "severity": "critical",
+   "message": "루트 계정에 액세스 키가 있음",
+   "evidence": {
+    "AccountAccessKeysPresent": 1
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

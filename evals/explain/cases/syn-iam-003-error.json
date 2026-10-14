@@ -1,0 +1,33 @@
+{
+ "id": "syn-iam-003-error",
+ "title": "자격증명 보고서 생성 권한 없음 (ERROR)",
+ "source": "synthetic",
+ "rule_id": "IAM-003",
+ "tags": [
+  "iam",
+  "error"
+ ],
+ "findings": [
+  {
+   "rule_id": "IAM-003",
+   "resource": "account",
+   "region": null,
+   "status": "ERROR",
+   "severity": "high",
+   "message": "자격증명 보고서을(를) 수집하지 못함",
+   "evidence": {
+    "errors": [
+     {
+      "operation": "iam:GenerateCredentialReport",
+      "region": null,
+      "error_code": "AccessDenied",
+      "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: iam:GenerateCredentialReport because no identity-based policy allows the iam:GenerateCredentialReport action",
+      "resource": null
+     }
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

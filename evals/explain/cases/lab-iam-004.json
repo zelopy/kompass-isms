@@ -1,0 +1,31 @@
+{
+ "id": "lab-iam-004",
+ "title": "실습 결과 IAM-004 (비밀번호 정책 미흡)",
+ "source": "lab",
+ "rule_id": "IAM-004",
+ "tags": [
+  "iam",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "IAM-004",
+   "resource": "account",
+   "region": null,
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "비밀번호 정책이 설정되지 않음",
+   "evidence": {
+    "password_policy": null,
+    "criteria": {
+     "min_length_two_types": 10,
+     "min_length_three_types": 8
+    },
+    "login_attempt_limit": "IAM 비밀번호 정책으로 확인할 수 없음",
+    "character_types": 0
+   },
+   "collected_at": "2026-10-14T01:09:46.801088Z",
+   "mappings": null
+  }
+ ]
+}

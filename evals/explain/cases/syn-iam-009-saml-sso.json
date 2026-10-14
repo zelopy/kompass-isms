@@ -1,0 +1,42 @@
+{
+ "id": "syn-iam-009-saml-sso",
+ "title": "SAML 공급자와 Identity Center 역할 (REVIEW)",
+ "source": "synthetic",
+ "rule_id": "IAM-009",
+ "tags": [
+  "iam",
+  "review",
+  "masking"
+ ],
+ "findings": [
+  {
+   "rule_id": "IAM-009",
+   "resource": "arn:aws:iam::123456789012:saml-provider/AcmeOkta",
+   "region": null,
+   "status": "REVIEW",
+   "severity": "medium",
+   "message": "외부 자격증명 공급자로 로그인하는 사용자의 MFA는 IdP에서 확인해야 함 (saml)",
+   "evidence": {
+    "kind": "saml"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-009",
+   "resource": "account",
+   "region": null,
+   "status": "REVIEW",
+   "severity": "medium",
+   "message": "외부 자격증명 공급자로 로그인하는 사용자의 MFA는 IdP에서 확인해야 함 (identity_center_roles)",
+   "evidence": {
+    "kind": "identity_center_roles",
+    "roles": [
+     "arn:aws:iam::123456789012:role/aws-reserved/sso.amazonaws.com/AWSReservedSSO_Admin_4f1c2a9b7d3e8f60"
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

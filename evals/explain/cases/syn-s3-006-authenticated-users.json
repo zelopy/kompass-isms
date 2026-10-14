@@ -1,0 +1,49 @@
+{
+ "id": "syn-s3-006-authenticated-users",
+ "title": "ACL이 인증된 모든 AWS 사용자에게 READ 부여",
+ "source": "synthetic",
+ "rule_id": "S3-006",
+ "tags": [
+  "s3",
+  "variant",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "S3-006",
+   "resource": "acme-static-site",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "ACL이 모든 사용자에게 권한을 부여함: acme-static-site",
+   "evidence": {
+    "object_ownership": "BucketOwnerPreferred",
+    "public_grants": [
+     {
+      "grantee": "http://acs.amazonaws.com/groups/global/AuthenticatedUsers",
+      "permission": "READ"
+     }
+    ],
+    "ignore_public_acls": {
+     "bucket": false,
+     "account": null
+    }
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "S3-006",
+   "resource": "acme-billing-exports",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "high",
+   "message": "ACL이 비활성화되어 있음: acme-billing-exports",
+   "evidence": {
+    "object_ownership": "BucketOwnerEnforced"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

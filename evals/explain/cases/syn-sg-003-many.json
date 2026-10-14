@@ -1,0 +1,1197 @@
+{
+ "id": "syn-sg-003-many",
+ "title": "MySQL 포트를 연 보안그룹 32개 (30개 초과로 일부만 전송)",
+ "source": "synthetic",
+ "rule_id": "SG-003",
+ "tags": [
+  "ec2",
+  "volume",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-46e63cb5666d3cd34",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-46e63cb5666d3cd34",
+   "evidence": {
+    "group_name": "db-tenant-01",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-f65f480a0d83016e1",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-f65f480a0d83016e1",
+   "evidence": {
+    "group_name": "db-tenant-02",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-898302ed37d077d9a",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-898302ed37d077d9a",
+   "evidence": {
+    "group_name": "db-tenant-03",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-ac830ff6609b34e86",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-ac830ff6609b34e86",
+   "evidence": {
+    "group_name": "db-tenant-04",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-dc56eb8283332e32f",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-dc56eb8283332e32f",
+   "evidence": {
+    "group_name": "db-tenant-05",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-3ee67f9c66838520d",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-3ee67f9c66838520d",
+   "evidence": {
+    "group_name": "db-tenant-06",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-768ebe06e2bef863b",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-768ebe06e2bef863b",
+   "evidence": {
+    "group_name": "db-tenant-07",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-114f63fa066a836ba",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-114f63fa066a836ba",
+   "evidence": {
+    "group_name": "db-tenant-08",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-8fb3c9c9c145a5d8d",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-8fb3c9c9c145a5d8d",
+   "evidence": {
+    "group_name": "db-tenant-09",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-3c4039e068e7f6f1d",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-3c4039e068e7f6f1d",
+   "evidence": {
+    "group_name": "db-tenant-10",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-770abe7e6118dc8e6",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-770abe7e6118dc8e6",
+   "evidence": {
+    "group_name": "db-tenant-11",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-20180d796929fe252",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-20180d796929fe252",
+   "evidence": {
+    "group_name": "db-tenant-12",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-a94609edb05fae93f",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-a94609edb05fae93f",
+   "evidence": {
+    "group_name": "db-tenant-13",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-0631e616e8b1133d3",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-0631e616e8b1133d3",
+   "evidence": {
+    "group_name": "db-tenant-14",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-fff56a34a5773b30c",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-fff56a34a5773b30c",
+   "evidence": {
+    "group_name": "db-tenant-15",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-7704586780af10b81",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-7704586780af10b81",
+   "evidence": {
+    "group_name": "db-tenant-16",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-bc3bc84da7e1f749a",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-bc3bc84da7e1f749a",
+   "evidence": {
+    "group_name": "db-tenant-17",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-3eccd34c3d0d47927",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-3eccd34c3d0d47927",
+   "evidence": {
+    "group_name": "db-tenant-18",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-bf96f1780b1f3fa58",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-bf96f1780b1f3fa58",
+   "evidence": {
+    "group_name": "db-tenant-19",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-413fc43c26e998025",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-413fc43c26e998025",
+   "evidence": {
+    "group_name": "db-tenant-20",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-d4eb0d424d92d953c",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-d4eb0d424d92d953c",
+   "evidence": {
+    "group_name": "db-tenant-21",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-6bb9a4d048c4fc087",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-6bb9a4d048c4fc087",
+   "evidence": {
+    "group_name": "db-tenant-22",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-fc58f9a8ddc579841",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-fc58f9a8ddc579841",
+   "evidence": {
+    "group_name": "db-tenant-23",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-227ceb96891c307e0",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-227ceb96891c307e0",
+   "evidence": {
+    "group_name": "db-tenant-24",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-c133a6fa5caf6c2bb",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-c133a6fa5caf6c2bb",
+   "evidence": {
+    "group_name": "db-tenant-25",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-72cc1208aa0b5ea34",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-72cc1208aa0b5ea34",
+   "evidence": {
+    "group_name": "db-tenant-26",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-2d0eabd8c42eb8f00",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-2d0eabd8c42eb8f00",
+   "evidence": {
+    "group_name": "db-tenant-27",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-899fc48556f5231a5",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-899fc48556f5231a5",
+   "evidence": {
+    "group_name": "db-tenant-28",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-9f7cf235219f3b00c",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-9f7cf235219f3b00c",
+   "evidence": {
+    "group_name": "db-tenant-29",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-773603ece744cde8e",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-773603ece744cde8e",
+   "evidence": {
+    "group_name": "db-tenant-30",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-19e24d2d0304fe2f5",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-19e24d2d0304fe2f5",
+   "evidence": {
+    "group_name": "db-tenant-31",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-99a73c7c41a597acb",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-99a73c7c41a597acb",
+   "evidence": {
+    "group_name": "db-tenant-32",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

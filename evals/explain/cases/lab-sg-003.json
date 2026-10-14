@@ -1,0 +1,241 @@
+{
+ "id": "lab-sg-003",
+ "title": "실습 결과 SG-003 (데이터베이스 포트 전체 개방)",
+ "source": "lab",
+ "rule_id": "SG-003",
+ "tags": [
+  "ec2",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-d9ed871eaca8d62a6",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-d9ed871eaca8d62a6",
+   "evidence": {
+    "group_name": "kompass-lab-open-all",
+    "vpc_id": "vpc-3c301b8c3dc2448b1",
+    "open_rules": [
+     {
+      "protocol": "-1",
+      "from_port": null,
+      "to_port": null,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       1433,
+       1521,
+       3306,
+       5432,
+       6379,
+       27017
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-14T01:09:46.167904Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-b416090082bf3b080",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙 규칙이 없음: sg-b416090082bf3b080",
+   "evidence": {
+    "group_name": "kompass-lab-restricted",
+    "vpc_id": "vpc-3c301b8c3dc2448b1",
+    "open_rules": [],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-14T01:09:46.167904Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-3f06056a7b9064367",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙 규칙이 없음: sg-3f06056a7b9064367",
+   "evidence": {
+    "group_name": "kompass-lab-public-only-workload",
+    "vpc_id": "vpc-36b846400effe0fe9",
+    "open_rules": [],
+    "prefix_lists": [],
+    "attached_interfaces": 1,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-14T01:09:46.167904Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-8792cfbb4ddf9ffc7",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙 규칙이 없음: sg-8792cfbb4ddf9ffc7",
+   "evidence": {
+    "group_name": "default",
+    "vpc_id": "vpc-cd9bc37e56c14ba8f",
+    "open_rules": [],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-14T01:09:46.167904Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-7dc2a3c1045d997ae",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙 규칙이 없음: sg-7dc2a3c1045d997ae",
+   "evidence": {
+    "group_name": "default",
+    "vpc_id": "vpc-36b846400effe0fe9",
+    "open_rules": [],
+    "prefix_lists": [],
+    "attached_interfaces": 1,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-14T01:09:46.167904Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-397eb526b306e73be",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙 규칙이 없음: sg-397eb526b306e73be",
+   "evidence": {
+    "group_name": "default",
+    "vpc_id": "vpc-3c301b8c3dc2448b1",
+    "open_rules": [],
+    "prefix_lists": [],
+    "attached_interfaces": 1,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-14T01:09:46.167904Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-5a5d68315da3d9135",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙 규칙이 없음: sg-5a5d68315da3d9135",
+   "evidence": {
+    "group_name": "kompass-lab-open-ssh",
+    "vpc_id": "vpc-3c301b8c3dc2448b1",
+    "open_rules": [],
+    "prefix_lists": [],
+    "attached_interfaces": 1,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-14T01:09:46.167904Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-003",
+   "resource": "sg-c13edb52c38e79855",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "데이터베이스 포트가 전체 개방된 인바운드 규칙: sg-c13edb52c38e79855",
+   "evidence": {
+    "group_name": "kompass-lab-open-db",
+    "vpc_id": "vpc-3c301b8c3dc2448b1",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 3306,
+      "to_port": 3306,
+      "cidrs": [
+       "::/0"
+      ],
+      "matched_ports": [
+       3306
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "db_ports": [
+     3306,
+     5432,
+     1433,
+     1521,
+     27017,
+     6379
+    ]
+   },
+   "collected_at": "2026-10-14T01:09:46.167904Z",
+   "mappings": null
+  }
+ ]
+}

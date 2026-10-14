@@ -1,0 +1,33 @@
+{
+ "id": "syn-ct-001-error",
+ "title": "추적 목록 조회 권한 없음 (ERROR)",
+ "source": "synthetic",
+ "rule_id": "CT-001",
+ "tags": [
+  "cloudtrail",
+  "error"
+ ],
+ "findings": [
+  {
+   "rule_id": "CT-001",
+   "resource": "account",
+   "region": null,
+   "status": "ERROR",
+   "severity": "high",
+   "message": "CloudTrail 추적 목록을 수집하지 못함",
+   "evidence": {
+    "errors": [
+     {
+      "operation": "cloudtrail:DescribeTrails",
+      "region": "ap-northeast-2",
+      "error_code": "AccessDenied",
+      "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: cloudtrail:DescribeTrails because no identity-based policy allows the cloudtrail:DescribeTrails action",
+      "resource": null
+     }
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

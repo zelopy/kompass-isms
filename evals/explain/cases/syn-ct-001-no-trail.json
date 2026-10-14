@@ -1,0 +1,28 @@
+{
+ "id": "syn-ct-001-no-trail",
+ "title": "추적이 하나도 없음",
+ "source": "synthetic",
+ "rule_id": "CT-001",
+ "tags": [
+  "cloudtrail",
+  "unseen-rule",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "CT-001",
+   "resource": "account",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "CloudTrail 추적이 없음",
+   "evidence": {
+    "require_read_events": true,
+    "trails": [],
+    "passing_trails": []
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

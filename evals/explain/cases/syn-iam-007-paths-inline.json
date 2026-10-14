@@ -1,0 +1,78 @@
+{
+ "id": "syn-iam-007-paths-inline",
+ "title": "IAM 경로가 있는 사용자·인라인·그룹·NotAction 관리자 권한",
+ "source": "synthetic",
+ "rule_id": "IAM-007",
+ "tags": [
+  "iam",
+  "masking",
+  "mixed",
+  "fail",
+  "review"
+ ],
+ "findings": [
+  {
+   "rule_id": "IAM-007",
+   "resource": "arn:aws:iam::123456789012:user/engineering/platform/alice.kim",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "사용자에게 관리자 권한이 직접 연결되어 있음: alice.kim",
+   "evidence": {
+    "user": "alice.kim",
+    "sources": [
+     {
+      "via": "user",
+      "policy": "inline:break-glass",
+      "kind": "admin"
+     }
+    ],
+    "permissions_boundary": null
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-007",
+   "resource": "arn:aws:iam::123456789012:user/bob.lee",
+   "region": null,
+   "status": "REVIEW",
+   "severity": "high",
+   "message": "그룹을 통해 관리자 권한을 가진 사용자: bob.lee",
+   "evidence": {
+    "user": "bob.lee",
+    "sources": [
+     {
+      "via": "group:platform-admins",
+      "policy": "arn:aws:iam::aws:policy/AdministratorAccess",
+      "kind": "admin"
+     }
+    ],
+    "permissions_boundary": null
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-007",
+   "resource": "arn:aws:iam::123456789012:user/carol.park",
+   "region": null,
+   "status": "REVIEW",
+   "severity": "high",
+   "message": "관리자 권한 여부를 확정할 수 없는 정책이 있음: carol.park",
+   "evidence": {
+    "user": "carol.park",
+    "sources": [
+     {
+      "via": "user",
+      "policy": "arn:aws:iam::123456789012:policy/ops/power-ops",
+      "kind": "ambiguous"
+     }
+    ],
+    "permissions_boundary": null
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

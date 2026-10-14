@@ -1,0 +1,31 @@
+{
+ "id": "lab-s3-001",
+ "title": "실습 결과 S3-001 (계정 수준 퍼블릭 액세스 차단 미설정)",
+ "source": "lab",
+ "rule_id": "S3-001",
+ "tags": [
+  "s3",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "S3-001",
+   "resource": "account",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "계정 수준 퍼블릭 액세스 차단이 설정되지 않음",
+   "evidence": {
+    "public_access_block": null,
+    "disabled_settings": [
+     "BlockPublicAcls",
+     "IgnorePublicAcls",
+     "BlockPublicPolicy",
+     "RestrictPublicBuckets"
+    ]
+   },
+   "collected_at": "2026-10-14T01:10:11.650166Z",
+   "mappings": null
+  }
+ ]
+}

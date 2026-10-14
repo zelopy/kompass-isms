@@ -1,0 +1,68 @@
+{
+ "id": "syn-sg-001-region-error",
+ "title": "한 리전은 FAIL, 다른 리전은 조회 권한 없음 (ERROR)",
+ "source": "synthetic",
+ "rule_id": "SG-001",
+ "tags": [
+  "ec2",
+  "mixed",
+  "error",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "SG-001",
+   "resource": "sg-3c25982a35eb1276a",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "critical",
+   "message": "관리 포트가 전체 개방된 인바운드 규칙: sg-3c25982a35eb1276a",
+   "evidence": {
+    "group_name": "bastion",
+    "vpc_id": "vpc-a5feb1981c1a8930f",
+    "open_rules": [
+     {
+      "protocol": "tcp",
+      "from_port": 22,
+      "to_port": 22,
+      "cidrs": [
+       "0.0.0.0/0"
+      ],
+      "matched_ports": [
+       22
+      ]
+     }
+    ],
+    "prefix_lists": [],
+    "attached_interfaces": 0,
+    "admin_ports": [
+     22,
+     3389
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "SG-001",
+   "resource": "account",
+   "region": "us-east-1",
+   "status": "ERROR",
+   "severity": "critical",
+   "message": "보안그룹 목록을 수집하지 못함",
+   "evidence": {
+    "errors": [
+     {
+      "operation": "ec2:DescribeSecurityGroups",
+      "region": "us-east-1",
+      "error_code": "AccessDenied",
+      "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: ec2:DescribeSecurityGroups because no identity-based policy allows the ec2:DescribeSecurityGroups action",
+      "resource": null
+     }
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

@@ -1,0 +1,608 @@
+{
+ "id": "syn-iam-003-many-users",
+ "title": "MFA 없는 콘솔 사용자 34명 (30개 초과로 일부만 전송)",
+ "source": "synthetic",
+ "rule_id": "IAM-003",
+ "tags": [
+  "iam",
+  "volume",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-01",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-01",
+   "evidence": {
+    "user": "dev-user-01",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-10-12T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-02",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-02",
+   "evidence": {
+    "user": "dev-user-02",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-10-11T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-03",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-03",
+   "evidence": {
+    "user": "dev-user-03",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-10-10T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-04",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-04",
+   "evidence": {
+    "user": "dev-user-04",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-10-09T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-05",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-05",
+   "evidence": {
+    "user": "dev-user-05",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-10-08T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-06",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-06",
+   "evidence": {
+    "user": "dev-user-06",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-10-07T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-07",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-07",
+   "evidence": {
+    "user": "dev-user-07",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-10-06T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-08",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-08",
+   "evidence": {
+    "user": "dev-user-08",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-10-05T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-09",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-09",
+   "evidence": {
+    "user": "dev-user-09",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-10-04T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-10",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-10",
+   "evidence": {
+    "user": "dev-user-10",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-10-03T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-11",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-11",
+   "evidence": {
+    "user": "dev-user-11",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-10-02T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-12",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-12",
+   "evidence": {
+    "user": "dev-user-12",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-10-01T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-13",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-13",
+   "evidence": {
+    "user": "dev-user-13",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-09-30T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-14",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-14",
+   "evidence": {
+    "user": "dev-user-14",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-09-29T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-15",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-15",
+   "evidence": {
+    "user": "dev-user-15",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-09-28T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-16",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-16",
+   "evidence": {
+    "user": "dev-user-16",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-09-27T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-17",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-17",
+   "evidence": {
+    "user": "dev-user-17",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-09-26T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-18",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-18",
+   "evidence": {
+    "user": "dev-user-18",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-09-25T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-19",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-19",
+   "evidence": {
+    "user": "dev-user-19",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-09-24T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-20",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-20",
+   "evidence": {
+    "user": "dev-user-20",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-09-23T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-21",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-21",
+   "evidence": {
+    "user": "dev-user-21",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-09-22T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-22",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-22",
+   "evidence": {
+    "user": "dev-user-22",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-09-21T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-23",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-23",
+   "evidence": {
+    "user": "dev-user-23",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-09-20T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-24",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-24",
+   "evidence": {
+    "user": "dev-user-24",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-09-19T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-25",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-25",
+   "evidence": {
+    "user": "dev-user-25",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-09-18T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-26",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-26",
+   "evidence": {
+    "user": "dev-user-26",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-09-17T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-27",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-27",
+   "evidence": {
+    "user": "dev-user-27",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-09-16T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-28",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-28",
+   "evidence": {
+    "user": "dev-user-28",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-09-15T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-29",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-29",
+   "evidence": {
+    "user": "dev-user-29",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-09-14T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-30",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-30",
+   "evidence": {
+    "user": "dev-user-30",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-09-13T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-31",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-31",
+   "evidence": {
+    "user": "dev-user-31",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-09-12T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-32",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-32",
+   "evidence": {
+    "user": "dev-user-32",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-09-11T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-33",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-33",
+   "evidence": {
+    "user": "dev-user-33",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-09-10T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/dev-user-34",
+   "region": null,
+   "status": "FAIL",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되지 않음: dev-user-34",
+   "evidence": {
+    "user": "dev-user-34",
+    "password_enabled": true,
+    "mfa_active": false,
+    "password_last_used": "2026-09-09T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-003",
+   "resource": "arn:aws:iam::123456789012:user/ops-admin",
+   "region": null,
+   "status": "PASS",
+   "severity": "high",
+   "message": "콘솔 사용자에 MFA가 설정되어 있음: ops-admin",
+   "evidence": {
+    "user": "ops-admin",
+    "password_enabled": true,
+    "mfa_active": true,
+    "password_last_used": "2026-10-12T12:00:00Z",
+    "report_generated_time": "2026-10-13T12:00:00Z"
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

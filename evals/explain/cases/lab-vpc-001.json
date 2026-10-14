@@ -1,0 +1,64 @@
+{
+ "id": "lab-vpc-001",
+ "title": "실습 결과 VPC-001 (공개·내부 서브넷 미분리)",
+ "source": "lab",
+ "rule_id": "VPC-001",
+ "tags": [
+  "ec2",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "VPC-001",
+   "resource": "vpc-3c301b8c3dc2448b1",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "medium",
+   "message": "프라이빗 서브넷에 리소스가 있음: vpc-3c301b8c3dc2448b1",
+   "evidence": {
+    "is_default_vpc": false,
+    "subnets": {
+     "subnet-71327bbfcaf11e065": {
+      "public": false,
+      "interfaces": 1
+     }
+    }
+   },
+   "collected_at": "2026-10-14T01:09:46.167904Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "VPC-001",
+   "resource": "vpc-cd9bc37e56c14ba8f",
+   "region": "ap-northeast-2",
+   "status": "N/A",
+   "severity": "medium",
+   "message": "VPC에 네트워크 인터페이스가 없음: vpc-cd9bc37e56c14ba8f",
+   "evidence": {
+    "is_default_vpc": true,
+    "subnets": {}
+   },
+   "collected_at": "2026-10-14T01:09:46.167904Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "VPC-001",
+   "resource": "vpc-36b846400effe0fe9",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "리소스가 퍼블릭 서브넷에만 있음: vpc-36b846400effe0fe9",
+   "evidence": {
+    "is_default_vpc": false,
+    "subnets": {
+     "subnet-aadd25710cee947b5": {
+      "public": true,
+      "interfaces": 1
+     }
+    }
+   },
+   "collected_at": "2026-10-14T01:09:46.167904Z",
+   "mappings": null
+  }
+ ]
+}

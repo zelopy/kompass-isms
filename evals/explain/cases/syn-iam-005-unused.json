@@ -1,0 +1,76 @@
+{
+ "id": "syn-iam-005-unused",
+ "title": "90일 넘게 쓰지 않은 자격증명 2명",
+ "source": "synthetic",
+ "rule_id": "IAM-005",
+ "tags": [
+  "iam",
+  "unseen-rule",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "IAM-005",
+   "resource": "arn:aws:iam::123456789012:user/legacy-batch",
+   "region": null,
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "90일 넘게 쓰지 않은 자격증명이 있음: legacy-batch",
+   "evidence": {
+    "user": "legacy-batch",
+    "threshold_days": 90,
+    "credentials": [
+     {
+      "credential": "access_key_1",
+      "last_activity": "2026-03-27T12:00:00Z",
+      "days_since_last_use": 200
+     }
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-005",
+   "resource": "arn:aws:iam::123456789012:user/former-contractor",
+   "region": null,
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "90일 넘게 쓰지 않은 자격증명이 있음: former-contractor",
+   "evidence": {
+    "user": "former-contractor",
+    "threshold_days": 90,
+    "credentials": [
+     {
+      "credential": "password",
+      "last_activity": "2026-05-16T12:00:00Z",
+      "days_since_last_use": 150
+     }
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-005",
+   "resource": "arn:aws:iam::123456789012:user/ci-deployer",
+   "region": null,
+   "status": "PASS",
+   "severity": "medium",
+   "message": "모든 활성 자격증명을 최근 90일 안에 사용함: ci-deployer",
+   "evidence": {
+    "user": "ci-deployer",
+    "threshold_days": 90,
+    "credentials": [
+     {
+      "credential": "access_key_1",
+      "last_activity": "2026-10-12T12:00:00Z",
+      "days_since_last_use": 1
+     }
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

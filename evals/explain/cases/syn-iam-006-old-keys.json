@@ -1,0 +1,65 @@
+{
+ "id": "syn-iam-006-old-keys",
+ "title": "교체하지 않은 액세스 키 (KISA 매핑 없음)",
+ "source": "synthetic",
+ "rule_id": "IAM-006",
+ "tags": [
+  "iam",
+  "unseen-rule",
+  "isms-only",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "IAM-006",
+   "resource": "arn:aws:iam::123456789012:user/legacy-batch#access_key_1",
+   "region": null,
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "액세스 키를 400일째 교체하지 않음: legacy-batch access_key_1",
+   "evidence": {
+    "user": "legacy-batch",
+    "key_slot": 1,
+    "last_rotated": "2025-09-08T12:00:00Z",
+    "days_since_rotation": 400,
+    "threshold_days": 90
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-006",
+   "resource": "arn:aws:iam::123456789012:user/legacy-batch#access_key_2",
+   "region": null,
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "액세스 키를 200일째 교체하지 않음: legacy-batch access_key_2",
+   "evidence": {
+    "user": "legacy-batch",
+    "key_slot": 2,
+    "last_rotated": "2026-03-27T12:00:00Z",
+    "days_since_rotation": 200,
+    "threshold_days": 90
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-006",
+   "resource": "arn:aws:iam::123456789012:user/ci-deployer#access_key_1",
+   "region": null,
+   "status": "PASS",
+   "severity": "medium",
+   "message": "액세스 키를 90일 안에 교체함: ci-deployer access_key_1",
+   "evidence": {
+    "user": "ci-deployer",
+    "key_slot": 1,
+    "last_rotated": "2026-09-23T12:00:00Z",
+    "days_since_rotation": 20,
+    "threshold_days": 90
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

@@ -1,0 +1,71 @@
+{
+ "id": "syn-s3-003-mixed",
+ "title": "퍼블릭 버킷 정책 FAIL과 조회 실패 ERROR 혼합",
+ "source": "synthetic",
+ "rule_id": "S3-003",
+ "tags": [
+  "s3",
+  "mixed",
+  "error",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "S3-003",
+   "resource": "acme-static-site",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "critical",
+   "message": "버킷 정책이 퍼블릭 접근을 허용함: acme-static-site",
+   "evidence": {
+    "policy_status": {
+     "IsPublic": true
+    },
+    "restrict_public_buckets": {
+     "bucket": false,
+     "account": null
+    }
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "S3-003",
+   "resource": "acme-hr-documents",
+   "region": "ap-northeast-2",
+   "status": "ERROR",
+   "severity": "critical",
+   "message": "버킷 정책 상태을(를) 수집하지 못함: acme-hr-documents",
+   "evidence": {
+    "errors": [
+     {
+      "operation": "s3:GetBucketPolicyStatus",
+      "region": "ap-northeast-2",
+      "error_code": "AccessDenied",
+      "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: s3:GetBucketPolicyStatus because no identity-based policy allows the s3:GetBucketPolicyStatus action",
+      "resource": "acme-hr-documents"
+     }
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "S3-003",
+   "resource": "acme-billing-exports",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "critical",
+   "message": "버킷 정책이 없음: acme-billing-exports",
+   "evidence": {
+    "policy_status": null,
+    "restrict_public_buckets": {
+     "bucket": true,
+     "account": null
+    }
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

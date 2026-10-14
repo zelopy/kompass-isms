@@ -1,0 +1,30 @@
+{
+ "id": "syn-iam-008-root-recent",
+ "title": "루트 계정을 3일 전에 사용 (REVIEW)",
+ "source": "synthetic",
+ "rule_id": "IAM-008",
+ "tags": [
+  "iam",
+  "review"
+ ],
+ "findings": [
+  {
+   "rule_id": "IAM-008",
+   "resource": "account",
+   "region": null,
+   "status": "REVIEW",
+   "severity": "high",
+   "message": "루트 계정을 최근 3일 전에 사용함. 운영 목적 사용인지 확인이 필요함",
+   "evidence": {
+    "password_last_used": "2026-10-10T12:00:00Z",
+    "access_key_1_last_used_date": "N/A",
+    "access_key_2_last_used_date": "N/A",
+    "last_used": "2026-10-10T12:00:00Z",
+    "days_since_last_use": 3,
+    "threshold_days": 90
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}
