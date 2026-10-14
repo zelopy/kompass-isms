@@ -187,3 +187,52 @@ def test_evaluate_incomplete_scan(store: Path) -> None:
     incomplete.mkdir(parents=True)
     result = runner.invoke(app, ["evaluate", "--scan", str(incomplete), "--store", str(store)])
     assert result.exit_code == EXIT_SNAPSHOT
+
+
+# --- report ---
+
+
+def test_scan_with_reports(aws: None, store: Path) -> None:
+    result = runner.invoke(app, _scan_args(store, "--report", "md", "--report", "xlsx"))
+    assert result.exit_code == 0, result.output
+    reports = store / "reports" / "123456789012"
+    assert len(list(reports.glob("*.md"))) == 1
+    assert len(list(reports.glob("*.xlsx"))) == 1
+    md = next(reports.glob("*.md")).read_text(encoding="utf-8")
+    assert "## KISA 항목별 결과" in md
+
+
+def test_report_from_latest_findings(aws: None, store: Path) -> None:
+    assert runner.invoke(app, _scan_args(store)).exit_code == 0
+    result = runner.invoke(app, ["report", "--store", str(store), "--format", "json"])
+    assert result.exit_code == 0, result.output
+    assert "판정 결과: " in result.output
+    [report] = (store / "reports" / "123456789012").glob("*.report.json")
+    data = json.loads(report.read_text(encoding="utf-8"))
+    assert len(data["kisa_items"]) == 19
+
+
+def test_report_defaults_to_md_and_xlsx(aws: None, store: Path) -> None:
+    assert runner.invoke(app, _scan_args(store)).exit_code == 0
+    assert runner.invoke(app, ["report", "--store", str(store)]).exit_code == 0
+    suffixes = sorted(p.suffix for p in (store / "reports" / "123456789012").iterdir())
+    assert suffixes == [".md", ".xlsx"]
+
+
+def test_report_without_findings(store: Path) -> None:
+    result = runner.invoke(app, ["report", "--store", str(store)])
+    assert result.exit_code == EXIT_SNAPSHOT
+
+
+def test_report_refuses_tampered_snapshot(aws: None, store: Path) -> None:
+    # 증적(스냅샷)이 판정 후 바뀌었으면 보고서를 만들지 않는다
+    assert runner.invoke(app, _scan_args(store)).exit_code == 0
+    [snapshot] = (store / "snapshots" / "123456789012").glob("*/ec2.json")
+    snapshot.write_text(snapshot.read_text(encoding="utf-8") + " ", encoding="utf-8")
+    result = runner.invoke(app, ["report", "--store", str(store)])
+    assert result.exit_code == EXIT_SNAPSHOT
+
+
+def test_unknown_report_format_is_usage_error(aws: None, store: Path) -> None:
+    result = runner.invoke(app, ["report", "--store", str(store), "--format", "pdf"])
+    assert result.exit_code == EXIT_USAGE

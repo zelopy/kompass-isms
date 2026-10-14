@@ -2,7 +2,8 @@
 
 - `collect`: 점검 세션을 열고 서비스별 설정을 수집해 스냅샷으로 저장한다
 - `evaluate`: 저장된 스냅샷을 룰로 판정해 결과 파일(`*.findings.json`)을 쓴다
-- `scan`: collect와 evaluate를 이어서 실행한다
+- `scan`: collect와 evaluate를 이어서 실행한다 (`--report`로 보고서까지)
+- `report`: 판정 결과에 KISA·ISMS-P 매핑을 붙여 보고서(Markdown, Excel, JSON)를 만든다
 
 종료 코드: 0 완료(FAIL이 있어도 0), 1 `--fail-on` 기준 해당, 2 사용법·설정 오류,
 3 세션 오류, 4 스냅샷 오류.
@@ -24,9 +25,13 @@ from kompass.pipeline import (
     COLLECTORS,
     collect,
     default_findings_path,
+    default_reports_dir,
     evaluate_scan,
     exceeds,
+    latest_findings,
+    make_report,
     write_report,
+    write_reports,
 )
 from kompass.snapshots import (
     DEFAULT_ROOT,
@@ -54,6 +59,15 @@ class FailOn(StrEnum):
     FAIL = "fail"
     ERROR = "error"
     REVIEW = "review"
+
+
+class ReportFormat(StrEnum):
+    MD = "md"
+    XLSX = "xlsx"
+    JSON = "json"
+
+
+DEFAULT_REPORT_FORMATS = (ReportFormat.MD, ReportFormat.XLSX)
 
 
 def _configure_output() -> None:
@@ -175,7 +189,8 @@ def _evaluate(
     settings: Settings,
     output: Path | None,
     fail_on: FailOn | None,
-) -> None:
+) -> tuple[Path, bool]:
+    """판정해 결과 파일을 쓴다. (결과 파일 경로, `--fail-on` 기준 해당 여부)를 돌려준다."""
     try:
         _, report = evaluate_scan(scan_path, settings)
     except (IncompleteScanError, SnapshotIntegrityError, FileNotFoundError) as exc:
@@ -183,8 +198,17 @@ def _evaluate(
     path = write_report(report, output or default_findings_path(store, report))
     _print_summary(report)
     typer.echo(f"결과 파일: {path}")
-    if exceeds(report, fail_on.value if fail_on else None):
-        raise typer.Exit(EXIT_FAIL_ON)
+    return path, exceeds(report, fail_on.value if fail_on else None)
+
+
+def _reports(store: SnapshotStore, findings_path: Path, formats: list[ReportFormat]) -> None:
+    try:
+        report = make_report(store, findings_path)
+    except (IncompleteScanError, SnapshotIntegrityError, FileNotFoundError) as exc:
+        _abort(str(exc), EXIT_SNAPSHOT)
+    paths = write_reports(report, [f.value for f in formats], default_reports_dir(store, report))
+    for path in paths:
+        typer.echo(f"보고서: {path}")
 
 
 def _print_summary(report: EvaluationReport) -> None:
@@ -240,7 +264,9 @@ def evaluate_command(
         if scan_path is None:
             _abort(f"완료된 점검이 없다: {snapshot_store.root}", EXIT_SNAPSHOT)
         typer.echo(f"점검: {scan_path}")
-    _evaluate(scan_path, snapshot_store, _settings(config), output, fail_on)
+    _, exceeded = _evaluate(scan_path, snapshot_store, _settings(config), output, fail_on)
+    if exceeded:
+        raise typer.Exit(EXIT_FAIL_ON)
 
 
 @app.command("scan")
@@ -254,10 +280,41 @@ def scan_command(
     config: Path | None = ConfigOption,
     output: Path | None = OutputOption,
     fail_on: FailOn | None = FailOnOption,
+    report: list[ReportFormat] | None = typer.Option(
+        None, "--report", help="판정 후 이 형식의 보고서도 만든다 (md, xlsx, json). 여러 번 지정."
+    ),
 ) -> None:
     """수집과 판정을 이어서 실행한다."""
     settings = _settings(config)  # 설정 오류는 AWS를 호출하기 전에 드러낸다
     scan = _open(profile, region, regions, account_id)
     snapshot_store = SnapshotStore(store)
     scan_path = _collect(scan, snapshot_store, service)
-    _evaluate(scan_path, snapshot_store, settings, output, fail_on)
+    findings_path, exceeded = _evaluate(scan_path, snapshot_store, settings, output, fail_on)
+    if report:
+        _reports(snapshot_store, findings_path, report)
+    if exceeded:
+        raise typer.Exit(EXIT_FAIL_ON)
+
+
+@app.command("report")
+def report_command(
+    findings: Path | None = typer.Option(
+        None, "--findings", help="판정 결과 파일. 없으면 가장 최근에 판정한 결과."
+    ),
+    account_id: str | None = AccountOption,
+    store: Path = StoreOption,
+    formats: list[ReportFormat] | None = typer.Option(
+        None, "--format", help="보고서 형식 (md, xlsx, json). 여러 번 지정. 없으면 md와 xlsx."
+    ),
+) -> None:
+    """판정 결과에 KISA·ISMS-P 매핑을 붙여 보고서를 만든다."""
+    snapshot_store = SnapshotStore(store)
+    if findings is None:
+        try:
+            findings = latest_findings(snapshot_store, account_id)
+        except ValueError as exc:
+            _abort(str(exc), EXIT_USAGE)
+        if findings is None:
+            _abort(f"판정 결과가 없다: {snapshot_store.root}", EXIT_SNAPSHOT)
+        typer.echo(f"판정 결과: {findings}")
+    _reports(snapshot_store, findings, list(formats or DEFAULT_REPORT_FORMATS))

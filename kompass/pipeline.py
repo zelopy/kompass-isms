@@ -18,7 +18,12 @@ from kompass.collectors.ec2 import Ec2Collector
 from kompass.collectors.iam import IamCollector
 from kompass.collectors.s3 import S3Collector
 from kompass.config import Settings
-from kompass.models import EvaluationReport, ScanManifest, Snapshot, Status
+from kompass.mappings.data import load_mappings
+from kompass.mappings.mapper import build_report
+from kompass.models import AuditReport, EvaluationReport, ScanManifest, Snapshot, Status
+from kompass.reporters.json_reporter import render_json
+from kompass.reporters.markdown_reporter import render_markdown
+from kompass.reporters.xlsx_reporter import render_xlsx
 from kompass.rules.registry import evaluate
 from kompass.snapshots import SnapshotStore, load_scan
 
@@ -29,6 +34,15 @@ COLLECTORS: dict[str, Callable[[], Collector]] = {
     "s3": S3Collector,
 }
 FINDINGS_DIR = "findings"
+REPORTS_DIR = "reports"
+SNAPSHOTS_DIR = "snapshots"
+
+# 보고서 형식 → (파일 확장자, 렌더러)
+REPORT_FORMATS: dict[str, tuple[str, Callable[[AuditReport], str | bytes]]] = {
+    "md": (".md", render_markdown),
+    "xlsx": (".xlsx", render_xlsx),
+    "json": (".report.json", render_json),
+}
 
 # --fail-on 기준: 이 상태 중 하나라도 있으면 종료 코드 1
 FAIL_ON: dict[str, frozenset[Status]] = {
@@ -105,3 +119,61 @@ def exceeds(report: EvaluationReport, fail_on: str | None) -> bool:
         return False
     statuses = FAIL_ON[fail_on]
     return any(f.status in statuses for f in report.findings)
+
+
+def latest_findings(store: SnapshotStore, account_id: str | None = None) -> Path | None:
+    """가장 최근에 판정한 결과 파일. 계정이 여럿인데 지정하지 않으면 ValueError."""
+    root = store.root / FINDINGS_DIR
+    if not root.is_dir():
+        return None
+    if account_id is None:
+        accounts = [p.name for p in root.iterdir() if p.is_dir()]
+        if len(accounts) > 1:
+            listed = ", ".join(sorted(accounts))
+            raise ValueError(f"여러 계정의 판정 결과가 있다 ({listed}). 계정을 지정해야 한다")
+        if not accounts:
+            return None
+        account_id = accounts[0]
+    files = sorted((root / account_id).glob("*.findings.json"))
+    if not files:
+        return None
+    return max(files, key=lambda p: _read_evaluation(p).evaluated_at)
+
+
+def _read_evaluation(path: Path) -> EvaluationReport:
+    return EvaluationReport.model_validate_json(path.read_text(encoding="utf-8"))
+
+
+def make_report(store: SnapshotStore, findings_path: Path) -> AuditReport:
+    """판정 결과에 매핑을 붙여 보고서 데이터를 만든다 (ADR-025).
+
+    해당 점검의 스냅샷을 다시 불러와 해시를 대조한다. 증적이 바뀌었으면 보고서를 만들지 않는다.
+    """
+    evaluation = _read_evaluation(findings_path)
+    scan_path = store.root / SNAPSHOTS_DIR / evaluation.account_id / evaluation.scan_id
+    manifest, _ = load_scan(scan_path)
+    return build_report(manifest, evaluation, load_mappings())
+
+
+def write_reports(report: AuditReport, formats: Sequence[str], out_dir: Path) -> list[Path]:
+    unknown = [f for f in formats if f not in REPORT_FORMATS]
+    if unknown:
+        raise ValueError(f"알 수 없는 보고서 형식: {', '.join(unknown)}")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    written: list[Path] = []
+    for name in dict.fromkeys(formats):
+        suffix, render = REPORT_FORMATS[name]
+        path = out_dir / f"{report.scan.scan_id}{suffix}"
+        content = render(report)
+        temp = path.with_name(path.name + ".tmp")
+        if isinstance(content, bytes):
+            temp.write_bytes(content)
+        else:
+            temp.write_text(content, encoding="utf-8")
+        os.replace(temp, path)
+        written.append(path)
+    return written
+
+
+def default_reports_dir(store: SnapshotStore, report: AuditReport) -> Path:
+    return store.root / REPORTS_DIR / report.scan.account_id
