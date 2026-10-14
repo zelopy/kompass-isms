@@ -2,6 +2,7 @@
 
 import json
 from collections.abc import Iterator
+from datetime import UTC, datetime
 from pathlib import Path
 
 import boto3
@@ -9,8 +10,13 @@ import pytest
 from moto import mock_aws
 from typer.testing import CliRunner
 
-from kompass.cli import EXIT_FAIL_ON, EXIT_SESSION, EXIT_SNAPSHOT, EXIT_USAGE, app
+from kompass.cli import EXIT_FAIL_ON, EXIT_LLM, EXIT_SESSION, EXIT_SNAPSHOT, EXIT_USAGE, app
+from kompass.interpreter.llm import LLMError
+from kompass.interpreter.sources import INDEX_ENV
+from kompass.mappings.data import load_mappings
+from kompass.models import ExplanationReport, SourceEntry, SourceIndex
 from tests.conftest import AwsFiles
+from tests.interpreter.fakes import FakeProvider, cite_first_source
 
 runner = CliRunner()
 REGION = "ap-northeast-2"
@@ -236,3 +242,132 @@ def test_report_refuses_tampered_snapshot(aws: None, store: Path) -> None:
 def test_unknown_report_format_is_usage_error(aws: None, store: Path) -> None:
     result = runner.invoke(app, ["report", "--store", str(store), "--format", "pdf"])
     assert result.exit_code == EXIT_USAGE
+
+
+# --- explain ---
+
+
+@pytest.fixture
+def source_index(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    mappings = load_mappings()
+    index = SourceIndex(
+        built_at=datetime(2026, 10, 14, tzinfo=UTC),
+        documents={},
+        kisa={
+            code: SourceEntry(title=item.title, page=1, text=f"KISA {code} 원문 구절이다.")
+            for code, item in mappings.kisa_items.items()
+        },
+        isms_p={
+            code: SourceEntry(title=name, page=1, text=f"ISMS-P {code} 원문 구절이다.")
+            for code, name in mappings.isms_p_controls.items()
+        },
+    )
+    path = tmp_path / "index.json"
+    path.write_text(index.model_dump_json(), encoding="utf-8")
+    monkeypatch.setenv(INDEX_ENV, str(path))
+    return path
+
+
+@pytest.fixture
+def fake_llm(monkeypatch: pytest.MonkeyPatch) -> FakeProvider:
+    provider = FakeProvider(cite_first_source)
+    monkeypatch.setattr("kompass.cli.make_provider", lambda settings: provider)
+    return provider
+
+
+def _scanned(store: Path) -> None:
+    _open_ssh_group()
+    assert runner.invoke(app, _scan_args(store)).exit_code == 0
+
+
+def test_explain_dry_run_sends_no_explanation_request(
+    aws: None, store: Path, source_index: Path, fake_llm: FakeProvider
+) -> None:
+    _scanned(store)
+    result = runner.invoke(app, ["explain", "--store", str(store), "--dry-run"])
+    assert result.exit_code == 0, result.output
+    assert "해설 대상: 룰" in result.output and "입력 토큰" in result.output
+    assert fake_llm.calls == [] and fake_llm.count_calls > 0
+    assert not (store / "explanations").exists()
+
+
+def test_explain_writes_file_and_reports(
+    aws: None, store: Path, source_index: Path, fake_llm: FakeProvider
+) -> None:
+    _scanned(store)
+    result = runner.invoke(app, ["explain", "--store", str(store), "--yes", "--report", "md"])
+    assert result.exit_code == 0, result.output
+    assert "해설 SG-001" in result.output and "검증됨" in result.output
+    [path] = (store / "explanations").rglob("*.explanations.json")
+    explained = ExplanationReport.model_validate_json(path.read_text(encoding="utf-8"))
+    assert {e.rule_id for e in explained.explanations} >= {"SG-001"}
+    assert all(e.verified for e in explained.explanations)
+    [md] = store.rglob("*.md")
+    assert "## AI 해설 (참고)" in md.read_text(encoding="utf-8")
+
+
+def test_explain_asks_before_spending(
+    aws: None, store: Path, source_index: Path, fake_llm: FakeProvider
+) -> None:
+    _scanned(store)
+    result = runner.invoke(app, ["explain", "--store", str(store)], input="n\n")
+    assert result.exit_code == 0
+    assert "취소했다" in result.output and fake_llm.calls == []
+
+
+def test_report_attaches_existing_explanations(
+    aws: None, store: Path, source_index: Path, fake_llm: FakeProvider
+) -> None:
+    _scanned(store)
+    assert runner.invoke(app, ["explain", "--store", str(store), "--yes"]).exit_code == 0
+    result = runner.invoke(app, ["report", "--store", str(store), "--format", "md"])
+    assert result.exit_code == 0
+    [md] = store.rglob("*.md")
+    assert "## AI 해설 (참고)" in md.read_text(encoding="utf-8")
+
+
+def test_report_warns_about_stale_explanations(
+    aws: None, store: Path, source_index: Path, fake_llm: FakeProvider
+) -> None:
+    _scanned(store)
+    assert runner.invoke(app, ["explain", "--store", str(store), "--yes"]).exit_code == 0
+    [scan_dir] = (store / "snapshots").glob("*/*")
+    evaluate = ["evaluate", "--store", str(store), "--scan", str(scan_dir)]
+    assert runner.invoke(app, evaluate).exit_code == 0  # 다시 판정
+    result = runner.invoke(app, ["report", "--store", str(store), "--format", "md"])
+    assert result.exit_code == 0
+    assert "kompass explain을 다시 실행한다" in result.output
+    [md] = store.rglob("*.md")
+    assert "## AI 해설" not in md.read_text(encoding="utf-8")
+
+
+def test_explain_all_failed_exit_code(
+    aws: None, store: Path, source_index: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _scanned(store)
+    provider = FakeProvider(lambda payload, attempt: LLMError("인증 실패"))
+    monkeypatch.setattr("kompass.cli.make_provider", lambda settings: provider)
+    result = runner.invoke(app, ["explain", "--store", str(store), "--yes"])
+    assert result.exit_code == EXIT_LLM
+    assert "인증 실패" in result.output
+
+
+def test_explain_without_index_is_usage_error(
+    aws: None, store: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, fake_llm: FakeProvider
+) -> None:
+    _scanned(store)
+    monkeypatch.setenv(INDEX_ENV, str(tmp_path / "missing.json"))
+    result = runner.invoke(app, ["explain", "--store", str(store), "--yes"])
+    assert result.exit_code == EXIT_USAGE
+    assert "build_source_index" in result.output
+
+
+def test_explain_without_api_key_is_usage_error(
+    aws: None, store: Path, source_index: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _scanned(store)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+    result = runner.invoke(app, ["explain", "--store", str(store), "--yes"])
+    assert result.exit_code == EXIT_USAGE
+    assert "ANTHROPIC_API_KEY" in result.output

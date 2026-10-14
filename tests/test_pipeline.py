@@ -1,6 +1,7 @@
 """실행 흐름(collect → evaluate → 결과 파일)과 설정 파일 로드 테스트. moto만 쓴다."""
 
 from collections.abc import Iterator
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import boto3
@@ -14,7 +15,9 @@ from kompass.config import ConfigError, Settings, load_settings
 from kompass.models import EvaluationReport, Finding, Severity, Status
 from kompass.pipeline import (
     COLLECTORS,
+    attach_explanations,
     collect,
+    default_explanations_path,
     default_findings_path,
     evaluate_scan,
     exceeds,
@@ -179,3 +182,53 @@ def test_load_settings_rejects_bad_files(tmp_path: Path, text: str) -> None:
 def test_load_settings_missing_file(tmp_path: Path) -> None:
     with pytest.raises(ConfigError):
         load_settings(tmp_path / "absent.yaml")
+
+
+# --- 해설 부착 ---
+
+
+def _explanation_file(store: SnapshotStore, evaluated_at: datetime) -> Path:
+    from kompass.models import ExplanationReport, TokenUsage
+    from tests.reporters.sample import DEFAULT
+
+    report = ExplanationReport(
+        scan_id=DEFAULT.scan.scan_id,
+        account_id=DEFAULT.scan.account_id,
+        findings_evaluated_at=evaluated_at,
+        generated_at=evaluated_at,
+        model="m",
+        effort="high",
+        source_documents={},
+        explanations=(),
+        failures=(),
+        usage=TokenUsage(),
+        estimated_cost_usd=None,
+    )
+    path = default_explanations_path(store, DEFAULT.scan.account_id, DEFAULT.scan.scan_id)
+    return write_report(report, path)
+
+
+def test_attach_matching_explanations(tmp_path: Path) -> None:
+    from tests.reporters.sample import DEFAULT
+
+    store = SnapshotStore(tmp_path)
+    path = _explanation_file(store, DEFAULT.evaluation.evaluated_at)
+    assert path.parent == tmp_path / "explanations" / DEFAULT.scan.account_id
+    attached, warning = attach_explanations(store, DEFAULT)
+    assert attached.explanations is not None and warning is None
+
+
+def test_stale_explanations_are_not_attached(tmp_path: Path) -> None:
+    from tests.reporters.sample import DEFAULT
+
+    store = SnapshotStore(tmp_path)
+    _explanation_file(store, DEFAULT.evaluation.evaluated_at - timedelta(hours=1))
+    attached, warning = attach_explanations(store, DEFAULT)
+    assert attached.explanations is None
+    assert warning and "kompass explain" in warning
+
+
+def test_no_explanations(tmp_path: Path) -> None:
+    from tests.reporters.sample import DEFAULT
+
+    assert attach_explanations(SnapshotStore(tmp_path), DEFAULT) == (DEFAULT, None)

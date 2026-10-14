@@ -20,7 +20,14 @@ from kompass.collectors.s3 import S3Collector
 from kompass.config import Settings
 from kompass.mappings.data import load_mappings
 from kompass.mappings.mapper import build_report
-from kompass.models import AuditReport, EvaluationReport, ScanManifest, Snapshot, Status
+from kompass.models import (
+    AuditReport,
+    EvaluationReport,
+    ExplanationReport,
+    ScanManifest,
+    Snapshot,
+    Status,
+)
 from kompass.reporters.json_reporter import render_json
 from kompass.reporters.markdown_reporter import render_markdown
 from kompass.reporters.xlsx_reporter import render_xlsx
@@ -34,6 +41,7 @@ COLLECTORS: dict[str, Callable[[], Collector]] = {
     "s3": S3Collector,
 }
 FINDINGS_DIR = "findings"
+EXPLANATIONS_DIR = "explanations"
 SNAPSHOTS_DIR = "snapshots"
 
 # 보고서 형식 → (파일 확장자, 렌더러)
@@ -103,8 +111,8 @@ def default_findings_path(store: SnapshotStore, report: EvaluationReport) -> Pat
     return store.root / FINDINGS_DIR / report.account_id / f"{report.scan_id}.findings.json"
 
 
-def write_report(report: EvaluationReport, path: Path) -> Path:
-    """판정 결과를 UTF-8 JSON으로 쓴다. 임시 파일에 쓴 뒤 이름을 바꾼다."""
+def write_report(report: EvaluationReport | ExplanationReport, path: Path) -> Path:
+    """판정·해설 결과를 UTF-8 JSON으로 쓴다. 임시 파일에 쓴 뒤 이름을 바꾼다."""
     path.parent.mkdir(parents=True, exist_ok=True)
     temp = path.with_name(path.name + ".tmp")
     temp.write_text(report.model_dump_json(indent=2), encoding="utf-8")
@@ -177,3 +185,27 @@ def write_reports(report: AuditReport, formats: Sequence[str], out_dir: Path) ->
 def default_reports_dir(store: SnapshotStore, report: AuditReport) -> Path:
     """사람이 보는 보고서는 저장 위치 바로 아래 계정 폴더에 둔다 (ADR-027)."""
     return store.root / report.scan.account_id
+
+
+def default_explanations_path(store: SnapshotStore, account_id: str, scan_id: str) -> Path:
+    return store.root / EXPLANATIONS_DIR / account_id / f"{scan_id}.explanations.json"
+
+
+def attach_explanations(
+    store: SnapshotStore, report: AuditReport
+) -> tuple[AuditReport, str | None]:
+    """저장된 해설이 이 판정 결과의 것이면 보고서에 붙인다. (보고서, 경고)를 돌려준다.
+
+    해설 뒤에 다시 판정했으면 finding이 달라졌을 수 있으므로 붙이지 않고 경고한다.
+    """
+    path = default_explanations_path(store, report.scan.account_id, report.scan.scan_id)
+    if not path.is_file():
+        return report, None
+    explanations = ExplanationReport.model_validate_json(path.read_text(encoding="utf-8"))
+    try:
+        return report.with_explanations(explanations), None
+    except ValueError:
+        return report, (
+            f"해설({path.name})이 이전 판정 결과를 대상으로 해 보고서에 붙이지 않았다. "
+            "kompass explain을 다시 실행한다"
+        )

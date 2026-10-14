@@ -3,7 +3,7 @@
 from kompass.models import AuditReport
 from kompass.reporters.json_reporter import render_json
 from kompass.reporters.markdown_reporter import render_markdown
-from tests.reporters.sample import DEFAULT, sample_report
+from tests.reporters.sample import DEFAULT, EXPLAINED, sample_report
 
 MD = render_markdown(DEFAULT)
 
@@ -112,3 +112,46 @@ def test_excluded_regions_are_shown_as_out_of_scope() -> None:
 def test_no_excluded_regions() -> None:
     assert "| 점검 제외 리전 (접근 거부) | 없음 |" in MD
     assert "점검 범위 밖 리전" not in MD
+
+
+# --- AI 해설 ---
+
+EXPLAINED_MD = render_markdown(EXPLAINED)
+
+
+def test_no_explanation_section_without_explanations() -> None:
+    assert "## AI 해설" not in MD
+    assert "| AI 해설 | 없음 |" in MD
+
+
+def test_explanation_section_states_it_does_not_change_judgment() -> None:
+    assert "## AI 해설 (참고)" in EXPLAINED_MD
+    assert "판정과 심각도는 룰이 정했고" in EXPLAINED_MD
+    assert "| AI 해설 | claude-opus-5-5 (effort high)" in EXPLAINED_MD
+
+
+def test_explanation_per_rule_with_verification_label() -> None:
+    assert "### SG-001 " in EXPLAINED_MD and "원문 인용 검증됨" in EXPLAINED_MD
+    assert "### S3-004 " in EXPLAINED_MD and "검증되지 않음" in EXPLAINED_MD
+    assert '원문에 없는 구절: kisa CA-10 "지어낸 문장"' in EXPLAINED_MD
+    assert '- KISA CA-09: "불필요한 포트를 차단해야 함"' in EXPLAINED_MD
+    assert "`SG-001:ap-northeast-2:sg-1`: bastion 용도 확인" in EXPLAINED_MD
+
+
+def test_explanation_failures_are_listed() -> None:
+    assert "IAM-008: 거부됨" in EXPLAINED_MD
+
+
+def test_llm_text_cannot_inject_markdown() -> None:
+    # 줄바꿈을 접어 제목을 만들 수 없고, HTML은 이스케이프한다
+    assert "\n# 제목 아님" not in EXPLAINED_MD
+    assert "<b>" not in EXPLAINED_MD and "&lt;b&gt;굵게" in EXPLAINED_MD
+
+
+def test_code_fence_longer_than_backticks_in_command() -> None:
+    assert "````bash\n=cmd|' /C calc'!A0\naws ec2 revoke-security-group-ingress" in EXPLAINED_MD
+    assert "--group-id sg-1 ```\n````\n" in EXPLAINED_MD
+
+
+def test_json_includes_explanations() -> None:
+    assert AuditReport.model_validate_json(render_json(EXPLAINED)) == EXPLAINED

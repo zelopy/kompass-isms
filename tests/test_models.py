@@ -10,11 +10,13 @@ from pydantic import ValidationError
 from kompass.models import (
     Automation,
     CollectError,
+    ExplanationReport,
     Finding,
     Mappings,
     Severity,
     Snapshot,
     Status,
+    TokenUsage,
     aggregate_status,
 )
 
@@ -308,3 +310,42 @@ def test_aggregate_invariants(statuses: list[Status], automation: Automation) ->
     # 해당 없음은 모든 finding이 해당 없음일 때만이다
     if result == Status.NOT_APPLICABLE:
         assert present == {Status.NOT_APPLICABLE}
+
+
+# --- 해설 부착 ---
+
+
+def _explanations(scan_id: str, evaluated_at: datetime) -> ExplanationReport:
+    return ExplanationReport(
+        scan_id=scan_id,
+        account_id="123456789012",
+        findings_evaluated_at=evaluated_at,
+        generated_at=evaluated_at,
+        model="m",
+        effort="high",
+        source_documents={},
+        explanations=(),
+        failures=(),
+        usage=TokenUsage(),
+        estimated_cost_usd=None,
+    )
+
+
+def test_report_accepts_explanations_for_same_evaluation() -> None:
+    from tests.reporters.sample import DEFAULT
+
+    attached = DEFAULT.with_explanations(
+        _explanations(DEFAULT.scan.scan_id, DEFAULT.evaluation.evaluated_at)
+    )
+    assert attached.explanations is not None
+    assert DEFAULT.explanations is None
+
+
+def test_report_rejects_explanations_for_other_evaluation() -> None:
+    from tests.reporters.sample import DEFAULT
+
+    later = DEFAULT.evaluation.evaluated_at + timedelta(minutes=1)
+    with pytest.raises(ValueError):
+        DEFAULT.with_explanations(_explanations(DEFAULT.scan.scan_id, later))
+    with pytest.raises(ValueError):
+        DEFAULT.with_explanations(_explanations("other", DEFAULT.evaluation.evaluated_at))

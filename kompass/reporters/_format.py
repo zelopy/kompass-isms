@@ -8,7 +8,8 @@ import json
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from kompass.models import ItemOutcome, Status
+from kompass.models import AuditReport, ItemOutcome, Status
+from kompass.rules.registry import RULES
 
 KST = timezone(timedelta(hours=9), "KST")
 
@@ -44,3 +45,27 @@ def compact_json(value: Any, limit: int = 300) -> str:
     """증적을 한 줄 JSON으로 줄인다. 전체 증적은 JSON 보고서에 있다."""
     text = json.dumps(value, ensure_ascii=False, separators=(", ", ": "))
     return text if len(text) <= limit else text[: limit - 1] + "…"
+
+
+# --- AI 해설 ---
+
+RULE_TITLES = {rule.id: rule.title for rule in RULES}
+PRIORITY_LABELS = {"critical": "긴급", "high": "높음", "medium": "보통", "low": "낮음"}
+SCHEME_LABELS = {"kisa": "KISA", "isms_p": "ISMS-P"}
+EXPLANATION_NOTICE = (
+    "LLM이 판정 결과를 설명한 참고 자료다. 판정과 심각도는 룰이 정했고 해설은 이를 바꾸지 않는다. "
+    '"검증됨"은 인용 구절이 KISA·ISMS-P 원문에 있음을 확인했다는 뜻이며 설명이나 조치 명령의 '
+    "정확성을 보장하지 않는다. 명령은 실행 전에 검토한다."
+)
+
+
+def explanation_summary(report: AuditReport) -> str:
+    explained = report.explanations
+    if explained is None:
+        return "없음"
+    verified = sum(1 for e in explained.explanations if e.verified)
+    unverified = len(explained.explanations) - verified
+    return (
+        f"{explained.model} (effort {explained.effort}), {kst(explained.generated_at)}, "
+        f"검증됨 {verified} · 검증되지 않음 {unverified} · 실패 {len(explained.failures)}"
+    )

@@ -240,6 +240,17 @@ class AuditReport(_Frozen):
     kisa_items: tuple[KisaItemResult, ...]
     isms_p_controls: tuple[IsmsPControlResult, ...]
     findings: tuple[Finding, ...]  # 매핑을 붙인 finding
+    # LLM 해설 (참고). 같은 판정 결과를 해설한 것만 붙는다. 판정에는 영향이 없다 (원칙 1)
+    explanations: "ExplanationReport | None" = None
+
+    def with_explanations(self, explanations: "ExplanationReport") -> Self:
+        """해설을 붙인 새 보고서. 다른 점검이나 다시 판정하기 전의 해설이면 ValueError."""
+        if (
+            explanations.scan_id != self.scan.scan_id
+            or explanations.findings_evaluated_at != self.evaluation.evaluated_at
+        ):
+            raise ValueError("해설이 이 판정 결과를 대상으로 한 것이 아니다")
+        return self.model_validate({**self.model_dump(), "explanations": explanations})
 
 
 class SourceEntry(_Frozen):
@@ -367,3 +378,6 @@ def aggregate_status(statuses: Iterable[Status], automation: Automation) -> Stat
     if Status.PASS in present:
         return Status.PASS if automation is Automation.FULL else Status.REVIEW
     return Status.NOT_APPLICABLE
+
+
+AuditReport.model_rebuild()  # explanations의 전방 참조(ExplanationReport)를 해석한다

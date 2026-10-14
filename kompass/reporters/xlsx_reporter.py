@@ -1,4 +1,5 @@
-"""Excel 점검표. 시트: 요약, KISA 항목, 점검 결과(finding 전체), ISMS-P (초안).
+"""Excel 점검표. 시트: 요약, KISA 항목, 점검 결과(finding 전체), ISMS-P (초안),
+AI 해설 (참고, 해설이 있을 때만).
 
 보안: 보고서에는 점검 대상 계정 안의 누군가가 정할 수 있는 값(ENI 설명, 태그, 리소스 이름 등)이
 들어간다. openpyxl은 `=`로 시작하는 문자열을 수식으로 저장하므로, 모든 문자열 칸을 문자열
@@ -18,9 +19,13 @@ from openpyxl.utils import get_column_letter
 from kompass.models import AuditReport, ItemOutcome
 from kompass.reporters._format import (
     DISCLAIMER,
+    EXPLANATION_NOTICE,
     OUTCOME_LABELS,
+    PRIORITY_LABELS,
+    SCHEME_LABELS,
     STATUS_LABELS,
     STATUS_ORDER,
+    explanation_summary,
     kst,
 )
 
@@ -101,6 +106,8 @@ def _summary(sheet: Any, report: AuditReport) -> None:
             ", ".join(f"{STATUS_LABELS[s]} {finding_counts.get(s, 0)}" for s in STATUS_ORDER),
         ),
         ("건너뛴 룰 (양호 아님)", ", ".join(evaluation.skipped_rules) or "없음"),
+        ("AI 해설 (참고)", explanation_summary(report)),
+        *([("AI 해설 주의", EXPLANATION_NOTICE)] if report.explanations is not None else []),
     ]
     for r, (label, value) in enumerate(rows, start=1):
         _set(sheet, r, 1, label).font = Font(bold=True)
@@ -177,6 +184,63 @@ def render_xlsx(report: AuditReport) -> bytes:
         outcome_column="결과",
     )
 
+    if report.explanations is not None:
+        _explanation_sheet(book.create_sheet("AI 해설 (참고)"), report)
+
     buffer = io.BytesIO()
     book.save(buffer)
     return buffer.getvalue()
+
+
+def _explanation_sheet(sheet: Any, report: AuditReport) -> None:
+    explained = report.explanations
+    assert explained is not None
+    rows: list[tuple[Any, ...]] = []
+    for item in explained.explanations:
+        draft = item.explanation
+        rows.append(
+            (
+                item.rule_id,
+                "검증됨" if item.verified else "검증되지 않음",
+                PRIORITY_LABELS[draft.priority],
+                len(item.finding_keys),
+                draft.summary,
+                draft.risk,
+                draft.priority_reason,
+                "\n".join(
+                    f'{SCHEME_LABELS[c.scheme]} {c.code}: "{c.quote}"' for c in draft.citations
+                ),
+                "\n".join(f"{n}. {s}" for n, s in enumerate(draft.remediation.steps, start=1)),
+                "\n".join(draft.remediation.aws_cli),
+                draft.remediation.terraform or "",
+                "\n".join(f"{n.finding_key}: {n.note}" for n in draft.resource_notes),
+                "\n".join(item.problems),
+                item.model + (" (대체)" if item.fallback_used else ""),
+            )
+        )
+    rows += [
+        (
+            f.rule_id,
+            "해설 실패",
+            "",
+            len(f.finding_keys),
+            f.error,
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+        )
+        for f in explained.failures
+    ]
+    _table(
+        sheet,
+        ["룰", "검증", "우선순위", "대상 finding", "요약", "위험", "우선순위 근거", "근거 인용",
+         "조치 절차", "AWS CLI", "Terraform", "리소스별 메모", "검증 문제", "모델"],
+        rows,
+        [9, 13, 9, 9, 40, 40, 30, 50, 50, 60, 50, 40, 40, 18],
+    )  # fmt: skip

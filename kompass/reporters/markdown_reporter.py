@@ -1,17 +1,23 @@
 """Markdown 보고서. 사람이 읽는 점검 결과 요약이며, 전체 증적은 JSON 보고서에 있다."""
 
+import re
 from collections import Counter
 
 import yaml
 
-from kompass.models import AuditReport, Finding, ItemOutcome
+from kompass.models import AuditReport, Finding, ItemOutcome, RuleExplanation
 from kompass.reporters._format import (
     ACTION_STATUSES,
     DISCLAIMER,
+    EXPLANATION_NOTICE,
     OUTCOME_LABELS,
+    PRIORITY_LABELS,
+    RULE_TITLES,
+    SCHEME_LABELS,
     STATUS_LABELS,
     STATUS_ORDER,
     compact_json,
+    explanation_summary,
     kst,
 )
 
@@ -55,6 +61,88 @@ def _excluded_notice(report: AuditReport) -> list[str]:
     return [*lines, ""]
 
 
+def _text(value: str) -> str:
+    """LLM이 쓴 문장을 본문에 넣는다. 줄바꿈을 접어 제목·목록을 만들지 못하게 하고 HTML은 막는다."""
+    collapsed = " ".join(value.split())
+    return collapsed.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def _code_block(language: str, body: str) -> list[str]:
+    longest = max((len(run) for run in re.findall(r"`+", body)), default=0)
+    fence = "`" * max(3, longest + 1)
+    return [f"{fence}{language}", body, fence]
+
+
+def _explanation_rule(item: RuleExplanation) -> list[str]:
+    draft = item.explanation
+    rule = RULE_TITLES.get(item.rule_id, "")
+    label = "원문 인용 검증됨" if item.verified else "검증되지 않음"
+    lines = [
+        f"### {item.rule_id} {_text(rule)} — 우선순위 {PRIORITY_LABELS[draft.priority]} · {label}",
+        "",
+        f"대상 finding {len(item.finding_keys)}건, 모델 {item.model}"
+        + (" (거부되어 대체 모델이 답함)" if item.fallback_used else ""),
+        "",
+        f"- 요약: {_text(draft.summary)}",
+        f"- 위험: {_text(draft.risk)}",
+        f"- 우선순위 근거: {_text(draft.priority_reason)}",
+        "",
+        "근거 인용:",
+        "",
+    ]
+    lines += [
+        f'- {SCHEME_LABELS[c.scheme]} {_text(c.code)}: "{_text(c.quote)}"' for c in draft.citations
+    ] or ["- 없음"]
+    if item.problems:
+        lines += ["", "검증 문제 (인용을 그대로 믿지 않는다):", ""]
+        lines += [f"- {_text(p)}" for p in item.problems]
+    lines += ["", "조치 절차:", ""]
+    lines += [f"{n}. {_text(step)}" for n, step in enumerate(draft.remediation.steps, start=1)]
+    if draft.remediation.aws_cli:
+        lines += [
+            "",
+            "AWS CLI (실행 전 검토):",
+            "",
+            *_code_block("bash", "\n".join(draft.remediation.aws_cli)),
+        ]
+    if draft.remediation.terraform:
+        lines += ["", "Terraform:", "", *_code_block("hcl", draft.remediation.terraform)]
+    if draft.resource_notes:
+        lines += ["", "리소스별 메모:", ""]
+        lines += [
+            f"- `{n.finding_key.replace('`', '')}`: {_text(n.note)}" for n in draft.resource_notes
+        ]
+    return [*lines, ""]
+
+
+def _explanation_section(report: AuditReport) -> list[str]:
+    explained = report.explanations
+    if explained is None:
+        return []
+    cost = (
+        f", 예상 비용 약 ${explained.estimated_cost_usd:.2f}"
+        if explained.estimated_cost_usd is not None
+        else ""
+    )
+    lines = [
+        "",
+        "## AI 해설 (참고)",
+        "",
+        f"> {EXPLANATION_NOTICE}",
+        "",
+        f"생성 {kst(explained.generated_at)}, 모델 {explained.model} (effort {explained.effort}), "
+        f"토큰 입력 {explained.usage.input_tokens:,} · "
+        f"출력 {explained.usage.output_tokens:,}{cost}",
+        "",
+    ]
+    for item in explained.explanations:
+        lines += _explanation_rule(item)
+    if explained.failures:
+        lines += ["### 해설하지 못한 룰", ""]
+        lines += [f"- {f.rule_id}: {_text(f.error)}" for f in explained.failures]
+    return lines
+
+
 def render_markdown(report: AuditReport) -> str:
     scan, evaluation = report.scan, report.evaluation
     lines: list[str] = [
@@ -79,6 +167,7 @@ def render_markdown(report: AuditReport) -> str:
         _row("보고서 생성", kst(report.generated_at)),
         _row("kompass 버전", evaluation.kompass_version),
         _row("매핑 데이터", report.mapping_digest[:12]),
+        _row("AI 해설", explanation_summary(report)),
         "",
         *_excluded_notice(report),
         "판정 기준값 (kompass.yaml 형식):",
@@ -152,6 +241,8 @@ def render_markdown(report: AuditReport) -> str:
             lines += ["", *_finding_rows(flagged)]
     else:
         lines.append("결과가 없다.")
+
+    lines += _explanation_section(report)
 
     related = [c for c in report.isms_p_controls if c.outcome != ItemOutcome.NOT_IMPLEMENTED]
     out_of_scope = len(report.isms_p_controls) - len(related)

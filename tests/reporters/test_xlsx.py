@@ -7,7 +7,7 @@ from openpyxl import load_workbook
 
 from kompass.models import Status
 from kompass.reporters.xlsx_reporter import render_xlsx
-from tests.reporters.sample import DEFAULT, finding, sample_report
+from tests.reporters.sample import DEFAULT, EXPLAINED, finding, sample_report
 
 SHEETS = ["요약", "KISA 항목", "점검 결과", "ISMS-P (초안)"]
 
@@ -87,3 +87,35 @@ def test_long_evidence_is_truncated_to_excel_limit() -> None:
     rows = _rows(_book(report)["점검 결과"])
     header = rows[0]
     assert len(rows[1][header.index("증적")]) <= 32767
+
+
+# --- AI 해설 ---
+
+
+def test_explanation_sheet_only_when_explained() -> None:
+    assert "AI 해설 (참고)" not in _book().sheetnames
+    assert _book(EXPLAINED).sheetnames == [*SHEETS, "AI 해설 (참고)"]
+
+
+def test_explanation_sheet_rows() -> None:
+    rows = _rows(_book(EXPLAINED)["AI 해설 (참고)"])
+    header, *body = rows
+    assert header[:4] == ("룰", "검증", "우선순위", "대상 finding")
+    assert [(r[0], r[1]) for r in body] == [
+        ("SG-001", "검증됨"),
+        ("S3-004", "검증되지 않음"),
+        ("IAM-008", "해설 실패"),
+    ]
+
+
+def test_explanation_commands_are_not_formulas() -> None:
+    sheet = _book(EXPLAINED)["AI 해설 (참고)"]
+    cells = [
+        c for row in sheet.iter_rows(min_row=2) for c in row if str(c.value).startswith("=cmd")
+    ]
+    assert cells and all(c.data_type == "s" for c in cells)
+
+
+def test_summary_mentions_explanations() -> None:
+    values = [v for row in _rows(_book(EXPLAINED)["요약"]) for v in row if v is not None]
+    assert any("검증됨 1" in str(v) and "실패 1" in str(v) for v in values)

@@ -180,6 +180,7 @@ reports/
 ├── .gitignore                 # "*" (자동 생성, 실제 계정 데이터 커밋 방지)
 ├── <account_id>/<scan_id>.md, .xlsx, .report.json   # 사람이 보는 보고서
 ├── findings/<account_id>/<scan_id>.findings.json     # 판정 결과
+├── explanations/<account_id>/<scan_id>.explanations.json  # LLM 해설 (같은 판정 결과에만 보고서에 붙음)
 └── snapshots/<account_id>/<scan_id>/   # scan_id = 20261013T120000Z-a1b2
     ├── iam.json, s3.json, ...  # 서비스별 Snapshot
     └── scan.json               # ScanManifest: 계정, 호출자, 리전, kompass 버전, 시작·종료 시각, 파일별 SHA-256

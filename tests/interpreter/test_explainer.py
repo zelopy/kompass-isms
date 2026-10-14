@@ -1,16 +1,12 @@
 """룰별 해설 흐름: 묶기, 마스킹, 원문 첨부, 인용 검증·재시도, 복원 (ADR-029, ADR-030)."""
 
-import json
-import re
-from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any
 
 import pytest
-from pydantic import BaseModel
 
 from kompass.interpreter.explainer import estimate_explanation, explain_report, select_groups
-from kompass.interpreter.llm import LLMError, LLMResponse, Usage
+from kompass.interpreter.llm import LLMError
 from kompass.interpreter.sources import SourceLookup
 from kompass.models import (
     Citation,
@@ -22,6 +18,7 @@ from kompass.models import (
     SourceIndex,
     Status,
 )
+from tests.interpreter.fakes import FakeProvider, payload_of
 from tests.reporters.sample import ACCOUNT, finding, sample_report
 
 SG = "sg-0a1b2c3d4e5f67890"
@@ -62,42 +59,6 @@ INDEX = SourceIndex(
     },
 )
 LOOKUP = SourceLookup(INDEX)
-
-
-# --- 가짜 공급자 ---
-
-Responder = Callable[[dict[str, Any], int], RuleExplanationDraft | Exception]
-
-
-class FakeProvider:
-    def __init__(self, responder: Responder) -> None:
-        self.responder = responder
-        self.calls: list[tuple[str, str]] = []
-
-    @property
-    def model(self) -> str:
-        return "fake-model"
-
-    def complete[T: BaseModel](self, system: str, prompt: str, schema: type[T]) -> LLMResponse[T]:
-        self.calls.append((system, prompt))
-        attempt = sum(1 for _, p in self.calls if _payload(p)["rule"] == _payload(prompt)["rule"])
-        result = self.responder(_payload(prompt), attempt)
-        if isinstance(result, Exception):
-            raise result
-        assert isinstance(result, schema)
-        return LLMResponse(
-            parsed=result, model="fake-model", usage=Usage(100, 50, 0, 0), fallback_used=False
-        )
-
-    def count_input_tokens(self, system: str, prompt: str, schema: type[BaseModel]) -> int:
-        return 1000
-
-
-def _payload(prompt: str) -> dict[str, Any]:
-    match = re.search(r"```json\n(.*?)\n```", prompt, re.DOTALL)
-    assert match, prompt
-    data: dict[str, Any] = json.loads(match.group(1))
-    return data
 
 
 def _draft(
@@ -147,7 +108,7 @@ def test_prompt_contains_no_raw_identifiers() -> None:
 def test_prompt_includes_mapped_source_text() -> None:
     provider = FakeProvider(_good)
     explain_report(REPORT, provider, LOOKUP, effort="high")
-    sg_payload = next(_payload(p) for _, p in provider.calls if "SG-001" in p)
+    sg_payload = next(payload_of(p) for _, p in provider.calls if "SG-001" in p)
     codes = {(s["scheme"], s["code"]) for s in sg_payload["sources"]}
     assert ("kisa", "CA-09") in codes and ("isms_p", "2.6.1") in codes
     assert ("kisa", "CA-03") not in codes  # 다른 룰의 원문은 보내지 않는다
