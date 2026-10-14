@@ -48,6 +48,7 @@ uv run kompass scan --profile kompass-lab-audit --regions ap-northeast-2
 
 - 식별자·파일명은 영어, docstring·주석·문서는 한국어.
 - 보고서에 들어가는 문장(finding 메시지, 리포터 문구, 해설 검증 문제, LLM 해설)은 개조식 명사형으로 끝맺는다: `설정되지 않음`, `확인해야 함`, `초안임`, `검토 필요`. `~다`, `~습니다`로 끝내지 않는다. 단, KISA·ISMS-P 원문 인용은 원문 그대로 둔다.
+- CLI 출력·도움말과 사용자에게 보이는 오류 메시지(예외 메시지, 스크립트 오류)는 정중체로 끝맺는다: `해설할 것이 없습니다.`, `해설을 요청하시겠습니까?`, `--account-id로 계정을 지정해 주십시오`. "이름: 값" 형식은 그대로 둔다. 보고서에도 기록되는 메시지(LLM 호출 실패·거부, 마스킹 차단, 해설 검증 문제)는 보고서 규칙(개조식)을 따른다.
 - 룰 하나 = 파일 하나 (`kompass/rules/s3/s3_001_account_public_access_block.py`). 룰 ID는 `docs/RULES.md`와 일치해야 한다.
 - 새 룰을 추가할 때는 **테스트를 먼저** 작성한다. 최소한 PASS 케이스, FAIL 케이스, ERROR(권한 없음) 케이스 3개.
 - 모든 모델은 pydantic으로 정의하고 `kompass/models.py`에 모은다.
