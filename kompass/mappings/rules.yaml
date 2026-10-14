@@ -1,0 +1,34 @@
+# 룰 → KISA 항목 → ISMS-P 통제항목 매핑 (ADR-002, ADR-025)
+#
+# docs/RULES.md의 각 룰 "KISA"·"ISMS-P(초안)" 칸과 같아야 한다 (KISA는 테스트로 검사).
+#   kisa: 이 룰이 판정에 기여하는 KISA 항목. 대응 항목이 없으면 빈 목록
+#   isms_p: 이 룰의 ISMS-P 통제항목 후보 (RULES.md의 룰별 초안)
+#   kisa_verified: 원문 근거를 사용자가 확인했다 (2026-10-13)
+#   isms_p_verified: ISMS-P 매핑은 공식 대응표가 없는 초안이다. 확인 전까지 false
+
+rules:
+  CT-001: {kisa: [CA-13], isms_p: ["2.9.4", "2.10.2"], kisa_verified: true, isms_p_verified: false}
+
+  SG-001: {kisa: [CA-09], isms_p: ["2.6.1", "2.6.6", "2.10.1"], kisa_verified: true, isms_p_verified: false}
+  SG-002: {kisa: [CA-09], isms_p: ["2.6.1", "2.10.1"], kisa_verified: true, isms_p_verified: false}
+  SG-003: {kisa: [CA-09], isms_p: ["2.6.1", "2.6.4", "2.10.1"], kisa_verified: true, isms_p_verified: false}
+  SG-004: {kisa: [], isms_p: ["2.6.1"], kisa_verified: true, isms_p_verified: false}
+  VPC-001: {kisa: [CA-07], isms_p: ["2.6.1", "2.10.2"], kisa_verified: true, isms_p_verified: false}
+  VPC-002: {kisa: [CA-08], isms_p: ["2.6.1", "2.10.2"], kisa_verified: true, isms_p_verified: false}
+
+  S3-001: {kisa: [CA-10], isms_p: ["2.10.2"], kisa_verified: true, isms_p_verified: false}
+  S3-002: {kisa: [CA-10], isms_p: ["2.10.2"], kisa_verified: true, isms_p_verified: false}
+  S3-003: {kisa: [CA-10], isms_p: ["2.10.2"], kisa_verified: true, isms_p_verified: false}
+  S3-004: {kisa: [], isms_p: ["2.7.1"], kisa_verified: true, isms_p_verified: false}
+  S3-005: {kisa: [CA-16], isms_p: ["2.9.4"], kisa_verified: true, isms_p_verified: false}
+  S3-006: {kisa: [CA-10], isms_p: ["2.10.2"], kisa_verified: true, isms_p_verified: false}
+
+  IAM-001: {kisa: [CA-03], isms_p: ["2.5.3", "2.5.5", "2.10.2"], kisa_verified: true, isms_p_verified: false}
+  IAM-002: {kisa: [CA-02], isms_p: ["2.5.5", "2.10.2"], kisa_verified: true, isms_p_verified: false}
+  IAM-003: {kisa: [CA-03], isms_p: ["2.5.3", "2.10.2"], kisa_verified: true, isms_p_verified: false}
+  IAM-004: {kisa: [CA-04], isms_p: ["2.5.4"], kisa_verified: true, isms_p_verified: false}
+  IAM-005: {kisa: [CA-01], isms_p: ["2.5.1", "2.5.6", "2.10.2"], kisa_verified: true, isms_p_verified: false}
+  IAM-006: {kisa: [], isms_p: ["2.10.2", "2.5.3"], kisa_verified: true, isms_p_verified: false}
+  IAM-007: {kisa: [CA-02], isms_p: ["2.5.5", "2.5.6", "2.10.2"], kisa_verified: true, isms_p_verified: false}
+  IAM-008: {kisa: [CA-02], isms_p: ["2.5.5", "2.10.2"], kisa_verified: true, isms_p_verified: false}
+  IAM-009: {kisa: [CA-03], isms_p: ["2.5.3", "2.10.2"], kisa_verified: true, isms_p_verified: false}

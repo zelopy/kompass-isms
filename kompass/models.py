@@ -100,11 +100,36 @@ class Snapshot(_Frozen):
 
 
 class Mappings(_Frozen):
-    """finding에 부착되는 기준 매핑. Mapper가 채운다."""
+    """finding에 부착되는 기준 매핑. 보고서를 만들 때 Mapper가 채운다 (ADR-025)."""
 
     kisa: tuple[str, ...]
     isms_p: tuple[str, ...]
-    verified: bool
+    kisa_verified: bool  # KISA 매핑의 원문 근거를 사용자가 확인했다
+    isms_p_verified: bool  # ISMS-P 매핑은 공식 대응표가 없는 초안이다
+
+
+KisaImportance = Literal["상", "중", "하"]
+
+
+class KisaItem(_Frozen):
+    """KISA 클라우드 점검 항목 (`mappings/kisa_items.yaml`)."""
+
+    code: str  # "CA-01"
+    title: str
+    importance: KisaImportance
+    page: int  # 원문 PDF 쪽
+    automation: Automation
+    isms_p: tuple[str, ...]
+    isms_p_verified: bool
+
+
+class RuleMapping(_Frozen):
+    """룰 하나의 매핑 (`mappings/rules.yaml`)."""
+
+    kisa: tuple[str, ...]
+    isms_p: tuple[str, ...]
+    kisa_verified: bool
+    isms_p_verified: bool
 
 
 class Finding(_Frozen):

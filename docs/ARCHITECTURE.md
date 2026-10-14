@@ -215,17 +215,32 @@ class Rule(Protocol):
 
 IAM 역할을 `SecurityAudit`로 제한하는 것과 별개로, 코드 레벨에서도 이중으로 막는다.
 
-## 매핑 파일 형식
+## 매핑 데이터
+
+매핑은 `kompass/mappings/`의 YAML 파일 3개로 나눈다 (ADR-025). 중요도와 자동화 분류는 KISA 항목의 속성이므로 룰마다 적지 않는다.
 
 ```yaml
-S3-001:
-  title: 계정 수준 S3 퍼블릭 액세스 차단 미설정
-  kisa: []                 # 0단계에서 원문 확인 후 채움
-  kisa_importance: null    # KISA 원문 중요도 (상 | 중 | 하), 원문 확인 후 채움
-  isms_p: ["2.6.1"]
-  automation: full         # full | partial | manual
-  verified: false          # 원문 근거 확인 전까지 false
+# kisa_items.yaml — 항목 속성의 정본 (COVERAGE.md 요약표와 테스트로 대조)
+items:
+  CA-10:
+    title: 스토리지 리소스 퍼블릭 접근 관리
+    importance: 중              # KISA 원문 중요도 (상 | 중 | 하)
+    page: 863
+    automation: partial         # full | partial | manual
+    isms_p: ["2.10.2"]          # 항목 → ISMS-P 후보
+    isms_p_verified: false
+
+# rules.yaml — 룰 → KISA 항목 (RULES.md "KISA" 칸과 테스트로 대조)
+rules:
+  S3-001: {kisa: [CA-10], isms_p: ["2.10.2"], kisa_verified: true, isms_p_verified: false}
+
+# isms_p_controls.yaml — 별표 7의 101개 통제항목 번호와 명칭
+controls:
+  "2.10.2": 클라우드 보안
 ```
+
+- 매핑은 판정(`findings.json`) 때가 아니라 보고서를 만들 때 붙인다. 매핑을 고쳐도 다시 판정할 필요 없이 보고서만 다시 만든다. 보고서에는 세 파일의 SHA-256을 남긴다.
+- `kisa_verified`(원문 근거를 사용자가 확인)와 `isms_p_verified`(공식 대응표가 없는 초안)를 나눠 기록하고, 보고서에 ISMS-P 매핑이 초안임을 표시한다.
 
 ## 설정
 

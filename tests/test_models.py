@@ -84,7 +84,9 @@ def test_finding_mappings_default_to_none() -> None:
 
 def test_with_mappings_returns_new_finding() -> None:
     finding = _finding()
-    mappings = Mappings(kisa=("CA-10",), isms_p=("2.10.2",), verified=False)
+    mappings = Mappings(
+        kisa=("CA-10",), isms_p=("2.10.2",), kisa_verified=True, isms_p_verified=False
+    )
     mapped = finding.with_mappings(mappings)
     assert mapped.mappings == mappings
     assert mapped.status == finding.status
@@ -109,7 +111,9 @@ def test_snapshot_model_copy_cannot_update() -> None:
 
 
 def test_mappings_are_tuples() -> None:
-    mappings = Mappings.model_validate({"kisa": ["CA-10"], "isms_p": ["2.10.2"], "verified": False})
+    mappings = Mappings.model_validate(
+        {"kisa": ["CA-10"], "isms_p": ["2.10.2"], "kisa_verified": True, "isms_p_verified": False}
+    )
     assert mappings.kisa == ("CA-10",)
     assert mappings.isms_p == ("2.10.2",)
 

@@ -48,7 +48,7 @@
 
 ## 2단계 — 매핑과 보고서 (1~2주)
 
-- [ ] `mappings/rules.yaml`: 룰 → KISA 항목 → ISMS-P 통제항목
+- [x] 매핑 데이터: `kisa_items.yaml`, `rules.yaml`, `isms_p_controls.yaml` + 문서·레지스트리 대조 테스트 (ADR-025)
 - [ ] 매퍼: finding에 매핑 정보 부착, 매핑 누락 검증 테스트
 - [ ] ISMS-P 커버리지 리포트 (자동 점검 / 부분 / 수동 항목 현황)
 - [ ] 리포터: JSON, Markdown (UTC로 저장된 시각은 KST로 표시, ADR-019)
