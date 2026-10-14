@@ -155,3 +155,16 @@ def test_code_fence_longer_than_backticks_in_command() -> None:
 
 def test_json_includes_explanations() -> None:
     assert AuditReport.model_validate_json(render_json(EXPLAINED)) == EXPLAINED
+
+
+def test_multiline_llm_text_becomes_nested_list() -> None:
+    from kompass.reporters.markdown_reporter import _labeled
+
+    assert _labeled("요약", "- 첫째 항목\n- 둘째 <b>항목</b>") == [
+        "- 요약:",
+        "  - 첫째 항목",
+        "  - 둘째 &lt;b&gt;항목&lt;/b&gt;",
+    ]
+    assert _labeled("위험", "한 줄 설명") == ["- 위험: 한 줄 설명"]
+    # 목록 항목 안의 "# "는 제목으로 렌더링되므로 이스케이프한다
+    assert _labeled("위험", "# 제목\n• 점 목록") == ["- 위험:", "  - \\# 제목", "  - 점 목록"]

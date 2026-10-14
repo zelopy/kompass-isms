@@ -67,6 +67,21 @@ def _text(value: str) -> str:
     return collapsed.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
+def _labeled(label: str, value: str) -> list[str]:
+    """LLM이 여러 줄(개조식 목록)로 쓴 값은 하위 목록으로, 한 줄이면 그대로 붙인다."""
+    items = [line.strip().lstrip("-•·*").strip() for line in value.splitlines()]
+    items = [item for item in items if item]
+    if len(items) <= 1:
+        return [f"- {label}: {_text(items[0] if items else '')}"]
+    return [f"- {label}:", *(f"  - {_list_item(item)}" for item in items)]
+
+
+def _list_item(value: str) -> str:
+    text = _text(value)
+    # 목록 항목 맨 앞의 "#"은 제목으로 렌더링되므로 이스케이프한다
+    return "\\" + text if text.startswith("#") else text
+
+
 def _code_block(language: str, body: str) -> list[str]:
     longest = max((len(run) for run in re.findall(r"`+", body)), default=0)
     fence = "`" * max(3, longest + 1)
@@ -83,9 +98,9 @@ def _explanation_rule(item: RuleExplanation) -> list[str]:
         f"대상 finding {len(item.finding_keys)}건, 모델 {item.model}"
         + (" (거부되어 대체 모델이 답함)" if item.fallback_used else ""),
         "",
-        f"- 요약: {_text(draft.summary)}",
-        f"- 위험: {_text(draft.risk)}",
-        f"- 우선순위 근거: {_text(draft.priority_reason)}",
+        *_labeled("요약", draft.summary),
+        *_labeled("위험", draft.risk),
+        *_labeled("우선순위 근거", draft.priority_reason),
         "",
         "근거 인용:",
         "",
