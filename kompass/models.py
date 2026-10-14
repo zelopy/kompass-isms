@@ -303,6 +303,50 @@ class RuleExplanationDraft(_Frozen):
     resource_notes: list[ResourceNote]
 
 
+class TokenUsage(_Frozen):
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cache_read_input_tokens: int = 0
+    cache_write_input_tokens: int = 0
+
+
+class RuleExplanation(_Frozen):
+    """룰 하나에 대한 해설 (마스킹 복원 후). finding의 판정은 바꾸지 않는다."""
+
+    rule_id: str
+    finding_keys: tuple[str, ...]  # 해설 대상 finding (`Finding.key`)
+    explanation: RuleExplanationDraft
+    verified: bool  # 인용이 모두 매핑·원문과 일치하고 지어낸 식별자가 없다
+    problems: tuple[str, ...]  # 마지막 응답의 검증 문제. verified면 비어 있다
+    model: str  # 실제로 답한 모델
+    fallback_used: bool
+    attempts: int
+    usage: TokenUsage
+
+
+class ExplanationFailure(_Frozen):
+    rule_id: str
+    finding_keys: tuple[str, ...]
+    error: str
+
+
+class ExplanationReport(_Frozen):
+    """해설 결과 파일 (`*.explanations.json`). 원본 식별정보가 복원되어 있으므로 커밋하지 않는다."""
+
+    format_version: Literal[1] = 1
+    scan_id: str
+    account_id: AccountId
+    findings_evaluated_at: UtcDatetime  # 어떤 판정 결과를 해설했는가
+    generated_at: UtcDatetime
+    model: str  # 설정한 모델
+    effort: str
+    source_documents: dict[str, SourceDocument]  # 인용 검증에 쓴 원문 색인의 판
+    explanations: tuple[RuleExplanation, ...]
+    failures: tuple[ExplanationFailure, ...]
+    usage: TokenUsage
+    estimated_cost_usd: float | None
+
+
 _PRECEDENCE = (Status.FAIL, Status.ERROR, Status.REVIEW)
 
 

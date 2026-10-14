@@ -114,6 +114,10 @@ class Masker:
         """자리표시자를 원래 값으로 되돌린다. 모르는 자리표시자(LLM이 지어낸 것)는 그대로 둔다."""
         return _TOKEN.sub(lambda m: self._reverse.get(m.group(0), m.group(0)), text)
 
+    def unknown_tokens(self, text: str) -> set[str]:
+        """이 마스커가 만들지 않은 자리표시자 (LLM이 지어낸 식별자)."""
+        return {token for token in _TOKEN.findall(text) if token not in self._reverse}
+
     # --- 내부 ---
 
     def _token(self, kind: str, original: str) -> str:

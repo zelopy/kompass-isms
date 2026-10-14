@@ -47,6 +47,7 @@ class SourceLookup:
     """항목 코드로 원문을 꺼내고 인용 구절이 그 항목 원문에 있는지 확인한다."""
 
     def __init__(self, index: SourceIndex) -> None:
+        self.documents = index.documents
         self._entries: dict[SourceScheme, Mapping[str, SourceEntry]] = {
             "kisa": index.kisa,
             "isms_p": index.isms_p,

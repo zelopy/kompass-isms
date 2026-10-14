@@ -147,3 +147,9 @@ def test_table_is_not_shared_between_maskers() -> None:
     a = Masker.for_values([FINDING_LIKE])
     b = Masker.for_values([])
     assert b.unmask_text(a.mask_text(ACCOUNT)) != ACCOUNT
+
+
+def test_unknown_tokens_detects_invented_placeholders() -> None:
+    masker, masked = _masked()
+    sg = masked["evidence"]["group_id"]
+    assert masker.unknown_tokens(f"{sg} and MASKED_SG_999") == {"MASKED_SG_999"}

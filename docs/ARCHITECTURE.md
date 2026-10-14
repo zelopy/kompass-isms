@@ -39,7 +39,8 @@ kompass-isms/
 │   │   ├── rules.yaml       # 룰 → KISA → ISMS-P
 │   │   └── mapper.py
 │   ├── interpreter/         # 3단계
-│   │   ├── llm.py
+│   │   ├── llm.py           # 공급자 인터페이스, Claude 구현체 (ADR-030)
+│   │   ├── explainer.py     # 룰별 해설·인용 검증 (explain_system.txt: 시스템 프롬프트)
 │   │   ├── sources.py       # 원문 색인 조회·인용 검증 (ADR-029)
 │   │   └── masking.py
 │   ├── reporters/
