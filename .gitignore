@@ -31,3 +31,8 @@ knowledge/**/*.hwp
 knowledge/**/*.hwpx
 # 원문 색인 — 원문 구절을 담으므로 재배포하지 않음 (ADR-029)
 knowledge/index.json
+
+# 평가 실행 산출물 — 대화 기록·보고서는 다시 만들 수 있으므로 커밋하지 않음 (ADR-033)
+.claude/hillclimb/**/traces/
+.claude/hillclimb/**/report.html
+.claude/hillclimb/**/trajectory/

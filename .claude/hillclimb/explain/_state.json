@@ -1,0 +1,67 @@
+{
+  "flow": "explain",
+  "harness_sha": "5a5014a73e629e69b65fa6687e74072470256396aba128e6c63769869a4b40c8",
+  "metrics": [
+    {
+      "id": "verified",
+      "label": "검증 통과",
+      "kind": "binary"
+    },
+    {
+      "id": "first_try",
+      "label": "첫 응답 통과",
+      "kind": "binary"
+    },
+    {
+      "id": "cite_precision",
+      "label": "인용 정밀도",
+      "kind": "score"
+    },
+    {
+      "id": "core_basis",
+      "label": "핵심 근거",
+      "kind": "binary"
+    },
+    {
+      "id": "cli_valid",
+      "label": "CLI 유효",
+      "kind": "score"
+    },
+    {
+      "id": "action_cover",
+      "label": "조치 작업",
+      "kind": "score"
+    },
+    {
+      "id": "target_match",
+      "label": "대상 일치",
+      "kind": "score"
+    },
+    {
+      "id": "leak_free",
+      "label": "노출 없음",
+      "kind": "binary"
+    },
+    {
+      "id": "no_invented",
+      "label": "지어냄 없음",
+      "kind": "binary"
+    },
+    {
+      "id": "style_ok",
+      "label": "문체 준수",
+      "kind": "binary"
+    }
+  ],
+  "perf_fields": [
+    "latency_s",
+    "cost_usd",
+    "attempts"
+  ],
+  "prices": {
+    "claude-opus-5-5": {
+      "in": 4.0,
+      "out": 20.0
+    }
+  }
+}
