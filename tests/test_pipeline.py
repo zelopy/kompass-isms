@@ -232,3 +232,15 @@ def test_no_explanations(tmp_path: Path) -> None:
     from tests.reporters.sample import DEFAULT
 
     assert attach_explanations(SnapshotStore(tmp_path), DEFAULT) == (DEFAULT, None)
+
+
+def test_corrupt_explanations_are_skipped_with_warning(tmp_path: Path) -> None:
+    from tests.reporters.sample import DEFAULT
+
+    store = SnapshotStore(tmp_path)
+    path = default_explanations_path(store, DEFAULT.scan.account_id, DEFAULT.scan.scan_id)
+    path.parent.mkdir(parents=True)
+    path.write_text("{broken", encoding="utf-8")
+    attached, warning = attach_explanations(store, DEFAULT)
+    assert attached.explanations is None
+    assert warning and "읽을 수 없어" in warning

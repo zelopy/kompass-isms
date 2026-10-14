@@ -271,8 +271,8 @@ cloudtrail:
 
 ## 3단계 이후: Interpreter
 
-1. finding을 마스킹한다 (`masking.py`, 치환 테이블은 `Masker` 인스턴스 안에만 있고 저장·전송하지 않는다).
-   - ARN은 서비스·리소스 종류를 남기고 계정·이름만 바꾼다 (`arn:aws:iam::MASKED_ACCOUNT_1:user/MASKED_NAME_1`). 리소스 ID는 종류를 남긴다 (`MASKED_SG_1`).
+1. finding을 마스킹한다 (`masking.py`, 치환 테이블은 `Masker` 인스턴스 안에만 있고 저장·전송하지 않는다). 이름은 보고서 전체 finding에서 모으고, dict 키도 마스킹한다. 보내기 직전에 원본 리소스 값·일부만 가려진 값·남은 이름이 있으면 그 룰은 보내지 않는다 (ADR-032).
+   - ARN은 서비스·리소스 종류(첫 구간)만 남기고 계정과 경로 구간을 모두 바꾼다 (`arn:aws:iam::MASKED_ACCOUNT_1:user/MASKED_NAME_1`). S3 ARN은 전부 바꾼다. 리소스 ID는 종류를 남긴다 (`MASKED_SG_1`). IAM 고유 ID·액세스 키 ID도 바꾼다.
    - AWS 관리형 ARN(계정 `aws`)과 `0.0.0.0/0`, `::/0`은 판정의 의미이므로 남긴다.
 2. 매핑된 항목코드로 원문 색인(`sources.py`, `knowledge/index.json`)에서 원문을 꺼낸다 (ADR-029). 색인은 `uv run --with pypdf python scripts/build_source_index.py`로 만들며, 원문 PDF의 SHA-256이 `knowledge/SOURCES.md` 기록과 다르면 만들지 않는다.
 3. LLM은 구조화된 출력(pydantic 스키마)으로 해설, 인용, 위험도 의견, 조치안을 낸다. 해설은 `Finding.key`(`룰:리전:리소스`)로 finding에 붙인다.

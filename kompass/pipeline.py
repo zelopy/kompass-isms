@@ -11,6 +11,8 @@ from datetime import UTC, datetime
 from importlib.metadata import version
 from pathlib import Path
 
+from pydantic import ValidationError
+
 from kompass.aws.session import ScanContext
 from kompass.collectors.base import Collector
 from kompass.collectors.cloudtrail import CloudTrailCollector
@@ -201,7 +203,13 @@ def attach_explanations(
     path = default_explanations_path(store, report.scan.account_id, report.scan.scan_id)
     if not path.is_file():
         return report, None
-    explanations = ExplanationReport.model_validate_json(path.read_text(encoding="utf-8"))
+    try:
+        explanations = ExplanationReport.model_validate_json(path.read_bytes())
+    except (OSError, ValidationError):
+        return report, (
+            f"해설 파일({path.name})을 읽을 수 없어 보고서에 붙이지 않았다. "
+            "kompass explain을 다시 실행한다"
+        )
     try:
         return report.with_explanations(explanations), None
     except ValueError:

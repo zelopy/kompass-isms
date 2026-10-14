@@ -153,3 +153,117 @@ def test_unknown_tokens_detects_invented_placeholders() -> None:
     masker, masked = _masked()
     sg = masked["evidence"]["group_id"]
     assert masker.unknown_tokens(f"{sg} and MASKED_SG_999") == {"MASKED_SG_999"}
+
+
+# --- 실제 증적 형태 회귀 테스트 (실습 계정에서 노출이 확인된 경로) ---
+
+ACL_BUCKET = "kompass-lab-public-acl-0e094f74"
+LOG_BUCKET = "kompass-lab-logs-0e094f74"
+PRIVATE_BUCKET = "kompass-lab-private-0e094f74"
+
+
+def test_resource_field_names_are_masked() -> None:
+    # S3 finding은 버킷 이름이 resource에만 있다
+    data = {"resource": LOG_BUCKET, "message": f"서버 액세스 로깅이 꺼져 있음: {LOG_BUCKET}"}
+    masker = Masker.for_values([data])
+    text = json.dumps(masker.mask(data), ensure_ascii=False)
+    assert LOG_BUCKET not in text
+    assert masker.unmask(masker.mask(data)) == data
+
+
+def test_account_resource_is_not_a_name() -> None:
+    masker = Masker.for_values([{"resource": "account"}])
+    assert masker.mask_text("IAM-004:-:account") == "IAM-004:-:account"
+
+
+def test_names_referenced_from_other_findings() -> None:
+    # 다른 finding의 이름(log_target_for, target_prefix 안)도 마스킹한다
+    group = {"resource": LOG_BUCKET, "evidence": {"log_target_for": [PRIVATE_BUCKET]}}
+    other = {
+        "resource": PRIVATE_BUCKET,
+        "evidence": {"target_prefix": f"s3-access/{PRIVATE_BUCKET}/"},
+    }
+    masker = Masker.for_values([group, other])
+    text = json.dumps(masker.mask([group, other]), ensure_ascii=False)
+    assert PRIVATE_BUCKET not in text and LOG_BUCKET not in text
+
+
+def test_id_like_suffix_inside_name_is_not_a_resource_id() -> None:
+    # "...-acl-0e094f74"는 네트워크 ACL ID가 아니라 버킷 이름의 일부다
+    masker = Masker.for_values([{"resource": ACL_BUCKET}])
+    masked = masker.mask_text(f"버킷 {ACL_BUCKET}의 ACL")
+    assert "MASKED_ACL" not in masked and "kompass" not in masked
+    assert masker.mask_text("acl-0123abcd 와 sg-0123456789abcdef0") == "MASKED_ACL_1 와 MASKED_SG_1"
+
+
+def test_dict_keys_are_masked() -> None:
+    data = {"subnets": {"subnet-074cf8448312397c5": {"public": True}}}
+    masker = Masker.for_values([data])
+    masked = masker.mask(data)
+    assert "subnet-074cf8448312397c5" not in json.dumps(masked)
+    assert masker.unmask(masked) == data
+
+
+def test_arn_path_segments_are_masked() -> None:
+    masker = Masker.for_values([])
+    role = masker.mask_text(f"arn:aws:sts::{ACCOUNT}:assumed-role/kompass-audit-role/alice-session")
+    assert role.startswith("arn:aws:sts::MASKED_ACCOUNT_1:assumed-role/MASKED_NAME_")
+    assert "kompass-audit-role" not in role and "alice-session" not in role
+    user = masker.mask_text(f"arn:aws:iam::{ACCOUNT}:user/engineering/alice")
+    assert "engineering" not in user and "alice" not in user
+
+
+def test_aws_defined_path_segments_are_kept() -> None:
+    masker = Masker.for_values([])
+    arn = (
+        f"arn:aws:iam::{ACCOUNT}:role/aws-reserved/sso.amazonaws.com/ap-northeast-2/"
+        "AWSReservedSSO_Admin_0123456789abcdef"
+    )
+    masked = masker.mask_text(arn)
+    assert "role/aws-reserved/sso.amazonaws.com/ap-northeast-2/MASKED_NAME_" in masked
+    assert "AWSReservedSSO_Admin" not in masked
+
+
+def test_s3_object_arn_masks_bucket() -> None:
+    masker = Masker.for_values([])
+    masked = masker.mask_text("arn:aws:s3:::my-secret-bucket/path/key.txt")
+    assert "my-secret-bucket" not in masked and "path" not in masked
+
+
+def test_iam_unique_ids_and_access_keys_are_masked() -> None:
+    masker = Masker.for_values([])
+    text = "requester AIDAEXAMPLEUSERID0001, key AKIAIOSFODNN7EXAMPLE, role AROAEXAMPLEROLEID0001"
+    masked = masker.mask_text(text)
+    for raw in ("AIDAEXAMPLEUSERID0001", "AKIAIOSFODNN7EXAMPLE", "AROAEXAMPLEROLEID0001"):
+        assert raw not in masked
+    assert masker.unmask_text(masked) == text
+
+
+def test_inline_policy_names_are_masked() -> None:
+    data = {"evidence": {"policy": "inline:kompass-lab-notaction"}}
+    masker = Masker.for_values([data])
+    assert "kompass-lab-notaction" not in json.dumps(masker.mask(data))
+
+
+def test_aws_default_names_are_kept() -> None:
+    masker = Masker.for_values([{"group_name": "default"}])
+    assert masker.mask_text("default 보안그룹") == "default 보안그룹"
+
+
+def test_partial_masking_is_detected() -> None:
+    masker = Masker.for_values([])
+    assert masker.partially_masked("kompass-MASKED_ACL_1 그리고 user/MASKED_NAME_2")
+    assert not masker.partially_masked("user/MASKED_NAME_2, SG-001:ap:MASKED_SG_1의 규칙")
+
+
+def test_name_only_in_arn_and_message_is_masked() -> None:
+    # 증적에 사용자 이름 키가 없어도 ARN에서 이름을 모아 메시지 속 이름까지 바꾼다
+    data = {
+        "resource": f"arn:aws:iam::{ACCOUNT}:user/bob-ops",
+        "message": "관리자 권한이 직접 연결되어 있음: bob-ops",
+    }
+    masker = Masker.for_values([data])
+    masked = masker.mask(data)
+    assert "bob-ops" not in json.dumps(masked, ensure_ascii=False)
+    token = masked["resource"].rpartition("/")[2]
+    assert token in masked["message"]

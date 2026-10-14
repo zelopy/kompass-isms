@@ -76,6 +76,9 @@ class Price:
 
 PRICES: dict[str, Price] = {
     "claude-opus-5-5": Price(4.0, 20.0),
+    # 거부 시 서버가 대신 답하게 하는 대체 모델 (fallbacks="default")
+    "claude-opus-5": Price(5.0, 25.0),
+    "claude-opus-4-8": Price(5.0, 25.0),
 }
 _CACHE_READ_RATE = 0.1  # 캐시 읽기는 입력 단가의 0.1배
 _CACHE_WRITE_RATE = 1.25  # 캐시 쓰기(5분)는 입력 단가의 1.25배

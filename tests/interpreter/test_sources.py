@@ -216,3 +216,23 @@ def test_default_index_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
     assert default_index_path() == tmp_path / "x.json"
     monkeypatch.delenv(INDEX_ENV)
     assert default_index_path().parts[-2:] == ("knowledge", "index.json")
+
+
+def test_boilerplate_quote_is_detected() -> None:
+    # KISA 항목마다 똑같이 나오는 형식 문구는 근거가 아니다
+    common = "조치 시 영향 일반적인 경우 영향 없음"
+    index = SourceIndex(
+        built_at=datetime(2026, 10, 14, tzinfo=UTC),
+        documents={},
+        kisa={
+            f"CA-0{n}": SourceEntry(
+                title=f"t{n}", page=n, text=f"항목 {n} 고유 판단 기준\n{common}"
+            )
+            for n in range(1, 5)
+        },
+        isms_p={},
+    )
+    lookup = SourceLookup(index)
+    assert lookup.contains_quote("kisa", "CA-01", common)
+    assert lookup.is_boilerplate("kisa", common)
+    assert not lookup.is_boilerplate("kisa", "항목 1 고유 판단 기준")

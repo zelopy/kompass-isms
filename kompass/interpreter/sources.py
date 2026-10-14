@@ -26,6 +26,7 @@ Page = tuple[int, str]  # (PDF 쪽 번호, 그 쪽의 텍스트)
 INDEX_ENV = "KOMPASS_SOURCE_INDEX"
 BUILD_COMMAND = "uv run --with pypdf python scripts/build_source_index.py"
 MIN_QUOTE_LENGTH = 6  # 공백을 뺀 글자 수. 이보다 짧은 구절은 근거로 보지 않는다
+BOILERPLATE_SHARE = 0.5  # 이 비율보다 많은 항목에 나오는 구절은 형식 문구로 본다
 
 _DOTS = str.maketrans({"ㆍ": "·", "ᆞ": "·", "‧": "·", "・": "·"})
 _DOT_CLASS = "[·ㆍᆞ‧・]"
@@ -65,6 +66,18 @@ class SourceLookup:
         needle = normalize_for_match(quote)
         haystack = self._normalized.get((scheme, code))
         return haystack is not None and len(needle) >= MIN_QUOTE_LENGTH and needle in haystack
+
+    def is_boilerplate(self, scheme: SourceScheme, quote: str) -> bool:
+        """같은 문서의 절반이 넘는 항목에 똑같이 나오는 형식 문구인가.
+
+        예: KISA 19개 항목에 모두 있는 "조치 시 영향 일반적인 경우 영향 없음". 원문에 있어도
+        이 항목의 근거라고 볼 수 없다.
+        """
+        needle = normalize_for_match(quote)
+        texts = [text for (s, _), text in self._normalized.items() if s == scheme]
+        if not needle or len(texts) < 2:
+            return False
+        return sum(needle in text for text in texts) > len(texts) * BOILERPLATE_SHARE
 
 
 # --- 색인 파일 ---

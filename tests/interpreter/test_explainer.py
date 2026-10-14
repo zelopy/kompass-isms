@@ -253,3 +253,60 @@ def test_system_prompt_states_core_rules() -> None:
     from kompass.interpreter.explainer import SYSTEM_PROMPT
 
     assert "status" in SYSTEM_PROMPT and "MASKED_" in SYSTEM_PROMPT and "sources" in SYSTEM_PROMPT
+
+
+# --- 전송 직전 마스킹 검사 (fail closed) ---
+
+
+def test_unmaskable_resource_is_not_sent() -> None:
+    # 2자짜리 이름은 마스킹하지 않으므로 그대로 남는다 → 보내지 않고 실패로 기록
+    report = sample_report(
+        finding("S3-004", Status.FAIL, "ab", "ap-northeast-2", "암호화 없음: ab")
+    )
+    provider = FakeProvider(_good)
+    result = explain_report(report, provider, LOOKUP, effort="high")
+    assert provider.calls == []
+    [failure] = result.failures
+    assert "마스킹 검증 실패" in failure.error and "ab" not in failure.error.split("(")[0]
+
+
+def test_names_from_findings_outside_the_group_are_masked() -> None:
+    log_bucket, private_bucket = "corp-logs-bucket", "corp-private-bucket"
+    report = sample_report(
+        finding("S3-005", Status.FAIL, log_bucket, "ap-northeast-2", "로깅 꺼짐",
+                {"log_target_for": [private_bucket]}),
+        finding("S3-005", Status.PASS, private_bucket, "ap-northeast-2", "로깅 켜짐",
+                {"target_prefix": f"s3-access/{private_bucket}/"}),
+    )  # fmt: skip
+    provider = FakeProvider(lambda payload, attempt: _draft(payload, []))
+    explain_report(report, provider, LOOKUP, effort="high")
+    [(_, prompt), *_] = provider.calls
+    assert log_bucket not in prompt and private_bucket not in prompt
+
+
+def test_estimate_reports_blocked_rules() -> None:
+    report = sample_report(finding("S3-004", Status.FAIL, "ab", "ap-northeast-2"))
+    estimate = estimate_explanation(report, FakeProvider(_good), LOOKUP)
+    assert estimate.blocked == ("S3-004",) and estimate.rules == 0
+
+
+def test_boilerplate_citation_is_a_problem() -> None:
+    common = "조치 시 영향 일반적인 경우 영향 없음"
+    index = SourceIndex(
+        built_at=datetime(2026, 10, 14, tzinfo=UTC),
+        documents={},
+        kisa={
+            **{f"CA-1{n}": _entry("x", common) for n in range(5)},
+            "CA-09": _entry("접근 제어", f"§ {CA09_QUOTE}\n{common}"),
+        },
+        isms_p=INDEX.isms_p,
+    )
+
+    def responder(payload: dict[str, Any], attempt: int) -> RuleExplanationDraft:
+        return _draft(payload, [Citation(scheme="kisa", code="CA-09", quote=common)])
+
+    report = sample_report(REPORT.findings[0])
+    result = explain_report(report, FakeProvider(responder), SourceLookup(index), effort="high")
+    [explanation] = result.explanations
+    assert not explanation.verified
+    assert any("형식 문구" in p for p in explanation.problems)

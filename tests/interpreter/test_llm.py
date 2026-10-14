@@ -208,3 +208,9 @@ def test_explanation_schema_has_no_status_field() -> None:
     names = _property_names(RuleExplanationDraft.model_json_schema())
     assert "status" not in names and "severity" not in names
     assert {"citations", "remediation", "priority"} <= names
+
+
+@pytest.mark.parametrize("model", ["claude-opus-5", "claude-opus-4-8"])
+def test_estimate_cost_fallback_models(model: str) -> None:
+    # 대체 모델이 답해도 비용 합계가 사라지지 않는다
+    assert estimate_cost(model, Usage(1_000_000, 0, 0, 0)) == pytest.approx(5.0)

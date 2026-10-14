@@ -15,14 +15,14 @@
 
 import json
 from collections import defaultdict
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from importlib.resources import files
 from typing import Any
 
 from kompass.interpreter.llm import LLMError, LLMProvider, Usage, estimate_cost
-from kompass.interpreter.masking import Masker
+from kompass.interpreter.masking import Masker, MaskingError
 from kompass.interpreter.sources import SourceLookup, SourceScheme
 from kompass.models import (
     AuditReport,
@@ -34,6 +34,7 @@ from kompass.models import (
     Status,
     TokenUsage,
 )
+from kompass.rules.base import ACCOUNT_RESOURCE
 from kompass.rules.registry import RULES
 
 NEEDS_ACTION = frozenset({Status.FAIL, Status.ERROR, Status.REVIEW})
@@ -68,6 +69,7 @@ class ExplanationEstimate:
     input_tokens: int
     assumed_output_tokens: int
     cost_usd: float | None
+    blocked: tuple[str, ...] = ()  # 마스킹 검증에 실패해 보내지 않을 룰
 
 
 def select_groups(report: AuditReport) -> list[RuleGroup]:
@@ -90,13 +92,14 @@ def explain_report(
     failures: list[ExplanationFailure] = []
     total = Usage(0, 0, 0, 0)
     cost: float | None = 0.0
+    names = _report_names(report)
     for group in select_groups(report):
         if on_progress:
             on_progress(group.rule_id)
         keys = tuple(f.key for f in group.findings)
         try:
-            explanation, usages = _explain_group(group, provider, lookup)
-        except LLMError as exc:
+            explanation, usages = _explain_group(group, provider, lookup, names)
+        except (LLMError, MaskingError) as exc:
             failures.append(
                 ExplanationFailure(rule_id=group.rule_id, finding_keys=keys, error=str(exc))
             )
@@ -131,18 +134,27 @@ def estimate_explanation(
 
     토큰 계산에도 마스킹한 프롬프트만 보낸다.
     """
+    names = _report_names(report)
+    prompts: list[str] = []
+    blocked: list[str] = []
     groups = select_groups(report)
+    for group in groups:
+        try:
+            prompts.append(_prepare(group, lookup, names).prompt)
+        except MaskingError:
+            blocked.append(group.rule_id)
     input_tokens = sum(
-        provider.count_input_tokens(SYSTEM_PROMPT, _prepare(g, lookup).prompt, RuleExplanationDraft)
-        for g in groups
+        provider.count_input_tokens(SYSTEM_PROMPT, prompt, RuleExplanationDraft)
+        for prompt in prompts
     )
-    output_tokens = output_tokens_per_rule * len(groups)
+    output_tokens = output_tokens_per_rule * len(prompts)
     return ExplanationEstimate(
-        rules=len(groups),
-        findings=sum(len(g.findings) for g in groups),
+        rules=len(prompts),
+        findings=sum(len(g.findings) for g in groups if g.rule_id not in blocked),
         input_tokens=input_tokens,
         assumed_output_tokens=output_tokens,
         cost_usd=estimate_cost(provider.model, Usage(input_tokens, output_tokens, 0, 0)),
+        blocked=tuple(blocked),
     )
 
 
@@ -150,9 +162,9 @@ def estimate_explanation(
 
 
 def _explain_group(
-    group: RuleGroup, provider: LLMProvider, lookup: SourceLookup
+    group: RuleGroup, provider: LLMProvider, lookup: SourceLookup, names: tuple[str, ...]
 ) -> tuple[RuleExplanation, list[tuple[str, Usage]]]:
-    prepared = _prepare(group, lookup)
+    prepared = _prepare(group, lookup, names)
     prompt = prepared.prompt
     usages: list[tuple[str, Usage]] = []
     fallback_used = False
@@ -181,21 +193,28 @@ def _explain_group(
     return explanation, usages
 
 
-def _prepare(group: RuleGroup, lookup: SourceLookup) -> _Prepared:
+def _raw(finding: Finding) -> dict[str, Any]:
+    return {
+        "key": finding.key,
+        "resource": finding.resource,
+        "region": finding.region,
+        "status": finding.status.value,
+        "message": finding.message,
+        "evidence": finding.evidence,
+    }
+
+
+def _report_names(report: AuditReport) -> tuple[str, ...]:
+    """보고서 전체 finding의 이름. 다른 finding의 이름이 증적에서 참조되기 때문이다."""
+    return Masker.for_values(_raw(f) for f in report.findings).names
+
+
+def _prepare(group: RuleGroup, lookup: SourceLookup, names: tuple[str, ...]) -> _Prepared:
     shown = group.findings[:MAX_FINDINGS_PER_REQUEST]
-    raw = [
-        {
-            "key": f.key,
-            "resource": f.resource,
-            "region": f.region,
-            "status": f.status.value,
-            "message": f.message,
-            "evidence": f.evidence,
-        }
-        for f in shown
-    ]
-    masker = Masker.for_values(raw)
+    raw = [_raw(f) for f in shown]
+    masker = Masker(names)
     masked: list[dict[str, Any]] = masker.mask(raw)
+    _require_masked(masker, shown, json.dumps(masked, ensure_ascii=False))
 
     allowed: set[tuple[SourceScheme, str]] = set()
     for finding in group.findings:
@@ -231,6 +250,22 @@ def _prepare(group: RuleGroup, lookup: SourceLookup) -> _Prepared:
     )
 
 
+def _require_masked(masker: Masker, findings: Sequence[Finding], text: str) -> None:
+    """보내기 직전 검사. 원본 식별정보가 남아 있으면 보내지 않는다 (원칙 5, fail closed).
+
+    오류 메시지에는 원본 값을 넣지 않는다.
+    """
+    reasons: list[str] = []
+    if any(f.resource != ACCOUNT_RESOURCE and f.resource in text for f in findings):
+        reasons.append("리소스 식별자가 남아 있음")
+    if masker.partially_masked(text):
+        reasons.append("일부만 가려진 값이 있음")
+    if masker.remaining_names(text):
+        reasons.append("가리지 못한 이름이 있음")
+    if reasons:
+        raise MaskingError(f"마스킹 검증 실패로 전송하지 않음 ({', '.join(reasons)})")
+
+
 def _check(draft: RuleExplanationDraft, prepared: _Prepared, lookup: SourceLookup) -> list[str]:
     problems: list[str] = []
     if not draft.citations:
@@ -241,6 +276,11 @@ def _check(draft: RuleExplanationDraft, prepared: _Prepared, lookup: SourceLooku
         elif not lookup.contains_quote(citation.scheme, citation.code, citation.quote):
             problems.append(
                 f'원문에 없는 구절: {citation.scheme} {citation.code} "{citation.quote}"'
+            )
+        elif lookup.is_boilerplate(citation.scheme, citation.quote):
+            problems.append(
+                f"여러 항목에 공통인 형식 문구라 근거가 아님: {citation.scheme} {citation.code} "
+                f'"{citation.quote}"'
             )
     for note in draft.resource_notes:
         if note.finding_key not in prepared.masked_keys:

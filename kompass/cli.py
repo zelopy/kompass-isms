@@ -392,6 +392,12 @@ def explain_command(
         estimate = estimate_explanation(audit, provider, lookup)
     except LLMError as exc:
         _abort(str(exc), EXIT_USAGE)
+    if estimate.blocked:
+        typer.echo(
+            f"경고: 마스킹 검증에 실패해 보내지 않을 룰: {', '.join(estimate.blocked)}", err=True
+        )
+    if not estimate.rules:
+        _abort("마스킹 검증을 통과한 룰이 없어 해설을 요청하지 않는다", EXIT_LLM)
     typer.echo(
         f"해설 대상: 룰 {estimate.rules}개, finding {estimate.findings}건 "
         f"(모델 {provider.model}, effort {settings.llm.effort})"
