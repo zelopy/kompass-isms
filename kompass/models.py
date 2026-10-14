@@ -213,6 +213,7 @@ class KisaItemResult(_Frozen):
 class IsmsPControlResult(_Frozen):
     code: str
     name: str
+    area: str  # "보호대책 요구사항" 등
     outcome: ItemOutcome  # 관련 룰이 없으면 NOT_IMPLEMENTED (자동 점검 범위 밖)
     kisa_items: tuple[str, ...]
     rule_ids: tuple[str, ...]

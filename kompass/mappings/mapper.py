@@ -93,6 +93,7 @@ def build_report(
             IsmsPControlResult(
                 code=code,
                 name=mappings.isms_p_controls[code],
+                area=mappings.isms_p_areas[code.split(".")[0]],
                 outcome=_outcome(rule_ids, by_rule, skipped, Automation.PARTIAL),
                 kisa_items=kisa,
                 rule_ids=rule_ids,

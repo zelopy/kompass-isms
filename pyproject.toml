@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "boto3>=1.35",
+    "openpyxl>=3.1",
     "pydantic>=2.9",
     "pyyaml>=6.0",
     "typer>=0.12",
@@ -66,9 +67,9 @@ strict = true
 packages = ["kompass"]
 plugins = ["pydantic.mypy"]
 
-# boto3·botocore·moto·PyYAML은 타입 정보를 제공하지 않는다. 필요해지면 stub 패키지 도입을 검토한다.
+# boto3·botocore·moto·PyYAML·openpyxl은 타입 정보를 제공하지 않는다. 필요해지면 stub 패키지 도입을 검토한다.
 [[tool.mypy.overrides]]
-module = ["boto3", "boto3.*", "botocore", "botocore.*", "moto", "moto.*", "yaml", "yaml.*"]
+module = ["boto3", "boto3.*", "botocore", "botocore.*", "moto", "moto.*", "yaml", "yaml.*", "openpyxl", "openpyxl.*"]
 ignore_missing_imports = true
 
 [tool.pydantic-mypy]
