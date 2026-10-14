@@ -381,3 +381,18 @@ def aggregate_status(statuses: Iterable[Status], automation: Automation) -> Stat
 
 
 AuditReport.model_rebuild()  # explanations의 전방 참조(ExplanationReport)를 해석한다
+
+
+class EvalCase(_Frozen):
+    """해설 평가 케이스 하나 = 룰 묶음 하나 (ADR-033). 가짜 데이터만 담는다 (원칙 4).
+
+    `findings`에는 그 룰의 finding을 PASS까지 모두 담는다. 해설 대상은 조치가 필요한 것뿐이지만,
+    다른 finding의 이름이 증적에서 참조되는 실제 상황을 재현하기 위해서다.
+    """
+
+    id: str
+    title: str  # 이 케이스가 시험하는 상황
+    source: Literal["lab", "synthetic"]
+    rule_id: RuleId
+    tags: tuple[str, ...]
+    findings: tuple[Finding, ...]
