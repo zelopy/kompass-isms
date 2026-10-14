@@ -54,6 +54,8 @@ class LlmSettings(_Section):
     # 추론 깊이. 인용 정확도가 중요해 high를 기본으로 한다 (모델 기본값은 medium)
     effort: Literal["low", "medium", "high", "xhigh", "max"] = "high"
     max_tokens: int = Field(default=16000, ge=1024)
+    # 요청 하나의 시간 제한(초). SDK가 연결 오류·429·5xx를 최대 2회 재시도하므로 최악은 약 3배
+    timeout_s: float = Field(default=300.0, gt=0)
 
 
 class Settings(_Section):

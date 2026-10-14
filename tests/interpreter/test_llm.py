@@ -214,3 +214,19 @@ def test_explanation_schema_has_no_status_field() -> None:
 def test_estimate_cost_fallback_models(model: str) -> None:
     # 대체 모델이 답해도 비용 합계가 사라지지 않는다
     assert estimate_cost(model, Usage(1_000_000, 0, 0, 0)) == pytest.approx(5.0)
+
+
+def test_client_uses_request_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    # 요청마다 시간 상한을 둔다 (평가 실행기도 이것에 기댄다)
+    seen: dict[str, Any] = {}
+
+    class _Client:
+        api_key = "k"
+        auth_token = None
+
+        def __init__(self, **kwargs: Any) -> None:
+            seen.update(kwargs)
+
+    monkeypatch.setattr(anthropic, "Anthropic", _Client)
+    ClaudeProvider(LlmSettings(timeout_s=42))
+    assert seen == {"timeout": 42}

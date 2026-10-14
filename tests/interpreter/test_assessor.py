@@ -79,3 +79,14 @@ def test_prepare_counts_rules_without_explanations() -> None:
     prepared = prepare_assessment(REPORT, [], report_names(REPORT))
     assert prepared.rule_ids == ("IAM-003", "SG-001")
     assert '"summary": null' in prepared.prompt
+
+
+def test_reassess_keeps_explanations_and_adds_usage() -> None:
+    from kompass.interpreter.explainer import reassess_report
+
+    first, _ = _run(lambda payload, attempt: LLMError("일시 오류"))
+    assert first.assessment is None
+    result = reassess_report(REPORT, first, FakeProvider(_good))
+    assert result.explanations == first.explanations
+    assert result.assessment is not None and result.assessment_failure is None
+    assert result.usage.input_tokens == first.usage.input_tokens + 100

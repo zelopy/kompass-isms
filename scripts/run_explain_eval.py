@@ -43,7 +43,11 @@ def main() -> int:
     parser.add_argument("--cases", help="쉼표로 구분한 케이스 ID (파일럿). 없으면 전체")
     parser.add_argument("--provider", choices=("claude", "oracle", "null"), default="claude")
     parser.add_argument("--concurrency", type=int, default=4)
-    parser.add_argument("--timeout-s", type=float, default=600.0)
+    parser.add_argument(
+        "--timeout-s",
+        type=float,
+        help="요청 하나의 시간 제한(초). 없으면 kompass.yaml의 llm.timeout_s",
+    )
     parser.add_argument("--config", type=Path, help="kompass.yaml (llm 설정)")
     parser.add_argument(
         "--dry-run", action="store_true", help="해설을 요청하지 않고 입력 토큰만 센다"
@@ -54,6 +58,9 @@ def main() -> int:
     args = parser.parse_args()
 
     settings = load_settings(args.config)
+    llm = settings.llm
+    if args.timeout_s:
+        llm = llm.model_copy(update={"timeout_s": args.timeout_s})
     cases = load_cases(EVAL_DIR / "cases")
     if args.cases:
         wanted = {c.strip() for c in args.cases.split(",")}
@@ -76,16 +83,17 @@ def main() -> int:
         make_provider = NullProvider
     else:
         try:
-            ClaudeProvider(settings.llm)  # API 키 확인
+            ClaudeProvider(llm)  # API 키 확인
         except LLMError as exc:
             print(f"오류: {exc}", file=sys.stderr)
             return 2
-        make_provider = lambda: ClaudeProvider(settings.llm)  # noqa: E731
+        make_provider = lambda: ClaudeProvider(llm)  # noqa: E731
 
     if args.dry_run:
         provider = make_provider()
         tokens = sum(
-            estimate_explanation(case_report(c), provider, lookup).input_tokens for c in cases
+            estimate_explanation(case_report(c), provider, lookup, assess=False).input_tokens
+            for c in cases
         )
         total = tokens * args.reps
         cost = estimate_cost(provider.model, Usage(total, 3000 * len(cases) * args.reps, 0, 0))
@@ -110,8 +118,7 @@ def main() -> int:
         print(summary)
         return 0
     write_state(OUT_DIR, harness)
-    config = RunConfig(OUT_DIR, args.variant, args.reps, args.concurrency, args.timeout_s,
-                       settings.llm.effort)  # fmt: skip
+    config = RunConfig(OUT_DIR, args.variant, args.reps, args.concurrency, llm.effort)
     variant_dir = run(cases, make_provider, lookup, golden, config, harness, on_event=print)
     summary = summarize(variant_dir)
     (variant_dir / "metrics.md").write_text(summary, encoding="utf-8")

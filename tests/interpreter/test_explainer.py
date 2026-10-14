@@ -233,7 +233,7 @@ def test_estimate_counts_input_and_assumes_output() -> None:
     provider = FakeProvider(_good)
     estimate = estimate_explanation(REPORT, provider, LOOKUP, output_tokens_per_rule=3000)
     assert estimate.rules == 2 and estimate.findings == 2
-    assert estimate.input_tokens == 3000  # 룰 2개 + 종합 평가 1회
+    assert estimate.input_tokens == 3000 + 2 * 250  # 룰 2개 + 종합 평가 1회 (요약 분량 포함)
     assert estimate.assumed_output_tokens == 9000
     assert provider.calls == []  # 해설 요청은 보내지 않는다
 

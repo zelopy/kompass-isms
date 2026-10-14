@@ -14,7 +14,7 @@ import statistics
 import threading
 import time
 from collections.abc import Callable, Sequence
-from concurrent.futures import ThreadPoolExecutor, wait
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -47,7 +47,6 @@ class RunConfig:
     variant: str = "baseline"
     reps: int = 2
     concurrency: int = 4
-    timeout_s: float = 600.0
     effort: str = "high"
 
 
@@ -146,25 +145,11 @@ def run(
         )
         on_event(f"  완료 {case.id} #{rep}: 검증 {graded.scores['verified']:.0f}")
 
+    # 시간 상한은 요청마다 둔다 (llm.timeout_s, SDK가 시간 초과 시 LLMError로 끝낸다).
+    # 실행 중인 스레드는 밖에서 멈출 수 없으므로 실행기 수준의 마감은 두지 않는다
     with ThreadPoolExecutor(max_workers=config.concurrency) as pool:
-        futures = {pool.submit(one, case, rep): (case, rep) for case, rep in todo}
-        deadline = time.monotonic() + config.timeout_s * max(
-            1, math.ceil(len(todo) / config.concurrency)
-        )
-        _, pending = wait(futures, timeout=max(0.0, deadline - time.monotonic()))
-        for future in pending:  # 시간 상한을 넘긴 시도는 결과에서 빼고 기록만 한다
-            case, rep = futures[future]
-            future.cancel()
-            _append(
-                variant_dir / "errors.jsonl",
-                {
-                    "prompt_id": case.id,
-                    "rep": rep,
-                    "class": "timeout",
-                    "error": f"{config.timeout_s:.0f}초 상한 초과",
-                },
-                lock,
-            )
+        for future in [pool.submit(one, case, rep) for case, rep in todo]:
+            future.result()
     return variant_dir
 
 
@@ -236,6 +221,8 @@ def _failure_class(error: str) -> str:
         return "masking_blocked"
     if "거부" in error:
         return "refusal"
+    if "timed out" in error.lower():  # SDK 요청 시간 초과 (llm.timeout_s)
+        return "timeout"
     if "잘림" in error:
         return "truncated"
     return "api_error"

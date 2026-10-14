@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.scripts]
-kompass = "kompass.cli:app"
+kompass = "kompass.cli:run"
 
 [dependency-groups]
 dev = [

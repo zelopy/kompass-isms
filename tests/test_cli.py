@@ -391,3 +391,37 @@ def test_explain_without_assessment(
     result = runner.invoke(app, ["explain", "--store", str(store), "--yes", "--no-assessment"])
     assert result.exit_code == 0, result.output
     assert fake_llm.assessment_calls == [] and "종합 평가" not in result.output
+
+
+def test_assessment_only_reuses_saved_explanations(
+    aws: None, store: Path, source_index: Path, fake_llm: FakeProvider
+) -> None:
+    _scanned(store)
+    args = ["explain", "--store", str(store), "--yes"]
+    assert runner.invoke(app, [*args, "--no-assessment"]).exit_code == 0
+    explained_calls = len(fake_llm.calls)
+    result = runner.invoke(app, [*args, "--assessment-only", "--report", "md"])
+    assert result.exit_code == 0, result.output
+    assert len(fake_llm.calls) == explained_calls  # 룰별 해설은 다시 요청하지 않는다
+    assert len(fake_llm.assessment_calls) == 1 and "종합 평가: 검증됨" in result.output
+    [path] = (store / "explanations").rglob("*.explanations.json")
+    saved = ExplanationReport.model_validate_json(path.read_text(encoding="utf-8"))
+    assert saved.assessment is not None and saved.explanations
+    [md] = store.rglob("*.md")
+    assert "### 종합 위험 평가" in md.read_text(encoding="utf-8")
+
+
+def test_assessment_only_needs_saved_explanations(
+    aws: None, store: Path, source_index: Path, fake_llm: FakeProvider
+) -> None:
+    _scanned(store)
+    result = runner.invoke(app, ["explain", "--store", str(store), "--yes", "--assessment-only"])
+    assert result.exit_code == EXIT_USAGE
+    assert "저장된 해설이 없습니다" in result.output and fake_llm.assessment_calls == []
+
+
+def test_assessment_only_conflicts_with_no_assessment(store: Path) -> None:
+    result = runner.invoke(
+        app, ["explain", "--store", str(store), "--assessment-only", "--no-assessment"]
+    )
+    assert result.exit_code == EXIT_USAGE and "함께 쓸 수 없습니다" in result.output

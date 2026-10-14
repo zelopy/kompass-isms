@@ -43,6 +43,7 @@ from kompass.rules.registry import RULES
 
 MAX_FINDINGS_PER_REQUEST = 30  # 이보다 많으면 앞의 것만 보내고 나머지 건수를 알린다
 MAX_ATTEMPTS = 2
+_SUMMARY_TOKENS = 250  # 종합 평가 입력에 들어갈 룰별 해설 요약 하나의 대략적 토큰 수 (실측)
 
 SYSTEM_PROMPT = (
     files("kompass.interpreter").joinpath("explain_system.txt").read_text(encoding="utf-8").strip()
@@ -145,6 +146,64 @@ def explain_report(
     )
 
 
+def reassess_report(
+    report: AuditReport, existing: ExplanationReport, provider: LLMProvider
+) -> ExplanationReport:
+    """저장된 룰별 해설은 그대로 두고 종합 위험 평가만 다시 만든다 (`--assessment-only`).
+
+    사용량·비용은 기존 합계에 더한다. 실패하면 `assessment_failure`에 이유를 남긴다.
+    """
+    total = Usage(
+        existing.usage.input_tokens,
+        existing.usage.output_tokens,
+        existing.usage.cache_read_input_tokens,
+        existing.usage.cache_write_input_tokens,
+    )
+    cost = existing.estimated_cost_usd
+    assessment: RiskAssessment | None = None
+    failure: str | None = None
+    try:
+        assessment, usages = assess_report(
+            report, existing.explanations, provider, report_names(report)
+        )
+    except (LLMError, MaskingError) as exc:
+        failure = str(exc)
+    else:
+        for model, usage in usages:
+            total = total + usage
+            call_cost = estimate_cost(model, usage)
+            cost = None if cost is None or call_cost is None else cost + call_cost
+    return ExplanationReport.model_validate(
+        {
+            **existing.model_dump(),
+            "assessment": assessment,
+            "assessment_failure": failure,
+            "usage": _token_usage(total),
+            "estimated_cost_usd": cost,
+        }
+    )
+
+
+def estimate_assessment(
+    report: AuditReport,
+    explanations: Sequence[RuleExplanation],
+    provider: LLMProvider,
+    output_tokens: int = 4000,
+) -> ExplanationEstimate:
+    """종합 평가 1회의 예상 비용. 마스킹 검증에 실패하면 MaskingError (보내지 않는다)."""
+    prepared = prepare_assessment(report, explanations, report_names(report))
+    input_tokens = provider.count_input_tokens(
+        ASSESS_SYSTEM_PROMPT, prepared.prompt, RiskAssessmentDraft
+    )
+    return ExplanationEstimate(
+        rules=len(prepared.rule_ids),
+        findings=len(prepared.finding_keys),
+        input_tokens=input_tokens,
+        assumed_output_tokens=output_tokens,
+        cost_usd=estimate_cost(provider.model, Usage(input_tokens, output_tokens, 0, 0)),
+    )
+
+
 def estimate_explanation(
     report: AuditReport,
     provider: LLMProvider,
@@ -179,7 +238,7 @@ def estimate_explanation(
         else:
             input_tokens += provider.count_input_tokens(
                 ASSESS_SYSTEM_PROMPT, prepared.prompt, RiskAssessmentDraft
-            )
+            ) + _SUMMARY_TOKENS * len(prepared.rule_ids)  # 아직 없는 룰별 요약 분량
             output_tokens += output_tokens_per_rule
     return ExplanationEstimate(
         rules=len(prompts),

@@ -106,7 +106,7 @@ class ClaudeProvider:
     def __init__(self, settings: LlmSettings, client: anthropic.Anthropic | None = None) -> None:
         self._settings = settings
         if client is None:
-            client = anthropic.Anthropic()
+            client = anthropic.Anthropic(timeout=settings.timeout_s)
             if client.api_key is None and client.auth_token is None:
                 raise LLMError(
                     "Claude API 키가 없습니다. 환경 변수 ANTHROPIC_API_KEY를 설정해 주십시오 "

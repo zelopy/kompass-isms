@@ -117,3 +117,17 @@ def test_regrade_replays_traces_without_calling_the_model(
     assert [r["grade"] for r in after] == [r["grade"] for r in before]
     assert [r["usage"] for r in after] == [r["usage"] for r in before]  # 원래 사용량 유지
     assert {r["meta"]["harness_sha"] for r in after} == {"new"}
+
+
+def test_request_timeouts_are_classified(tmp_path: Path, lookup: SourceLookup) -> None:
+    class TimingOut(OracleProvider):
+        def complete[T: BaseModel](
+            self, system: str, prompt: str, schema: type[T]
+        ) -> LLMResponse[T]:
+            raise LLMError("Claude API 호출 실패: Request timed out.")
+
+    variant = run(
+        CASES[:1], lambda: TimingOut(GOLDEN), lookup, GOLDEN, RunConfig(tmp_path, reps=1), "sha"
+    )
+    [error] = _rows(variant / "errors.jsonl")
+    assert error["class"] == "timeout"

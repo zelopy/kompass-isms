@@ -21,8 +21,15 @@ import typer
 
 from kompass.aws.session import ScanContext, SessionError, open_scan
 from kompass.config import ConfigError, LlmSettings, Settings, load_settings
-from kompass.interpreter.explainer import estimate_explanation, explain_report, select_groups
+from kompass.interpreter.explainer import (
+    estimate_assessment,
+    estimate_explanation,
+    explain_report,
+    reassess_report,
+    select_groups,
+)
 from kompass.interpreter.llm import ClaudeProvider, LLMError, LLMProvider
+from kompass.interpreter.masking import MaskingError
 from kompass.interpreter.sources import SourceIndexError, SourceLookup, load_index
 from kompass.models import AuditReport, EvaluationReport, Snapshot, Status
 from kompass.pipeline import (
@@ -369,6 +376,11 @@ def explain_command(
     no_assessment: bool = typer.Option(
         False, "--no-assessment", help="룰을 엮은 종합 위험 평가(LLM 1회 추가)를 하지 않습니다."
     ),
+    assessment_only: bool = typer.Option(
+        False,
+        "--assessment-only",
+        help="저장된 룰별 해설을 그대로 두고 종합 위험 평가만 다시 만듭니다 (LLM 1회).",
+    ),
     report: list[ReportFormat] | None = typer.Option(
         None, "--report", help="해설 후 이 형식의 보고서도 다시 만듭니다 (md, xlsx, json)."
     ),
@@ -378,10 +390,16 @@ def explain_command(
     LLM에는 계정 ID·IP·ARN·리소스 이름을 가린 값만 보냅니다.
     API 키는 환경 변수 ANTHROPIC_API_KEY에서 읽습니다.
     """
+    if assessment_only and no_assessment:
+        _abort("--assessment-only와 --no-assessment는 함께 쓸 수 없습니다", EXIT_USAGE)
     settings = _settings(config)
     snapshot_store = SnapshotStore(store)
     findings = _findings_path(snapshot_store, findings, account_id)
     audit = _audit_report(snapshot_store, findings)
+    if assessment_only:
+        _reassess(snapshot_store, findings, audit, settings, dry_run=dry_run, yes=yes,
+                  report=report)  # fmt: skip
+        return
     try:
         lookup = SourceLookup(load_index())
     except SourceIndexError as exc:
@@ -446,7 +464,11 @@ def explain_command(
         typer.echo(f"경고: 종합 평가 실패: {result.assessment_failure}", err=True)
     for failure in result.failures:
         typer.echo(f"경고: {failure.rule_id} 해설 실패: {failure.error}", err=True)
-    cost = f", 비용 약 ${result.estimated_cost_usd:.2f}" if result.estimated_cost_usd else ""
+    cost = (
+        f", 비용 약 ${result.estimated_cost_usd:.2f}"
+        if result.estimated_cost_usd is not None
+        else ""
+    )
     typer.echo(
         f"토큰: 입력 {result.usage.input_tokens:,}, 출력 {result.usage.output_tokens:,}{cost}"
     )
@@ -455,3 +477,67 @@ def explain_command(
         _reports(snapshot_store, findings, report)
     if not result.explanations:
         raise typer.Exit(EXIT_LLM)
+
+
+def _reassess(
+    store: SnapshotStore,
+    findings: Path,
+    audit: AuditReport,
+    settings: Settings,
+    *,
+    dry_run: bool,
+    yes: bool,
+    report: list[ReportFormat] | None,
+) -> None:
+    """`explain --assessment-only`: 같은 판정 결과의 저장된 해설에 종합 평가만 다시 만든다."""
+    attached, warning = attach_explanations(store, audit)
+    existing = attached.explanations
+    if existing is None:
+        _abort(
+            warning or "저장된 해설이 없습니다. 먼저 --assessment-only 없이 실행해 주십시오",
+            EXIT_USAGE,
+        )
+    if not existing.explanations:
+        _abort("저장된 룰별 해설이 없어 종합 평가를 만들 수 없습니다", EXIT_USAGE)
+    try:
+        provider = make_provider(settings.llm)
+        estimate = estimate_assessment(audit, existing.explanations, provider)
+    except LLMError as exc:
+        _abort(str(exc), EXIT_USAGE)
+    except MaskingError as exc:
+        _abort(str(exc), EXIT_LLM)
+    typer.echo(
+        f"종합 평가 대상: 룰 {estimate.rules}개, finding {estimate.findings}건 "
+        f"(모델 {provider.model}, effort {settings.llm.effort})"
+    )
+    typer.echo(f"입력 토큰: {estimate.input_tokens:,} (마스킹한 프롬프트 기준)")
+    if estimate.cost_usd is not None:
+        typer.echo(
+            f"예상 비용: 약 ${estimate.cost_usd:.2f} "
+            f"(출력 {estimate.assumed_output_tokens:,} 토큰 가정)"
+        )
+    if dry_run:
+        return
+    if not yes and not typer.confirm("종합 평가를 요청하시겠습니까?"):
+        typer.echo("취소했습니다.")
+        return
+    result = reassess_report(audit, existing, provider)
+    path = write_report(result, default_explanations_path(store, result.account_id, result.scan_id))
+    if result.assessment is None:
+        typer.echo(f"경고: 종합 평가 실패: {result.assessment_failure}", err=True)
+    else:
+        status = "검증됨" if result.assessment.verified else "검증되지 않음"
+        typer.echo(
+            f"종합 평가: {status} (시나리오 {len(result.assessment.assessment.scenarios)}개)"
+        )
+    typer.echo(f"해설 파일: {path}")
+    if report:
+        _reports(store, findings, report)
+    if result.assessment is None:
+        raise typer.Exit(EXIT_LLM)
+
+
+def run() -> None:
+    """콘솔 스크립트 진입점. 최상위 `--help`도 UTF-8로 나가도록 출력 설정을 먼저 한다."""
+    _configure_output()
+    app()
