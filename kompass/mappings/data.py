@@ -18,6 +18,8 @@ import yaml
 from kompass.models import KisaItem, RuleMapping
 
 _FILES = ("kisa_items.yaml", "rules.yaml", "isms_p_controls.yaml")
+_CRLF = bytes([13, 10])
+_LF = bytes([10])
 
 
 @dataclass(frozen=True)
@@ -33,7 +35,8 @@ class MappingData:
 
 
 def _read(name: str) -> tuple[bytes, Any]:
-    raw = files("kompass.mappings").joinpath(name).read_bytes()
+    # git 체크아웃 설정(CRLF 변환)과 관계없이 같은 해시가 나오도록 줄바꿈을 통일한다
+    raw = files("kompass.mappings").joinpath(name).read_bytes().replace(_CRLF, _LF)
     return raw, yaml.safe_load(raw.decode("utf-8"))
 
 

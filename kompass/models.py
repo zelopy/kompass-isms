@@ -186,6 +186,51 @@ class EvaluationReport(_Frozen):
     findings: tuple[Finding, ...]
 
 
+class ItemOutcome(StrEnum):
+    """KISA 항목·ISMS-P 통제항목의 결과. `Status`의 값에 항목 단위 상태 두 가지를 더한다."""
+
+    FAIL = "FAIL"
+    ERROR = "ERROR"
+    REVIEW = "REVIEW"
+    PASS = "PASS"
+    NOT_APPLICABLE = "N/A"
+    NOT_EVALUATED = "NOT_EVALUATED"  # 담당 룰이 있지만 스냅샷이 없어 실행하지 않음
+    NOT_IMPLEMENTED = "NOT_IMPLEMENTED"  # 담당 룰이 없음. 수동 점검 대상
+
+
+class KisaItemResult(_Frozen):
+    code: str
+    title: str
+    importance: KisaImportance
+    page: int
+    automation: Automation
+    outcome: ItemOutcome
+    rule_ids: tuple[str, ...]
+    status_counts: dict[str, int]  # finding 상태별 개수
+    isms_p: tuple[str, ...]
+
+
+class IsmsPControlResult(_Frozen):
+    code: str
+    name: str
+    outcome: ItemOutcome  # 관련 룰이 없으면 NOT_IMPLEMENTED (자동 점검 범위 밖)
+    kisa_items: tuple[str, ...]
+    rule_ids: tuple[str, ...]
+
+
+class AuditReport(_Frozen):
+    """보고서 원본 데이터. 리포터(JSON·Markdown·Excel)는 이것만 읽는다."""
+
+    format_version: Literal[1] = 1
+    scan: ScanManifest
+    evaluation: EvaluationReport
+    mapping_digest: str  # 매핑 데이터 세 파일의 SHA-256
+    generated_at: UtcDatetime
+    kisa_items: tuple[KisaItemResult, ...]
+    isms_p_controls: tuple[IsmsPControlResult, ...]
+    findings: tuple[Finding, ...]  # 매핑을 붙인 finding
+
+
 _PRECEDENCE = (Status.FAIL, Status.ERROR, Status.REVIEW)
 
 
