@@ -25,7 +25,8 @@ from typing import Any
 TOKEN_PREFIX = "MASKED_"
 _TOKEN = re.compile(r"MASKED_[A-Z0-9]+_\d+")
 # 자리표시자 앞뒤에 이름 문자가 붙어 있으면 값의 일부만 바뀐 것이다
-_PARTIAL = re.compile(r"[A-Za-z0-9.-]MASKED_[A-Z0-9]+_\d+|MASKED_[A-Z0-9]+_\d+[A-Za-z0-9-]")
+# 번호는 끝까지 읽은 뒤 판단한다 (`MASKED_NAME_10`을 `MASKED_NAME_1` + `0`으로 보지 않는다)
+_PARTIAL = re.compile(r"[A-Za-z0-9.-]MASKED_[A-Z0-9]+_\d+|MASKED_[A-Z0-9]+_\d+(?!\d)[A-Za-z-]")
 _KEEP = frozenset({"0.0.0.0/0", "::/0"})
 _MIN_NAME_LENGTH = 3
 _NOT_NAMES = frozenset({"account", "default"})  # 계정 단위 리소스 표기, AWS 기본값

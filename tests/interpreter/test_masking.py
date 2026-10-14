@@ -267,3 +267,10 @@ def test_name_only_in_arn_and_message_is_masked() -> None:
     assert "bob-ops" not in json.dumps(masked, ensure_ascii=False)
     token = masked["resource"].rpartition("/")[2]
     assert token in masked["message"]
+
+
+def test_two_digit_token_numbers_are_not_partial() -> None:
+    # 회귀: 같은 종류 자리표시자가 10개를 넘으면 모든 요청이 차단되던 버그 (평가셋이 발견)
+    masker = Masker.for_values([])
+    assert not masker.partially_masked("user/MASKED_NAME_10, MASKED_SG_123")
+    assert masker.partially_masked("MASKED_NAME_10-prod")
