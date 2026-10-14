@@ -366,6 +366,9 @@ def explain_command(
         False, "--dry-run", help="해설을 요청하지 않고 대상과 예상 비용만 보여준다."
     ),
     yes: bool = typer.Option(False, "--yes", "-y", help="비용 확인 없이 진행한다."),
+    no_assessment: bool = typer.Option(
+        False, "--no-assessment", help="룰을 엮은 종합 위험 평가(LLM 1회 추가)를 하지 않는다."
+    ),
     report: list[ReportFormat] | None = typer.Option(
         None, "--report", help="해설 후 이 형식의 보고서도 다시 만든다 (md, xlsx, json)."
     ),
@@ -389,7 +392,7 @@ def explain_command(
         return
     try:
         provider = make_provider(settings.llm)
-        estimate = estimate_explanation(audit, provider, lookup)
+        estimate = estimate_explanation(audit, provider, lookup, assess=not no_assessment)
     except LLMError as exc:
         _abort(str(exc), EXIT_USAGE)
     if estimate.blocked:
@@ -422,6 +425,7 @@ def explain_command(
         provider,
         lookup,
         effort=settings.llm.effort,
+        assess=not no_assessment,
         on_progress=lambda rule_id: typer.echo(f"  해설 {rule_id}"),
     )
     path = write_report(
@@ -432,6 +436,13 @@ def explain_command(
         f"해설: 검증됨 {verified}, 검증되지 않음 {len(result.explanations) - verified}, "
         f"실패 {len(result.failures)}"
     )
+    if result.assessment is not None:
+        status = "검증됨" if result.assessment.verified else "검증되지 않음"
+        typer.echo(
+            f"종합 평가: {status} (시나리오 {len(result.assessment.assessment.scenarios)}개)"
+        )
+    elif result.assessment_failure:
+        typer.echo(f"경고: 종합 평가 실패: {result.assessment_failure}", err=True)
     for failure in result.failures:
         typer.echo(f"경고: {failure.rule_id} 해설 실패: {failure.error}", err=True)
     cost = f", 비용 약 ${result.estimated_cost_usd:.2f}" if result.estimated_cost_usd else ""

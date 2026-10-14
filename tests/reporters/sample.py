@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from kompass.mappings.data import load_mappings
 from kompass.mappings.mapper import build_report
 from kompass.models import (
+    ActionStep,
     AuditReport,
     Citation,
     EvaluationReport,
@@ -13,6 +14,9 @@ from kompass.models import (
     Finding,
     Remediation,
     ResourceNote,
+    RiskAssessment,
+    RiskAssessmentDraft,
+    RiskScenario,
     RuleExplanation,
     RuleExplanationDraft,
     ScanManifest,
@@ -146,5 +150,32 @@ EXPLAINED = DEFAULT.with_explanations(
         ),
         usage=TokenUsage(input_tokens=2000, output_tokens=1000),
         estimated_cost_usd=0.028,
+        assessment=RiskAssessment(
+            assessment=RiskAssessmentDraft(
+                summary="- 외부 노출 경로가 겹쳐 있음\n- 즉시 조치 필요",
+                scenarios=[
+                    RiskScenario(
+                        title="공개 SSH <script>와 암호화 없는 버킷",
+                        description="관리 포트 개방과 버킷 노출이 함께 있음",
+                        finding_keys=[
+                            "SG-001:ap-northeast-2:sg-1",
+                            "S3-004:ap-northeast-2:bucket-a",
+                        ],
+                        impact="critical",
+                    )
+                ],
+                action_order=[
+                    ActionStep(rule_id="SG-001", reason="외부 접근 경로 차단 우선"),
+                    ActionStep(rule_id="S3-004", reason="데이터 보호"),
+                    ActionStep(rule_id="IAM-008", reason="확인 작업"),
+                ],
+            ),
+            verified=True,
+            problems=(),
+            model="claude-opus-5-5",
+            fallback_used=False,
+            attempts=1,
+            usage=TokenUsage(input_tokens=500, output_tokens=300),
+        ),
     )
 )

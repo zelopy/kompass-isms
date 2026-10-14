@@ -67,5 +67,15 @@ def explanation_summary(report: AuditReport) -> str:
     unverified = len(explained.explanations) - verified
     return (
         f"{explained.model} (effort {explained.effort}), {kst(explained.generated_at)}, "
-        f"검증됨 {verified} · 검증되지 않음 {unverified} · 실패 {len(explained.failures)}"
+        f"검증됨 {verified} · 검증되지 않음 {unverified} · 실패 {len(explained.failures)}, "
+        f"종합 평가 {assessment_label(report)}"
     )
+
+
+def assessment_label(report: AuditReport) -> str:
+    explained = report.explanations
+    if explained is None or (explained.assessment is None and not explained.assessment_failure):
+        return "없음"
+    if explained.assessment is None:
+        return "실패"
+    return "검증됨" if explained.assessment.verified else "검증되지 않음"

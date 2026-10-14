@@ -168,3 +168,31 @@ def test_multiline_llm_text_becomes_nested_list() -> None:
     assert _labeled("위험", "한 줄 설명") == ["- 위험: 한 줄 설명"]
     # 목록 항목 안의 "# "는 제목으로 렌더링되므로 이스케이프한다
     assert _labeled("위험", "# 제목\n• 점 목록") == ["- 위험:", "  - \\# 제목", "  - 점 목록"]
+
+
+def test_assessment_section_comes_first_with_order_and_scenarios() -> None:
+    section = EXPLAINED_MD.split("## AI 해설 (참고)")[1]
+    assert section.index("### 종합 위험 평가 — 참조 검증됨") < section.index("### SG-001 ")
+    assert "1. SG-001 관리 포트 전체 개방 — 외부 접근 경로 차단 우선" in section
+    assert "(영향 긴급)" in section and "&lt;script&gt;" in section and "<script>" not in section
+    assert (
+        "  - 관련 finding: `SG-001:ap-northeast-2:sg-1`, `S3-004:ap-northeast-2:bucket-a`"
+        in section
+    )
+    assert "- 요약:\n  - 외부 노출 경로가 겹쳐 있음" in section
+    assert "종합 평가 검증됨" in EXPLAINED_MD  # 점검 정보 표
+
+
+def test_assessment_failure_is_shown() -> None:
+    from kompass.reporters.markdown_reporter import _assessment_section
+
+    explained = EXPLAINED.explanations
+    assert explained is not None
+    failed = EXPLAINED.model_validate(
+        {
+            **EXPLAINED.model_dump(),
+            "explanations": {**explained.model_dump(), "assessment": None,
+                             "assessment_failure": "모델이 요청을 거부함"},
+        }
+    )  # fmt: skip
+    assert "- 만들지 못함: 모델이 요청을 거부함" in _assessment_section(failed)

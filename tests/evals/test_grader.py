@@ -168,7 +168,7 @@ def _lookup() -> SourceLookup:
 
 def _run(case: EvalCase, provider: LLMProvider, lookup: SourceLookup) -> dict[str, float | None]:
     recorder = RecordingProvider(provider)
-    result = explain_report(case_report(case), recorder, lookup, effort="high")
+    result = explain_report(case_report(case), recorder, lookup, effort="high", assess=False)
     assert result.failures == (), result.failures
     [explanation] = result.explanations
     outcome = CaseOutcome(

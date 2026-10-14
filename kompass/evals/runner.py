@@ -110,7 +110,9 @@ def run(
         recorder = RecordingProvider(make_provider())
         started = time.monotonic()
         try:
-            result = explain_report(case_report(case), recorder, lookup, effort=config.effort)
+            result = explain_report(
+                case_report(case), recorder, lookup, effort=config.effort, assess=False
+            )
         except Exception as exc:  # 실행기 결함·예상 못한 오류도 결과를 막지 않고 기록한다
             _append(
                 variant_dir / "errors.jsonl",
@@ -339,7 +341,7 @@ def regrade(
         trace_path = variant_dir / "traces" / f"{case.id}_rep{row['rep']}.json"
         trace = json.loads(trace_path.read_text("utf-8"))
         recorder = RecordingProvider(ReplayProvider(trace))
-        result = explain_report(case_report(case), recorder, lookup, effort="replay")
+        result = explain_report(case_report(case), recorder, lookup, effort="replay", assess=False)
         [explanation] = result.explanations
         outcome = CaseOutcome(
             case=case,

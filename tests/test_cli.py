@@ -371,3 +371,23 @@ def test_explain_without_api_key_is_usage_error(
     result = runner.invoke(app, ["explain", "--store", str(store), "--yes"])
     assert result.exit_code == EXIT_USAGE
     assert "ANTHROPIC_API_KEY" in result.output
+
+
+def test_explain_includes_assessment_by_default(
+    aws: None, store: Path, source_index: Path, fake_llm: FakeProvider
+) -> None:
+    _scanned(store)
+    result = runner.invoke(app, ["explain", "--store", str(store), "--yes", "--report", "md"])
+    assert result.exit_code == 0, result.output
+    assert "종합 평가: 검증됨" in result.output and len(fake_llm.assessment_calls) == 1
+    [md] = store.rglob("*.md")
+    assert "### 종합 위험 평가 — 참조 검증됨" in md.read_text(encoding="utf-8")
+
+
+def test_explain_without_assessment(
+    aws: None, store: Path, source_index: Path, fake_llm: FakeProvider
+) -> None:
+    _scanned(store)
+    result = runner.invoke(app, ["explain", "--store", str(store), "--yes", "--no-assessment"])
+    assert result.exit_code == 0, result.output
+    assert fake_llm.assessment_calls == [] and "종합 평가" not in result.output

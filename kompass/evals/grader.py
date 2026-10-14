@@ -27,7 +27,7 @@ import botocore.session
 import yaml
 from botocore import xform_name
 
-from kompass.evals.cases import NEEDS_ACTION, case_report
+from kompass.evals.cases import case_report
 from kompass.interpreter.explainer import (
     RuleGroup,
     check_draft,
@@ -37,6 +37,7 @@ from kompass.interpreter.explainer import (
 )
 from kompass.interpreter.sources import SourceLookup, normalize_for_match
 from kompass.models import (
+    NEEDS_ACTION,
     EvalCase,
     Golden,
     RuleExplanation,

@@ -186,6 +186,8 @@ def render_xlsx(report: AuditReport) -> bytes:
 
     if report.explanations is not None:
         _explanation_sheet(book.create_sheet("AI 해설 (참고)"), report)
+        if report.explanations.assessment is not None:
+            _assessment_sheet(book.create_sheet("AI 종합 평가 (참고)"), report)
 
     buffer = io.BytesIO()
     book.save(buffer)
@@ -244,3 +246,35 @@ def _explanation_sheet(sheet: Any, report: AuditReport) -> None:
         rows,
         [9, 13, 9, 9, 40, 40, 30, 50, 50, 60, 50, 40, 40, 18],
     )  # fmt: skip
+
+
+def _assessment_sheet(sheet: Any, report: AuditReport) -> None:
+    explained = report.explanations
+    assert explained is not None and explained.assessment is not None
+    item = explained.assessment
+    draft = item.assessment
+    rows: list[tuple[Any, ...]] = [
+        ("요약", 0, "검증됨" if item.verified else "검증되지 않음", "", draft.summary, "")
+    ]
+    rows += [
+        (
+            "위험 시나리오",
+            n,
+            scenario.title,
+            PRIORITY_LABELS[scenario.impact],
+            scenario.description,
+            "\n".join(scenario.finding_keys),
+        )
+        for n, scenario in enumerate(draft.scenarios, start=1)
+    ]
+    rows += [
+        ("조치 순서", n, step.rule_id, "", step.reason, "")
+        for n, step in enumerate(draft.action_order, start=1)
+    ]
+    rows += [("검증 문제", n, "", "", p, "") for n, p in enumerate(item.problems, start=1)]
+    _table(
+        sheet,
+        ["구분", "순번", "제목·룰", "영향", "내용", "관련 finding"],
+        rows,
+        [14, 6, 30, 8, 80, 60],
+    )

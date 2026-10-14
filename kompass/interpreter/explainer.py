@@ -21,23 +21,26 @@ from datetime import UTC, datetime
 from importlib.resources import files
 from typing import Any
 
+from kompass.interpreter.assessor import SYSTEM_PROMPT as ASSESS_SYSTEM_PROMPT
+from kompass.interpreter.assessor import assess_report, prepare_assessment
 from kompass.interpreter.llm import LLMError, LLMProvider, Usage, estimate_cost
 from kompass.interpreter.masking import Masker, MaskingError
 from kompass.interpreter.sources import SourceLookup, SourceScheme
 from kompass.models import (
+    NEEDS_ACTION,
     AuditReport,
     ExplanationFailure,
     ExplanationReport,
     Finding,
+    RiskAssessment,
+    RiskAssessmentDraft,
     RuleExplanation,
     RuleExplanationDraft,
-    Status,
     TokenUsage,
 )
 from kompass.rules.base import ACCOUNT_RESOURCE
 from kompass.rules.registry import RULES
 
-NEEDS_ACTION = frozenset({Status.FAIL, Status.ERROR, Status.REVIEW})
 MAX_FINDINGS_PER_REQUEST = 30  # 이보다 많으면 앞의 것만 보내고 나머지 건수를 알린다
 MAX_ATTEMPTS = 2
 
@@ -87,7 +90,9 @@ def explain_report(
     *,
     effort: str,
     on_progress: Callable[[str], None] | None = None,
+    assess: bool = True,
 ) -> ExplanationReport:
+    """룰별 해설을 만들고, `assess`면 이어서 종합 위험 평가를 한 번 만든다 (ADR-034)."""
     explanations: list[RuleExplanation] = []
     failures: list[ExplanationFailure] = []
     total = Usage(0, 0, 0, 0)
@@ -109,6 +114,20 @@ def explain_report(
             total = total + usage
             call_cost = estimate_cost(model, usage)
             cost = None if cost is None or call_cost is None else cost + call_cost
+    assessment: RiskAssessment | None = None
+    assessment_failure: str | None = None
+    if assess and explanations:
+        if on_progress:
+            on_progress("종합 평가")
+        try:
+            assessment, usages = assess_report(report, explanations, provider, names)
+        except (LLMError, MaskingError) as exc:
+            assessment_failure = str(exc)
+        else:
+            for model, usage in usages:
+                total = total + usage
+                call_cost = estimate_cost(model, usage)
+                cost = None if cost is None or call_cost is None else cost + call_cost
     return ExplanationReport(
         scan_id=report.scan.scan_id,
         account_id=report.scan.account_id,
@@ -121,6 +140,8 @@ def explain_report(
         failures=tuple(failures),
         usage=_token_usage(total),
         estimated_cost_usd=cost,
+        assessment=assessment,
+        assessment_failure=assessment_failure,
     )
 
 
@@ -129,6 +150,7 @@ def estimate_explanation(
     provider: LLMProvider,
     lookup: SourceLookup,
     output_tokens_per_rule: int = 4000,
+    assess: bool = True,
 ) -> ExplanationEstimate:
     """해설 요청을 보내지 않고 입력 토큰을 세어 비용을 어림한다 (재시도는 셈하지 않는다).
 
@@ -148,6 +170,17 @@ def estimate_explanation(
         for prompt in prompts
     )
     output_tokens = output_tokens_per_rule * len(prompts)
+    if assess and prompts:
+        # 종합 평가 1회. 룰별 해설 요약이 아직 없으므로 요약 없이 센다
+        try:
+            prepared = prepare_assessment(report, [], names)
+        except MaskingError:
+            blocked.append("종합 평가")
+        else:
+            input_tokens += provider.count_input_tokens(
+                ASSESS_SYSTEM_PROMPT, prepared.prompt, RiskAssessmentDraft
+            )
+            output_tokens += output_tokens_per_rule
     return ExplanationEstimate(
         rules=len(prompts),
         findings=sum(len(g.findings) for g in groups if g.rule_id not in blocked),
@@ -216,7 +249,7 @@ def prepare_request(
     raw = [_raw(f) for f in shown]
     masker = Masker(names)
     masked: list[dict[str, Any]] = masker.mask(raw)
-    _require_masked(masker, shown, json.dumps(masked, ensure_ascii=False))
+    require_masked(masker, shown, json.dumps(masked, ensure_ascii=False))
 
     allowed: set[tuple[SourceScheme, str]] = set()
     for finding in group.findings:
@@ -252,20 +285,9 @@ def prepare_request(
     )
 
 
-def _require_masked(masker: Masker, findings: Sequence[Finding], text: str) -> None:
-    """보내기 직전 검사. 원본 식별정보가 남아 있으면 보내지 않는다 (원칙 5, fail closed).
-
-    오류 메시지에는 원본 값을 넣지 않는다.
-    """
-    reasons: list[str] = []
-    if any(f.resource != ACCOUNT_RESOURCE and f.resource in text for f in findings):
-        reasons.append("리소스 식별자가 남아 있음")
-    if masker.partially_masked(text):
-        reasons.append("일부만 가려진 값이 있음")
-    if masker.remaining_names(text):
-        reasons.append("가리지 못한 이름이 있음")
-    if reasons:
-        raise MaskingError(f"마스킹 검증 실패로 전송하지 않음 ({', '.join(reasons)})")
+def require_masked(masker: Masker, findings: Sequence[Finding], text: str) -> None:
+    """보내기 직전 검사 (원칙 5, fail closed). `Masker.require_clean` 참고."""
+    masker.require_clean(text, [f.resource for f in findings if f.resource != ACCOUNT_RESOURCE])
 
 
 def check_draft(

@@ -155,6 +155,21 @@ class Masker:
         """값의 일부만 자리표시자로 바뀐 곳이 있다 (나머지 부분이 노출됨)."""
         return _PARTIAL.search(text) is not None
 
+    def require_clean(self, text: str, resources: Iterable[str]) -> None:
+        """보내기 직전 검사. 원본 리소스 값, 일부만 가려진 값, 남은 이름이 있으면 MaskingError.
+
+        오류 메시지에는 원본 값을 넣지 않는다 (원칙 5, fail closed).
+        """
+        reasons: list[str] = []
+        if any(resource in text for resource in resources):
+            reasons.append("리소스 식별자가 남아 있음")
+        if self.partially_masked(text):
+            reasons.append("일부만 가려진 값이 있음")
+        if self.remaining_names(text):
+            reasons.append("가리지 못한 이름이 있음")
+        if reasons:
+            raise MaskingError(f"마스킹 검증 실패로 전송하지 않음 ({', '.join(reasons)})")
+
     def remaining_names(self, text: str) -> list[str]:
         """마스킹했어야 할 이름 중 텍스트에 남아 있는 것."""
         return [n for n, p in zip(self._names, self._name_patterns, strict=True) if p.search(text)]

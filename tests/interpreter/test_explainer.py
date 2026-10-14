@@ -209,7 +209,8 @@ def test_report_metadata_and_usage() -> None:
     assert result.findings_evaluated_at == REPORT.evaluation.evaluated_at
     assert result.model == "fake-model" and result.effort == "high"
     assert result.source_documents == INDEX.documents
-    assert result.usage.input_tokens == 200 and result.usage.output_tokens == 100
+    # 룰 2개 + 종합 평가 1회
+    assert result.usage.input_tokens == 300 and result.usage.output_tokens == 150
     assert result.estimated_cost_usd is None  # 단가를 모르는 모델
 
 
@@ -222,7 +223,7 @@ def test_findings_are_not_modified() -> None:
 def test_progress_callback() -> None:
     seen: list[str] = []
     explain_report(REPORT, FakeProvider(_good), LOOKUP, effort="high", on_progress=seen.append)
-    assert seen == ["IAM-003", "SG-001"]
+    assert seen == ["IAM-003", "SG-001", "종합 평가"]
 
 
 # --- 예상 비용 ---
@@ -232,8 +233,8 @@ def test_estimate_counts_input_and_assumes_output() -> None:
     provider = FakeProvider(_good)
     estimate = estimate_explanation(REPORT, provider, LOOKUP, output_tokens_per_rule=3000)
     assert estimate.rules == 2 and estimate.findings == 2
-    assert estimate.input_tokens == 2000
-    assert estimate.assumed_output_tokens == 6000
+    assert estimate.input_tokens == 3000  # 룰 2개 + 종합 평가 1회
+    assert estimate.assumed_output_tokens == 9000
     assert provider.calls == []  # 해설 요청은 보내지 않는다
 
 

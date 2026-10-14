@@ -130,6 +130,46 @@ def _explanation_rule(item: RuleExplanation) -> list[str]:
     return [*lines, ""]
 
 
+def _assessment_section(report: AuditReport) -> list[str]:
+    explained = report.explanations
+    if explained is None:
+        return []
+    if explained.assessment is None:
+        if explained.assessment_failure:
+            return [
+                "### 종합 위험 평가",
+                "",
+                f"- 만들지 못함: {_text(explained.assessment_failure)}",
+                "",
+            ]
+        return []
+    item = explained.assessment
+    draft = item.assessment
+    label = "참조 검증됨" if item.verified else "검증되지 않음"
+    lines = [
+        "### 종합 위험 평가 — " + label,
+        "",
+        *_labeled("요약", draft.summary),
+        "",
+        "위험 시나리오:",
+        "",
+    ]
+    for scenario in draft.scenarios:
+        keys = ", ".join(f"`{k.replace('`', '')}`" for k in scenario.finding_keys)
+        lines += [
+            f"- **{_text(scenario.title)}** (영향 {PRIORITY_LABELS[scenario.impact]}): "
+            f"{_text(scenario.description)}",
+            f"  - 관련 finding: {keys}",
+        ]
+    lines += ["", "조치 순서:", ""]
+    for n, step in enumerate(draft.action_order, start=1):
+        title = _text(RULE_TITLES.get(step.rule_id, ""))
+        lines.append(f"{n}. {_text(step.rule_id)} {title} — {_text(step.reason)}")
+    if item.problems:
+        lines += ["", "검증 문제:", ""] + [f"- {_text(p)}" for p in item.problems]
+    return [*lines, ""]
+
+
 def _explanation_section(report: AuditReport) -> list[str]:
     explained = report.explanations
     if explained is None:
@@ -150,6 +190,7 @@ def _explanation_section(report: AuditReport) -> list[str]:
         f"출력 {explained.usage.output_tokens:,}{cost}",
         "",
     ]
+    lines += _assessment_section(report)
     for item in explained.explanations:
         lines += _explanation_rule(item)
     if explained.failures:

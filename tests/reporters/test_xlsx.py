@@ -94,7 +94,7 @@ def test_long_evidence_is_truncated_to_excel_limit() -> None:
 
 def test_explanation_sheet_only_when_explained() -> None:
     assert "AI 해설 (참고)" not in _book().sheetnames
-    assert _book(EXPLAINED).sheetnames == [*SHEETS, "AI 해설 (참고)"]
+    assert _book(EXPLAINED).sheetnames == [*SHEETS, "AI 해설 (참고)", "AI 종합 평가 (참고)"]
 
 
 def test_explanation_sheet_rows() -> None:
@@ -119,3 +119,12 @@ def test_explanation_commands_are_not_formulas() -> None:
 def test_summary_mentions_explanations() -> None:
     values = [v for row in _rows(_book(EXPLAINED)["요약"]) for v in row if v is not None]
     assert any("검증됨 1" in str(v) and "실패 1" in str(v) for v in values)
+
+
+def test_assessment_sheet() -> None:
+    book = _book(EXPLAINED)
+    assert book.sheetnames[-1] == "AI 종합 평가 (참고)"
+    rows = _rows(book["AI 종합 평가 (참고)"])
+    assert rows[0][:2] == ("구분", "순번")
+    kinds = [r[0] for r in rows[1:]]
+    assert kinds == ["요약", "위험 시나리오", "조치 순서", "조치 순서", "조치 순서"]

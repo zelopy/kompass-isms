@@ -13,11 +13,10 @@ from pathlib import Path
 
 from kompass.mappings.data import load_mappings
 from kompass.mappings.mapper import build_report
-from kompass.models import AuditReport, EvalCase, EvaluationReport, ScanManifest, Status
+from kompass.models import NEEDS_ACTION, AuditReport, EvalCase, EvaluationReport, ScanManifest
 
 EVAL_ACCOUNT = "123456789012"  # 평가 케이스의 가짜 계정 ID
 EVAL_TIME = datetime(2026, 10, 13, 12, 0, tzinfo=UTC)
-NEEDS_ACTION = frozenset({Status.FAIL, Status.ERROR, Status.REVIEW})
 _MARKDOWN_FULL = 5  # 해설 대상이 이보다 많으면 검토 목록에는 앞의 일부만 보여준다
 _MARKDOWN_SAMPLE = 3
 

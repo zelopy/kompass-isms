@@ -41,6 +41,7 @@ kompass-isms/
 │   ├── interpreter/         # 3단계
 │   │   ├── llm.py           # 공급자 인터페이스, Claude 구현체 (ADR-030)
 │   │   ├── explainer.py     # 룰별 해설·인용 검증 (explain_system.txt: 시스템 프롬프트)
+│   │   ├── assessor.py      # 종합 위험 평가 (assess_system.txt, ADR-034)
 │   │   ├── sources.py       # 원문 색인 조회·인용 검증 (ADR-029)
 │   │   └── masking.py
 │   ├── reporters/
@@ -278,5 +279,6 @@ cloudtrail:
 3. LLM은 구조화된 출력(pydantic 스키마)으로 해설, 인용, 위험도 의견, 조치안을 낸다. 해설은 `Finding.key`(`룰:리전:리소스`)로 finding에 붙인다.
 4. 인용 검증: 인용된 항목코드가 그 finding의 매핑에 있고, 인용 구절이 그 항목 원문에 있어야 한다 (공백·가운뎃점 변형 무시, 공백 제외 6자 이상). 아니면 한 번 재시도하고, 그래도 아니면 "검증되지 않음"으로 표시한다.
 5. 마스킹을 복원해서 보고서에 넣는다.
+6. 룰별 해설이 끝나면 보고서 전체로 종합 위험 평가를 한 번 만든다 (`assessor.py`, ADR-034). 시나리오가 참조한 finding 키와 조치 순서의 룰 목록을 코드로 검증한다.
 
 LLM 응답 스키마에는 `status` 필드를 두지 않는다.

@@ -341,6 +341,40 @@ class ExplanationFailure(_Frozen):
     error: str
 
 
+class RiskScenario(_Frozen):
+    """여러 finding이 겹쳐 생기는 위험 (LLM 의견)."""
+
+    title: str
+    description: str
+    finding_keys: list[str]  # 이 시나리오를 이루는 finding (`Finding.key`, 마스킹된 값)
+    impact: Literal["critical", "high", "medium", "low"]
+
+
+class ActionStep(_Frozen):
+    rule_id: str
+    reason: str  # 이 순서인 이유
+
+
+class RiskAssessmentDraft(_Frozen):
+    """보고서 전체에 대한 종합 위험 평가 LLM 응답 (마스킹된 상태). status 필드 없음 (원칙 1)."""
+
+    summary: str
+    scenarios: list[RiskScenario]
+    action_order: list[ActionStep]  # 해설 대상 룰을 모두 한 번씩, 먼저 할 것부터
+
+
+class RiskAssessment(_Frozen):
+    """종합 위험 평가 (마스킹 복원 후)."""
+
+    assessment: RiskAssessmentDraft
+    verified: bool  # 참조한 finding·룰이 실제로 있고 조치 순서에 빠진 룰이 없다
+    problems: tuple[str, ...]
+    model: str
+    fallback_used: bool
+    attempts: int
+    usage: TokenUsage
+
+
 class ExplanationReport(_Frozen):
     """해설 결과 파일 (`*.explanations.json`). 원본 식별정보가 복원되어 있으므로 커밋하지 않는다."""
 
@@ -356,8 +390,12 @@ class ExplanationReport(_Frozen):
     failures: tuple[ExplanationFailure, ...]
     usage: TokenUsage
     estimated_cost_usd: float | None
+    # 룰을 엮은 종합 위험 평가 (ADR-034). 하지 않았으면 둘 다 None, 실패했으면 이유만 있다
+    assessment: RiskAssessment | None = None
+    assessment_failure: str | None = None
 
 
+NEEDS_ACTION = frozenset({Status.FAIL, Status.ERROR, Status.REVIEW})  # 해설·종합 평가 대상
 _PRECEDENCE = (Status.FAIL, Status.ERROR, Status.REVIEW)
 
 

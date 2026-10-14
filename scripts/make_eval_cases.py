@@ -20,8 +20,8 @@ from collections.abc import Callable
 from typing import Any
 
 from kompass.config import Settings
-from kompass.evals.cases import EVAL_ACCOUNT, NEEDS_ACTION, cases_markdown, write_cases
-from kompass.models import CollectError, EvalCase, Finding, Snapshot
+from kompass.evals.cases import EVAL_ACCOUNT, cases_markdown, write_cases
+from kompass.models import NEEDS_ACTION, CollectError, EvalCase, Finding, Snapshot
 from kompass.pipeline import latest_findings, make_report
 from kompass.rules.registry import RULES
 from kompass.snapshots import SnapshotStore, project_root
