@@ -16,10 +16,10 @@ output/
 .env
 *.pem
 
-# Terraform
-lab/**/.terraform/
-lab/**/*.tfstate
-lab/**/*.tfstate.*
+# Terraform (state에는 민감 정보가 들어간다. 어느 위치에서 실행해도 커밋되지 않게 한다)
+**/.terraform/
+*.tfstate
+*.tfstate.*
 lab/**/*.tfvars
 
 # RAG 인덱스
