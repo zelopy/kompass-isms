@@ -29,3 +29,5 @@ lab/**/*.tfvars
 knowledge/**/*.pdf
 knowledge/**/*.hwp
 knowledge/**/*.hwpx
+# 원문 색인 — 원문 구절을 담으므로 재배포하지 않음 (ADR-029)
+knowledge/index.json

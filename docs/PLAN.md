@@ -63,7 +63,7 @@
 - [x] finding 식별자 정의: `Finding.key` = `룰:리전:리소스` (전역은 리전 `-`), 점검 안에서 유일성 검사. 해설·인용을 finding에 연결하는 데 필요
 - [ ] LLM 공급자 인터페이스 (Claude API 구현체 + 로컬 LLM 구현체 자리)
 - [x] 마스킹 레이어: 계정 ID, IP, ARN, 리소스명 치환 및 복원 + 테스트 (`interpreter/masking.py`, 종류 보존 자리표시자 `MASKED_<종류>_n`)
-- [ ] RAG: KISA 가이드·ISMS-P 원문을 항목 코드 단위로 색인 (Chroma 벡터 검색은 4단계로, ADR-029)
+- [x] RAG: KISA 가이드·ISMS-P 원문을 항목 코드 단위로 색인 (`scripts/build_source_index.py` → `knowledge/index.json`, KISA 19 · ISMS-P 별표 7 101개) (Chroma 벡터 검색은 4단계로, ADR-029)
 - [ ] 룰별 해설: 항목 근거 인용, 위험 설명 (조치 필요 finding을 룰 단위로 묶음, ADR-029)
 - [ ] 인용 검증: LLM이 인용한 항목코드가 실제 매핑/원문에 존재하는지 확인
 - [ ] 위험 우선순위: 여러 finding을 엮은 종합 평가

@@ -40,14 +40,15 @@ kompass-isms/
 │   │   └── mapper.py
 │   ├── interpreter/         # 3단계
 │   │   ├── llm.py
-│   │   ├── rag.py
+│   │   ├── sources.py       # 원문 색인 조회·인용 검증 (ADR-029)
 │   │   └── masking.py
 │   ├── reporters/
 │   │   ├── json_reporter.py
 │   │   ├── markdown_reporter.py
 │   │   └── xlsx_reporter.py
 │   └── agent/               # 4단계
-├── knowledge/               # RAG 원문 (KISA 가이드, ISMS-P)
+├── knowledge/               # 기준 문서 원문 (커밋 안 함), SOURCES.md, index.json(생성물, 커밋 안 함)
+├── scripts/                 # build_source_index.py (원문 색인 생성)
 ├── lab/                     # 취약 실습 환경 Terraform
 ├── tests/
 │   ├── collectors/
@@ -268,10 +269,12 @@ cloudtrail:
 
 ## 3단계 이후: Interpreter
 
-1. finding을 마스킹한다 (`masking.py`, 치환 테이블은 로컬에만 보관).
-2. 매핑된 항목코드로 RAG에서 원문 청크를 검색한다.
-3. LLM은 구조화된 출력(pydantic 스키마)으로 해설, 인용, 위험도 의견, 조치안을 낸다.
-4. 인용 검증: 인용된 항목코드가 매핑과 원문에 존재하지 않으면 해당 해설을 폐기하고 재시도하거나 표시한다.
+1. finding을 마스킹한다 (`masking.py`, 치환 테이블은 `Masker` 인스턴스 안에만 있고 저장·전송하지 않는다).
+   - ARN은 서비스·리소스 종류를 남기고 계정·이름만 바꾼다 (`arn:aws:iam::MASKED_ACCOUNT_1:user/MASKED_NAME_1`). 리소스 ID는 종류를 남긴다 (`MASKED_SG_1`).
+   - AWS 관리형 ARN(계정 `aws`)과 `0.0.0.0/0`, `::/0`은 판정의 의미이므로 남긴다.
+2. 매핑된 항목코드로 원문 색인(`sources.py`, `knowledge/index.json`)에서 원문을 꺼낸다 (ADR-029). 색인은 `uv run --with pypdf python scripts/build_source_index.py`로 만들며, 원문 PDF의 SHA-256이 `knowledge/SOURCES.md` 기록과 다르면 만들지 않는다.
+3. LLM은 구조화된 출력(pydantic 스키마)으로 해설, 인용, 위험도 의견, 조치안을 낸다. 해설은 `Finding.key`(`룰:리전:리소스`)로 finding에 붙인다.
+4. 인용 검증: 인용된 항목코드가 그 finding의 매핑에 있고, 인용 구절이 그 항목 원문에 있어야 한다 (공백·가운뎃점 변형 무시, 공백 제외 6자 이상). 아니면 한 번 재시도하고, 그래도 아니면 "검증되지 않음"으로 표시한다.
 5. 마스킹을 복원해서 보고서에 넣는다.
 
 LLM 응답 스키마에는 `status` 필드를 두지 않는다.

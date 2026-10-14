@@ -242,6 +242,31 @@ class AuditReport(_Frozen):
     findings: tuple[Finding, ...]  # 매핑을 붙인 finding
 
 
+class SourceEntry(_Frozen):
+    """기준 문서 원문의 항목 하나 (KISA 항목 또는 ISMS-P 통제항목)."""
+
+    title: str
+    page: int  # 항목이 시작하는 PDF 쪽
+    text: str
+
+
+class SourceDocument(_Frozen):
+    """색인을 만든 원문 파일. 해시로 판(版)을 확인한다 (knowledge/SOURCES.md)."""
+
+    file: str
+    sha256: str
+
+
+class SourceIndex(_Frozen):
+    """기준 문서 원문 색인 (`knowledge/index.json`, ADR-029). 원문을 담으므로 커밋하지 않는다."""
+
+    format_version: Literal[1] = 1
+    built_at: UtcDatetime
+    documents: dict[str, SourceDocument]  # "kisa", "isms_p"
+    kisa: dict[str, SourceEntry]  # "CA-01" → 원문
+    isms_p: dict[str, SourceEntry]  # "2.5.3" → 원문
+
+
 _PRECEDENCE = (Status.FAIL, Status.ERROR, Status.REVIEW)
 
 

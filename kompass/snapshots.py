@@ -94,13 +94,19 @@ def default_store_root(cwd: Path | None = None) -> Path:
     if configured:
         return Path(configured)
     start = (cwd or Path.cwd()).resolve()
+    return (project_root(start) or start) / STORE_DIR_NAME
+
+
+def project_root(cwd: Path | None = None) -> Path | None:
+    """kompass 저장소 최상위 폴더. 저장소 밖에서 실행하면 None."""
+    start = (cwd or Path.cwd()).resolve()
     for directory in (start, *start.parents):
         pyproject = directory / "pyproject.toml"
         if pyproject.is_file() and _PROJECT_MARKER in pyproject.read_text(
             encoding="utf-8", errors="ignore"
         ):
-            return directory / STORE_DIR_NAME
-    return start / STORE_DIR_NAME
+            return directory
+    return None
 
 
 class SnapshotStore:
