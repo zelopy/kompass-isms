@@ -48,7 +48,8 @@ kompass-isms/
 │   │   ├── json_reporter.py
 │   │   ├── markdown_reporter.py
 │   │   └── xlsx_reporter.py
-│   └── agent/               # 4단계
+│   └── agent/               # 4단계 (ADR-035)
+│       └── tools.py         # 목적별 읽기 전용 조사 도구 (가드가 걸린 점검 세션만 사용)
 ├── knowledge/               # 기준 문서 원문 (커밋 안 함), SOURCES.md, index.json(생성물, 커밋 안 함)
 ├── scripts/                 # build_source_index.py (원문 색인 생성)
 ├── lab/                     # 취약 실습 환경 Terraform
