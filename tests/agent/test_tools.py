@@ -1,43 +1,18 @@
 """에이전트 조사 도구 (ADR-035, ADR-036). moto와 botocore Stubber만 쓴다."""
 
 import json
-from collections.abc import Iterator
 from datetime import UTC, datetime
 from typing import Any
 
-import boto3
 import pytest
 from botocore.stub import Stubber
-from moto import mock_aws
 
 from kompass.agent import tools
 from kompass.agent.tools import TOOLS, Tool, ToolContext, ToolInputError, ToolResult, call_tool
-from kompass.aws.guard import ReadOnlyViolation, read_only_session
+from kompass.aws.guard import ReadOnlyViolation
 from kompass.aws.session import ScanContext
-
-ACCOUNT = "123456789012"
-REGION = "ap-northeast-2"
-
-
-@pytest.fixture
-def context() -> Iterator[ToolContext]:
-    with mock_aws():
-        scan = ScanContext(
-            session=read_only_session(),
-            account_id=ACCOUNT,
-            partition="aws",
-            caller_arn=f"arn:aws:iam::{ACCOUNT}:user/audit",
-            home_region=REGION,
-            regions=(REGION,),
-            enabled_regions=(REGION,),
-        )
-        yield ToolContext(scan)
-
-
-def _admin(service: str, region: str = REGION) -> Any:
-    """테스트 리소스를 만드는 가드 없는 클라이언트 (도구는 가드가 걸린 세션만 쓴다)."""
-    return boto3.client(service, region_name=region)
-
+from tests.agent.conftest import ACCOUNT, REGION
+from tests.agent.conftest import admin as _admin
 
 # --- 도구 목록 ---
 

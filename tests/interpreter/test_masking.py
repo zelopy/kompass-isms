@@ -288,3 +288,14 @@ def test_ids_followed_by_korean_particles_are_masked() -> None:
     for raw in ("vpc-0a1b2c3d4e5f60718", "eni-0f1e2d3c4b5a69788", "AIDAEXAMPLEUSERID0001"):
         assert raw not in masked
     assert "MASKED_VPC_1의" in masked and masker.unmask_text(masked) == text
+
+
+def test_add_names_extends_vocabulary_and_keeps_tokens() -> None:
+    masker = Masker.for_values([{"user": "alice"}])
+    first = masker.mask_text("alice")
+    masker.add_names(["platform-admins", "sg-0123456789abcdef0", "ab", "default", "alice"])
+    assert "platform-admins" in masker.names
+    assert "sg-0123456789abcdef0" not in masker.names  # ID는 정규식 단계가 맡는다
+    assert "ab" not in masker.names and "default" not in masker.names
+    assert masker.mask_text("alice in platform-admins").startswith(first)
+    assert "platform-admins" not in masker.mask_text("alice in platform-admins")

@@ -109,6 +109,23 @@ class Masker:
     def names(self) -> tuple[str, ...]:
         return tuple(self._names)
 
+    def add_names(self, names: Iterable[str]) -> None:
+        """나중에 알게 된 이름을 더한다 (에이전트 도구 결과에 처음 나온 이름).
+
+        ID·ARN·계정·IP처럼 정규식 단계가 맡는 값은 이름으로 더하지 않는다. 이미 만든 자리표시자는
+        그대로 유지되므로 같은 값은 계속 같은 자리표시자로 바뀐다.
+        """
+        new = {
+            n for n in names if len(n) >= _MIN_NAME_LENGTH and n not in _NOT_NAMES and _is_name(n)
+        } - set(self._names)
+        if not new:
+            return
+        self._names = sorted({*self._names, *new}, key=len, reverse=True)
+        self._name_patterns = [
+            re.compile(rf"(?<![A-Za-z0-9_.-]){re.escape(name)}(?![A-Za-z0-9_-])")
+            for name in self._names
+        ]
+
     # --- 마스킹 ---
 
     def mask(self, value: Any) -> Any:

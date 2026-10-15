@@ -451,3 +451,15 @@ class Golden(_Frozen):
     error_actions: tuple[str, ...]  # ERROR(수집 실패)를 해소하는 작업: 점검 권한 부여
     error_example: str
     rules: dict[str, GoldenRule]
+
+
+class AgentToolCall(_Frozen):
+    """에이전트의 도구 호출 하나 (조사 로그, ADR-035). 로컬에만 남기고 커밋하지 않는다."""
+
+    call_id: str  # "T1", "T2", … 조사 결과의 사실이 이 ID로 근거를 가리킨다
+    tool: str
+    input_masked: JsonObject  # LLM이 보낸 입력 (자리표시자 그대로)
+    input_raw: JsonObject  # AWS에 보낸 입력 (복원한 값)
+    output_masked: str  # LLM에 돌려준 결과 (마스킹 후)
+    error: str | None  # 입력 오류·AWS 오류·예산 초과·마스킹 차단이면 그 분류
+    duration_s: float
