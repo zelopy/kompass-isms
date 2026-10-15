@@ -1,4 +1,4 @@
-"""읽기 전용 가드 (CLAUDE.md 원칙 2, ADR-004, ADR-020).
+"""읽기 전용 가드 (CLAUDE.md 원칙 2, ADR-004, ADR-020, ADR-036).
 
 boto3 세션에 botocore `before-call` 이벤트 훅을 등록해, 허용 목록에 없는 오퍼레이션은
 요청이 나가기 전에 `ReadOnlyViolation`으로 막는다. paginator, waiter, resource API도
@@ -17,7 +17,14 @@ _ALLOWED_PREFIXES = ("Describe", "Get", "List")
 _ALLOWED_OPERATIONS = frozenset({"GenerateCredentialReport"})
 # 서비스까지 일치해야 하는 예외. AssumeRole은 대상 환경을 바꾸지 않고 임시 자격증명만 받는다.
 # 역할 기반 점검 세션에 필요하다 (ADR-020). AssumeRoleWith* 변형은 허용하지 않는다.
-_ALLOWED_SERVICE_OPERATIONS = frozenset({("sts", "AssumeRole")})
+# 에이전트 추가 조사용 (ADR-036): 관리 이벤트 이력 조회, 정책 평가 시뮬레이션. 둘 다 상태를 바꾸지 않는다.
+_ALLOWED_SERVICE_OPERATIONS = frozenset(
+    {
+        ("sts", "AssumeRole"),
+        ("cloudtrail", "LookupEvents"),
+        ("iam", "SimulatePrincipalPolicy"),
+    }
+)
 _HANDLER_ID = "kompass-read-only-guard"
 
 

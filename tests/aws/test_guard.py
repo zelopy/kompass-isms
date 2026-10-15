@@ -201,3 +201,27 @@ def test_violation_is_not_swallowed_as_client_error(guarded: Any) -> None:
     with pytest.raises(ReadOnlyViolation) as exc_info:
         guarded.client("iam").create_user(UserName="u")
     assert not isinstance(exc_info.value, ClientError | BotoCoreError)
+
+
+# --- 에이전트 조사용 예외 (ADR-036) ---
+
+
+@pytest.mark.parametrize(
+    ("service", "operation"),
+    [("cloudtrail", "LookupEvents"), ("iam", "SimulatePrincipalPolicy")],
+)
+def test_agent_read_only_exceptions_are_allowed(service: str, operation: str) -> None:
+    assert is_allowed_operation(service, operation)
+
+
+@pytest.mark.parametrize(
+    ("service", "operation"),
+    [
+        ("iam", "SimulateCustomPolicy"),  # 접두어 전체가 아니라 정한 작업만
+        ("cloudtrail", "LookupSomething"),
+        ("ec2", "LookupEvents"),  # 서비스까지 일치해야 한다
+        ("sts", "SimulatePrincipalPolicy"),
+    ],
+)
+def test_agent_exceptions_are_exact(service: str, operation: str) -> None:
+    assert not is_allowed_operation(service, operation)
