@@ -51,6 +51,7 @@ kompass-isms/
 │   └── agent/               # 4단계 (ADR-035)
 │       ├── tools.py         # 목적별 읽기 전용 조사 도구 (가드가 걸린 점검 세션만 사용)
 │       ├── toolbox.py       # 마스킹 다리·도구 호출 예산·호출 기록 (T1, T2, …)
+│       ├── investigator.py  # 룰별 추가 조사·사실↔호출 검증 (investigate_system.txt)
 │       └── llm.py           # 에이전트 공급자 인터페이스, Claude 구현(SDK 도구 러너)
 ├── knowledge/               # 기준 문서 원문 (커밋 안 함), SOURCES.md, index.json(생성물, 커밋 안 함)
 ├── scripts/                 # build_source_index.py (원문 색인 생성)

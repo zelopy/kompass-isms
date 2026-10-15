@@ -463,3 +463,64 @@ class AgentToolCall(_Frozen):
     output_masked: str  # LLM에 돌려준 결과 (마스킹 후)
     error: str | None  # 입력 오류·AWS 오류·예산 초과·마스킹 차단이면 그 분류
     duration_s: float
+
+
+# --- 에이전트 추가 조사 (4단계, ADR-035) ---
+# 조사 응답에도 판정 상태(status) 필드를 두지 않는다 (원칙 1). 에이전트는 사실을 모으고
+# 사람이 판단할 질문을 남길 뿐 판정을 바꾸지 않는다.
+
+
+class InvestigationFact(_Frozen):
+    statement: str  # 도구 결과로 확인한 사실
+    call_ids: list[str]  # 근거가 된 도구 호출 ("T1", "T3")
+
+
+class InvestigationNote(_Frozen):
+    finding_key: str  # `Finding.key` (마스킹된 값)
+    note: str
+
+
+class InvestigationDraft(_Frozen):
+    """룰 하나(FAIL·REVIEW finding 묶음)에 대한 에이전트 조사 응답. 마스킹된 상태 그대로다."""
+
+    summary: str
+    facts: list[InvestigationFact]
+    finding_notes: list[InvestigationNote]
+    open_questions: list[str]  # 도구로 확인하지 못해 사람이 확인해야 할 것
+
+
+class Investigation(_Frozen):
+    """룰 하나의 조사 결과 (마스킹 복원 후). 판정은 바꾸지 않는다."""
+
+    rule_id: str
+    finding_keys: tuple[str, ...]
+    investigation: InvestigationDraft
+    verified: bool  # 모든 사실이 실제 도구 호출을 근거로 가리키고 지어낸 식별자가 없다
+    problems: tuple[str, ...]
+    tool_calls: tuple[AgentToolCall, ...]  # 조사 로그 (LLM이 본 입출력과 AWS에 보낸 값)
+    model: str
+    iterations: int
+    stop: str  # end_turn, max_iterations, token_budget, …
+    usage: TokenUsage
+
+
+class InvestigationFailure(_Frozen):
+    rule_id: str
+    finding_keys: tuple[str, ...]
+    error: str
+
+
+class InvestigationReport(_Frozen):
+    """조사 결과 파일 (`*.investigation.json`). 원본 식별정보가 담기므로 커밋하지 않는다."""
+
+    format_version: Literal[1] = 1
+    scan_id: str
+    account_id: AccountId
+    findings_evaluated_at: UtcDatetime  # 어떤 판정 결과를 조사했는가
+    generated_at: UtcDatetime
+    model: str
+    effort: str
+    investigations: tuple[Investigation, ...]
+    failures: tuple[InvestigationFailure, ...]
+    usage: TokenUsage
+    estimated_cost_usd: float | None
