@@ -46,11 +46,14 @@ class ToolContext:
             self._clients[key] = self.scan.session.client(service, region_name=region)
         return self._clients[key]
 
-    def region(self, value: Any) -> str:
-        """점검 범위 안의 리전만 허용한다."""
+    def region(self, value: Any, *, any_enabled: bool = False) -> str:
+        """점검 범위 안의 리전만 허용한다. `any_enabled`면 계정의 활성 리전 전체."""
         if value is None:
             return self.scan.home_region
-        if not isinstance(value, str) or value not in {*self.scan.regions, self.scan.home_region}:
+        allowed = {*self.scan.regions, self.scan.home_region}
+        if any_enabled:
+            allowed |= set(self.scan.enabled_regions)
+        if not isinstance(value, str) or value not in allowed:
             raise ToolInputError(f"점검 범위 밖의 리전: {value}")
         return value
 
@@ -100,6 +103,10 @@ def _missing(exc: ClientError, *codes: str) -> bool:
     return exc.response.get("Error", {}).get("Code") in codes
 
 
+def _not_found(kind: str, identifier: str) -> ToolResult:
+    return ToolResult({"error": "NotFound", "message": f"{kind} 없음: {identifier}"})
+
+
 def _limit(items: list[Any]) -> dict[str, Any]:
     return {"items": items[:MAX_ITEMS], "truncated": len(items) > MAX_ITEMS}
 
@@ -122,17 +129,26 @@ _REGION = {"type": "string", "description": "리전. 없으면 기본 리전"}
 
 
 def _bucket_region(context: ToolContext, bucket: str) -> str:
-    location = context.client("s3").get_bucket_location(Bucket=bucket).get("LocationConstraint")
+    owner = context.scan.account_id
+    location = (
+        context.client("s3")
+        .get_bucket_location(Bucket=bucket, ExpectedBucketOwner=owner)
+        .get("LocationConstraint")
+    )
     return location or "us-east-1"
 
 
 def _s3_bucket_access(context: ToolContext, args: dict[str, Any]) -> ToolResult:
     bucket = args["bucket"]
+    # ExpectedBucketOwner: 점검 계정이 소유하지 않은 버킷이면 AWS가 거부한다 (다른 계정 조회 방지)
+    owner = context.scan.account_id
     s3 = context.client("s3", _bucket_region(context, bucket))
     data: dict[str, Any] = {"bucket": bucket}
     names = [bucket]
     try:
-        policy = json.loads(s3.get_bucket_policy(Bucket=bucket)["Policy"])
+        policy = json.loads(
+            s3.get_bucket_policy(Bucket=bucket, ExpectedBucketOwner=owner)["Policy"]
+        )
         data["policy"] = policy
         names += _sids(policy)
     except ClientError as exc:
@@ -140,29 +156,31 @@ def _s3_bucket_access(context: ToolContext, args: dict[str, Any]) -> ToolResult:
             raise
         data["policy"] = None
     try:
-        data["policy_is_public"] = s3.get_bucket_policy_status(Bucket=bucket)["PolicyStatus"][
-            "IsPublic"
-        ]
+        data["policy_is_public"] = s3.get_bucket_policy_status(
+            Bucket=bucket, ExpectedBucketOwner=owner
+        )["PolicyStatus"]["IsPublic"]
     except ClientError as exc:
         if not _missing(exc, "NoSuchBucketPolicy"):
             raise
         data["policy_is_public"] = None
     try:
-        data["public_access_block"] = s3.get_public_access_block(Bucket=bucket)[
-            "PublicAccessBlockConfiguration"
-        ]
+        data["public_access_block"] = s3.get_public_access_block(
+            Bucket=bucket, ExpectedBucketOwner=owner
+        )["PublicAccessBlockConfiguration"]
     except ClientError as exc:
         if not _missing(exc, "NoSuchPublicAccessBlockConfiguration"):
             raise
         data["public_access_block"] = None
     try:
-        rules = s3.get_bucket_ownership_controls(Bucket=bucket)["OwnershipControls"]["Rules"]
+        rules = s3.get_bucket_ownership_controls(Bucket=bucket, ExpectedBucketOwner=owner)[
+            "OwnershipControls"
+        ]["Rules"]
         data["object_ownership"] = rules[0]["ObjectOwnership"] if rules else None
     except ClientError as exc:
         if not _missing(exc, "OwnershipControlsNotFoundError"):
             raise
         data["object_ownership"] = None
-    acl = s3.get_bucket_acl(Bucket=bucket)
+    acl = s3.get_bucket_acl(Bucket=bucket, ExpectedBucketOwner=owner)
     grants = []
     for grant in acl.get("Grants", []):
         grantee = grant.get("Grantee", {})
@@ -197,7 +215,9 @@ def _s3_account_public_access_block(context: ToolContext, args: dict[str, Any]) 
 def _cloudtrail_data_events(context: ToolContext, args: dict[str, Any]) -> ToolResult:
     """버킷의 S3 데이터 이벤트를 기록하는 추적이 있는가."""
     bucket = args["bucket"]
-    prefix = f"arn:aws:s3:::{bucket}/"
+    partition = context.scan.partition
+    prefix = f"arn:{partition}:s3:::{bucket}/"
+    every_bucket = (f"arn:{partition}:s3", f"arn:{partition}:s3:::")
     cloudtrail = context.client("cloudtrail")
     trails = cloudtrail.describe_trails(includeShadowTrails=True)["trailList"]
     result, names = [], []
@@ -206,27 +226,33 @@ def _cloudtrail_data_events(context: ToolContext, args: dict[str, Any]) -> ToolR
         selectors = context.client("cloudtrail", region).get_event_selectors(
             TrailName=trail["TrailARN"]
         )
-        logged = False
+        scopes: set[str] = set()  # 기록하는 범위: ReadOnly, WriteOnly, All
         for selector in selectors.get("EventSelectors") or []:
             for resource in selector.get("DataResources", []):
                 values = resource.get("Values", [])
                 if resource.get("Type") == "AWS::S3::Object" and any(
-                    v in ("arn:aws:s3", "arn:aws:s3:::") or prefix.startswith(v) for v in values
+                    v in every_bucket or prefix.startswith(v) for v in values
                 ):
-                    logged = True
+                    scopes.add(selector.get("ReadWriteType", "All"))
         for selector in selectors.get("AdvancedEventSelectors") or []:
             fields = {f["Field"]: f for f in selector.get("FieldSelectors", [])}
-            if fields.get("eventCategory", {}).get("Equals") == [
-                "Data"
-            ] and "AWS::S3::Object" in fields.get("resources.type", {}).get("Equals", []):
+            category = fields.get("eventCategory", {}).get("Equals")
+            types = fields.get("resources.type", {}).get("Equals", [])
+            if category == ["Data"] and "AWS::S3::Object" in types:
                 arns = fields.get("resources.ARN", {})
                 if not arns or any(prefix.startswith(v) for v in arns.get("StartsWith", [])):
-                    logged = True
+                    read_only = (fields.get("readOnly", {}).get("Equals") or [""])[0]
+                    scopes.add({"true": "ReadOnly", "false": "WriteOnly"}.get(read_only, "All"))
+        if "All" in scopes or {"ReadOnly", "WriteOnly"} <= scopes:
+            scope: str | None = "All"
+        else:
+            scope = next(iter(scopes), None)
         result.append(
             {
                 "trail": trail["TrailARN"],
                 "multi_region": trail.get("IsMultiRegionTrail"),
-                "logs_bucket_data_events": logged,
+                "logs_bucket_data_events": bool(scopes),
+                "data_event_scope": scope,
             }
         )
         names.append(trail["Name"])
@@ -238,7 +264,7 @@ _LOOKUP_KEYS = ["EventName", "Username", "ResourceName", "EventSource"]
 
 def _cloudtrail_lookup_events(context: ToolContext, args: dict[str, Any]) -> ToolResult:
     """관리 이벤트 이력 (최근 90일 이내). 글로벌 서비스(IAM 등) 이벤트는 us-east-1에 기록된다."""
-    region = context.region(args.get("region"))
+    region = context.region(args.get("region"), any_enabled=True)
     days = args.get("days", 90)
     if not 1 <= days <= 90:
         raise ToolInputError("입력 오류: days는 1~90이어야 함")
@@ -251,7 +277,11 @@ def _cloudtrail_lookup_events(context: ToolContext, args: dict[str, Any]) -> Too
         EndTime=end,
         MaxResults=MAX_EVENTS,
     )
-    events, names = [], [args["attribute_value"]]
+    events: list[dict[str, Any]] = []
+    # 이벤트 이름·서비스 이름(PutBucketPolicy, s3.amazonaws.com)은 식별정보가 아니다
+    names = (
+        [args["attribute_value"]] if args["attribute_key"] in ("Username", "ResourceName") else []
+    )
     for event in response.get("Events", []):
         detail = json.loads(event.get("CloudTrailEvent") or "{}")
         events.append(
@@ -298,9 +328,12 @@ def _rules(permissions: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def _ec2_security_group(context: ToolContext, args: dict[str, Any]) -> ToolResult:
     region = context.region(args.get("region"))
-    [group] = context.client("ec2", region).describe_security_groups(GroupIds=[args["group_id"]])[
+    groups = context.client("ec2", region).describe_security_groups(GroupIds=[args["group_id"]])[
         "SecurityGroups"
     ]
+    if not groups:
+        return _not_found("보안그룹", args["group_id"])
+    group = groups[0]
     data = {
         "group_id": group["GroupId"],
         "name": group.get("GroupName"),
@@ -344,7 +377,10 @@ def _ec2_instance(context: ToolContext, args: dict[str, Any]) -> ToolResult:
     reservations = context.client("ec2", region).describe_instances(
         InstanceIds=[args["instance_id"]]
     )["Reservations"]
-    [instance] = [i for r in reservations for i in r["Instances"]]
+    instances = [i for r in reservations for i in r["Instances"]]
+    if not instances:
+        return _not_found("인스턴스", args["instance_id"])
+    instance = instances[0]
     tags = {t["Key"]: t["Value"] for t in instance.get("Tags", [])}
     data = {
         "instance_id": instance["InstanceId"],
@@ -371,10 +407,12 @@ def _ec2_subnet_routes(context: ToolContext, args: dict[str, Any]) -> ToolResult
     )["RouteTables"]
     explicit = bool(tables)
     if not tables:
-        [subnet] = ec2.describe_subnets(SubnetIds=[subnet_id])["Subnets"]
+        subnets = ec2.describe_subnets(SubnetIds=[subnet_id])["Subnets"]
+        if not subnets:
+            return _not_found("서브넷", subnet_id)
         tables = ec2.describe_route_tables(
             Filters=[
-                {"Name": "vpc-id", "Values": [subnet["VpcId"]]},
+                {"Name": "vpc-id", "Values": [subnets[0]["VpcId"]]},
                 {"Name": "association.main", "Values": ["true"]},
             ]
         )["RouteTables"]
@@ -526,11 +564,11 @@ def _iam_simulate(context: ToolContext, args: dict[str, Any]) -> ToolResult:
         }
         for r in response.get("EvaluationResults", [])
     ]
-    names = [
-        s.get("SourcePolicyId")
+    names = [  # AWS 관리형 정책 이름(AdministratorAccess 등)은 식별정보가 아니다
+        s["SourcePolicyId"]
         for r in response.get("EvaluationResults", [])
         for s in r.get("MatchedStatements", [])
-        if s.get("SourcePolicyId")
+        if s.get("SourcePolicyId") and s.get("SourcePolicyType") != "aws-managed"
     ]
     return ToolResult({"principal_arn": args["principal_arn"], "results": results}, tuple(names))
 

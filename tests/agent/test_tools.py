@@ -344,3 +344,82 @@ def test_iam_simulate(context: ToolContext) -> None:
             "iam_simulate_principal_policy",
             {"principal_arn": "arn", "actions": [f"s3:A{n}" for n in range(11)]},
         )
+
+
+# --- 검토 반영 ---
+
+
+def test_s3_calls_require_scanned_account_ownership(context: ToolContext) -> None:
+    # 다른 계정의 버킷은 AWS가 거부하도록 모든 버킷 호출에 소유 계정을 붙인다
+    stubber = _stub(context, "s3")
+    owner = {"Bucket": "acme-public", "ExpectedBucketOwner": ACCOUNT}
+    stubber.add_response("get_bucket_location", {"LocationConstraint": REGION}, owner)
+    stubber.add_client_error("get_bucket_policy", "NoSuchBucketPolicy", expected_params=owner)
+    stubber.add_client_error(
+        "get_bucket_policy_status", "NoSuchBucketPolicy", expected_params=owner
+    )
+    stubber.add_client_error(
+        "get_public_access_block", "NoSuchPublicAccessBlockConfiguration", expected_params=owner
+    )
+    stubber.add_client_error(
+        "get_bucket_ownership_controls", "OwnershipControlsNotFoundError", expected_params=owner
+    )
+    stubber.add_response("get_bucket_acl", {"Grants": []}, owner)
+    result = call_tool(context, "s3_bucket_access", {"bucket": "acme-public"})
+    assert result.data["policy"] is None and result.data["acl_grants"] == []
+    stubber.assert_no_pending_responses()
+
+
+def test_lookup_events_allows_enabled_regions_for_global_events(context: ToolContext) -> None:
+    # IAM·루트 이벤트는 us-east-1에 기록된다. 점검 리전이 아니어도 활성 리전이면 조회한다
+    args = {"attribute_key": "Username", "attribute_value": "root", "region": "us-east-1"}
+    with pytest.raises(ToolInputError, match="점검 범위 밖"):
+        call_tool(context, "cloudtrail_lookup_events", args)
+    context.scan = ScanContext(
+        **{**context.scan.__dict__, "enabled_regions": (REGION, "us-east-1")}
+    )
+    stubber = _stub(context, "cloudtrail", "us-east-1")
+    stubber.add_response("lookup_events", {"Events": []})
+    assert call_tool(context, "cloudtrail_lookup_events", args).data["region"] == "us-east-1"
+
+
+def test_event_name_lookup_value_is_not_a_name(context: ToolContext) -> None:
+    stubber = _stub(context, "cloudtrail")
+    stubber.add_response("lookup_events", {"Events": []})
+    args = {"attribute_key": "EventName", "attribute_value": "PutBucketPolicy"}
+    assert call_tool(context, "cloudtrail_lookup_events", args).names == ()
+
+
+def test_aws_managed_policy_ids_are_not_names(context: ToolContext) -> None:
+    stubber = _stub(context, "iam")
+    stubber.add_response(
+        "simulate_principal_policy",
+        {"EvaluationResults": [{"EvalActionName": "s3:GetObject", "EvalDecision": "allowed",
+                                "MatchedStatements": [
+                                    {"SourcePolicyId": "AdministratorAccess",
+                                     "SourcePolicyType": "aws-managed"}]}]},
+    )  # fmt: skip
+    args = {"principal_arn": f"arn:aws:iam::{ACCOUNT}:user/a", "actions": ["s3:GetObject"]}
+    assert call_tool(context, "iam_simulate_principal_policy", args).names == ()
+
+
+def test_missing_instance_is_a_not_found_result(context: ToolContext) -> None:
+    stubber = _stub(context, "ec2")
+    stubber.add_response("describe_instances", {"Reservations": []})
+    result = call_tool(context, "ec2_instance", {"instance_id": "i-0123456789abcdef0"})
+    assert result.data["error"] == "NotFound"
+
+
+def test_data_event_scope(context: ToolContext) -> None:
+    _admin("s3").create_bucket(
+        Bucket="trail-logs", CreateBucketConfiguration={"LocationConstraint": REGION}
+    )
+    cloudtrail = _admin("cloudtrail")
+    cloudtrail.create_trail(Name="write-only", S3BucketName="trail-logs")
+    cloudtrail.put_event_selectors(
+        TrailName="write-only",
+        EventSelectors=[{"ReadWriteType": "WriteOnly", "IncludeManagementEvents": True,
+                         "DataResources": [{"Type": "AWS::S3::Object", "Values": ["arn:aws:s3"]}]}],
+    )  # fmt: skip
+    [trail] = call_tool(context, "cloudtrail_data_events", {"bucket": "acme"}).data["trails"]
+    assert trail["logs_bucket_data_events"] is True and trail["data_event_scope"] == "WriteOnly"
