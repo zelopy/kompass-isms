@@ -70,6 +70,8 @@ terraform apply
 | IAM-007 | `kompass-lab-notaction` (Allow + NotAction) | REVIEW |
 | IAM-007 | `kompass-lab-readonly` | finding 없음 |
 | IAM-007 | `kompass-lab-admin` (배포용, `admin` 그룹 경유) | REVIEW |
+| IAM-010·011 | 관리자 권한 사용자 4명 + `kompass-lab-admin` (`*`, NotAction 포함) | REVIEW |
+| IAM-010·011 | `kompass-lab-readonly` (ReadOnlyAccess: 조회 작업뿐), 점검용 `security_manager` (SecurityAudit) | finding 없음 |
 | IAM-008 | 루트 계정 | REVIEW. 루트 `password_last_used`가 `no_information`이라 사용 이력 확인 불가 (최근 90일 안의 사용일이 보고서에 있어도 REVIEW) |
 | IAM-009 | GitHub Actions OIDC 공급자 | REVIEW |
 

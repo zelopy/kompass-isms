@@ -1,5 +1,6 @@
 """매퍼: finding 매핑 부착, KISA 항목·ISMS-P 통제항목 집계."""
 
+from dataclasses import replace
 from datetime import UTC, datetime
 from typing import Any
 
@@ -128,9 +129,18 @@ def test_item_fail_wins() -> None:
 
 
 def test_item_without_rules_is_not_implemented() -> None:
-    item = _item(_report(), "CA-05")
+    # 현재 매핑에는 룰이 없는 항목이 없으므로 IAM-010을 뺀 매핑으로 확인한다
+    mappings = replace(MAPPINGS, rules={k: v for k, v in MAPPINGS.rules.items() if k != "IAM-010"})
+    evaluation = _report().evaluation
+    report = build_report(_manifest(), evaluation, mappings)
+    item = _item(report, "CA-05")
     assert item.outcome == ItemOutcome.NOT_IMPLEMENTED
     assert item.rule_ids == ()
+    assert "자동 점검 룰 없음" in _group(report, "CA-05").reason
+
+
+def test_every_kisa_item_has_rules() -> None:
+    assert all(item.rule_ids for item in _report().kisa_items)
 
 
 def test_item_with_skipped_rules_is_not_evaluated() -> None:
@@ -233,7 +243,7 @@ def test_unsettled_full_items_get_requests() -> None:
     assert "수집 실패" in _group(report, "CA-13").reason
     assert _group(report, "CA-16").outcome == ItemOutcome.NOT_EVALUATED
     assert _group(report, "CA-11").outcome == ItemOutcome.NOT_EVALUATED  # RDS 스냅샷 없음
-    assert "자동 점검 룰 없음" in _group(report, "CA-05").reason  # 룰이 없는 항목
+    assert _group(report, "CA-05").outcome == ItemOutcome.NOT_EVALUATED  # IAM 스냅샷 없음
 
 
 def test_evidence_targets_are_review_and_error_findings() -> None:

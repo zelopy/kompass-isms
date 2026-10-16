@@ -104,6 +104,30 @@ rules:
   S3-003:
     fail: [s3:PutBucketPolicy, s3:DeleteBucketPolicy, s3:PutPublicAccessBlock, s3control:PutPublicAccessBlock]
     example: aws s3api delete-bucket-policy --bucket {resource}
+  IAM-010:
+    review:
+      - iam:SimulatePrincipalPolicy
+      - iam:DetachUserPolicy
+      - iam:DetachRolePolicy
+      - iam:DeleteUserPolicy
+      - iam:DeleteRolePolicy
+      - iam:PutUserPermissionsBoundary
+      - iam:PutRolePermissionsBoundary
+    example: >-
+      aws iam simulate-principal-policy --policy-source-arn {resource}
+      --action-names ec2:RunInstances ssm:StartSession
+  IAM-011:
+    review:
+      - iam:SimulatePrincipalPolicy
+      - iam:DetachUserPolicy
+      - iam:DetachRolePolicy
+      - iam:DeleteUserPolicy
+      - iam:DeleteRolePolicy
+      - iam:PutUserPermissionsBoundary
+      - iam:PutRolePermissionsBoundary
+    example: >-
+      aws iam simulate-principal-policy --policy-source-arn {resource}
+      --action-names ec2:AuthorizeSecurityGroupIngress ec2:CreateRoute
   LOG-001:
     fail: [logs:PutRetentionPolicy, logs:DeleteRetentionPolicy]
     example: aws logs put-retention-policy --log-group-name {resource} --retention-in-days 365

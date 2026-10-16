@@ -103,5 +103,17 @@ expectations:
   - {rule: IAM-007, resource: kompass-lab-notaction, status: REVIEW}
   - {rule: IAM-007, resource: kompass-lab-admin, status: REVIEW}
   - {rule: IAM-007, resource: kompass-lab-readonly, status: NONE}
+  - {rule: IAM-010, resource: kompass-lab-direct-admin, status: REVIEW}
+  - {rule: IAM-010, resource: kompass-lab-wildcard-admin, status: REVIEW}
+  - {rule: IAM-010, resource: kompass-lab-group-admin, status: REVIEW}
+  - {rule: IAM-010, resource: kompass-lab-notaction, status: REVIEW}
+  - {rule: IAM-010, resource: kompass-lab-admin, status: REVIEW}
+  - {rule: IAM-010, resource: kompass-lab-readonly, status: NONE}
+  - {rule: IAM-011, resource: kompass-lab-direct-admin, status: REVIEW}
+  - {rule: IAM-011, resource: kompass-lab-wildcard-admin, status: REVIEW}
+  - {rule: IAM-011, resource: kompass-lab-group-admin, status: REVIEW}
+  - {rule: IAM-011, resource: kompass-lab-notaction, status: REVIEW}
+  - {rule: IAM-011, resource: kompass-lab-admin, status: REVIEW}
+  - {rule: IAM-011, resource: kompass-lab-readonly, status: NONE}
   - {rule: IAM-008, resource: account, status: REVIEW}
   - {rule: IAM-009, resource: oidc-provider/token.actions.githubusercontent.com, status: REVIEW}

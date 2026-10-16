@@ -46,3 +46,5 @@ rules:
   IAM-007: {kisa: [CA-02], isms_p: ["2.5.5", "2.5.6", "2.10.2"], kisa_verified: true, isms_p_verified: false}
   IAM-008: {kisa: [CA-02], isms_p: ["2.5.5", "2.10.2"], kisa_verified: true, isms_p_verified: false}
   IAM-009: {kisa: [CA-03], isms_p: ["2.5.3", "2.10.2"], kisa_verified: true, isms_p_verified: false}
+  IAM-010: {kisa: [CA-05], isms_p: ["2.6.2", "2.10.2"], kisa_verified: false, isms_p_verified: false}
+  IAM-011: {kisa: [CA-06], isms_p: ["2.6.1", "2.10.2"], kisa_verified: false, isms_p_verified: false}

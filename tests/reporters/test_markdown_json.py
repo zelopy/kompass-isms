@@ -43,13 +43,13 @@ def test_all_kisa_items_listed_with_korean_outcomes() -> None:
         assert f"| {code} |" in MD
     assert "| CA-09 | 접근 제어 설정 관리 | 상 | partial | 취약 |" in MD
     assert "| CA-13 | 클라우드 서비스 사용자 계정 로깅 설정 | 상 | full | 양호 |" in MD
-    assert "| CA-05 | 인스턴스 서비스 정책 관리 | 상 | partial | 수동 점검 (미구현) |" in MD
+    assert "| CA-05 | 인스턴스 서비스 정책 관리 | 상 | partial | 점검하지 않음 |" in MD
     assert "| CA-03 | MFA(Multi-Factor Authentication) 설정 | 상 | full | 점검하지 않음 |" in MD
 
 
 def test_summary_counts() -> None:
     assert "취약 1" in MD  # CA-09
-    assert "수동 점검 (미구현) 2" in MD
+    assert "수동 점검 (미구현) 0" in MD
     assert "finding: 취약 2, 확인 불가 0, 검토 필요 1, 양호 4, 해당 없음 0" in MD
 
 

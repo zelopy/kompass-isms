@@ -107,6 +107,31 @@
 - ISMS-P(초안): 2.5.3 사용자 인증, 2.10.2 클라우드 보안
 - KISA: CA-03 MFA 설정 (상, 856쪽) — 근거 수준: 직접 ("각 계정별 2차 인증")
 
+### 권한 보유 주체 현황 공통 (IAM-010~011, ADR-044)
+
+`iam:GetAccountAuthorizationDetails`로 받은 정책 문서를 정적으로 분석해, 대상 작업 중 하나라도 허용된 사용자·역할을 찾는다.
+
+- 주체: IAM 사용자(직접 연결한 관리형·인라인 정책과 소속 그룹의 정책)와 역할. AWS 서비스 연결 역할(경로 `/aws-service-role/`)은 AWS가 관리하므로 빼고 개수만 남긴다.
+- 일치: `Allow` 문의 `Action`이 대상 작업과 일치하면(와일드카드 `*`·`?`, 대소문자 무시) 권한이 있다고 본다. `Allow` + `NotAction`은 목록에 없는 작업을 모두 허용한 것으로 본다.
+- 근사 (보수적): `Resource`는 보지 않는다. `Condition`이 있는 문도 권한으로 세고 evidence에 조건부임을 남긴다. `Deny` 문과 권한 경계는 판정에 쓰지 않는다 (경계 ARN은 evidence). 본문을 확인할 수 없는 관리형 정책은 `unknown_policies`로 남기고, 그런 정책만 있는 주체도 REVIEW로 낸다.
+- 판정: 권한을 가진 주체마다 `REVIEW` (권한의 적절성은 사람이 판단). 그런 주체가 없으면 계정 단위 PASS 하나. 권한 정보를 수집하지 못하면 ERROR.
+- evidence: 허용된 대상 작업, 정책별 출처(`via`: user·role·`group:<이름>`)와 조건부·NotAction 여부, 권한 경계.
+- 비고: 정확한 유효 권한은 `iam:SimulatePrincipalPolicy`로만 확인할 수 있으며, 이는 에이전트 추가 조사에서 쓴다 (ADR-036).
+
+### IAM-010 인스턴스 생성·접근 권한 보유 주체 현황
+- 심각도: medium
+- API: `iam:GetAccountAuthorizationDetails`
+- 대상 작업: `iam.instance_actions` (기본: `ec2:RunInstances`, `ec2:TerminateInstances`, `ec2:StartInstances`, `ec2:StopInstances`, `ec2:ModifyInstanceAttribute`, `ssm:StartSession`, `ssm:SendCommand`, `ec2-instance-connect:SendSSHPublicKey`, `ec2-instance-connect:SendSerialConsoleSSHPublicKey`)
+- ISMS-P(초안): 2.6.2 정보시스템 접근, 2.10.2 클라우드 보안
+- KISA: CA-05 인스턴스 서비스 정책 관리 (상, 858쪽) — 근거 수준: 직접 ("인스턴스 생성, 삭제, 수정 등에 대한 접근 권한을 설정")
+
+### IAM-011 네트워크 리소스 변경 권한 보유 주체 현황
+- 심각도: medium
+- API: `iam:GetAccountAuthorizationDetails`
+- 대상 작업: `iam.network_actions` (기본: 보안그룹 생성·삭제·규칙 변경, 네트워크 ACL 항목, VPC·서브넷·라우팅·인터넷/NAT 게이트웨이·피어링·탄력적 IP 연결, ELB 생성·삭제·리스너, Route 53 호스팅 영역·레코드 변경)
+- ISMS-P(초안): 2.6.1 네트워크 접근, 2.10.2 클라우드 보안
+- KISA: CA-06 네트워크 서비스 정책 관리 (상, 859쪽) — 근거 수준: 직접 ("네트워크 리소스 생성, 삭제, 수정 등에 대한 접근 권한을 설정")
+
 ## S3
 
 데이터 형태: `bucket_details.<버킷>.<항목>`의 값이 null이면 "설정 없음", 키가 없으면 "수집 실패"다. 로깅이 꺼진 버킷은 AWS가 빈 응답을 주므로 `logging`이 null이다. `ListBuckets`는 버킷 리전을 주지 않아 버킷마다 `GetBucketLocation`으로 확인한다 (실습 계정 확인, 2026-10-13). S3 룰의 `resource`는 버킷 이름(전역 고유)이고 `region`은 버킷 리전이다.

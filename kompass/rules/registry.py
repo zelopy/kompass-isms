@@ -26,6 +26,8 @@ from kompass.rules.iam.iam_006_access_key_rotation import Iam006AccessKeyRotatio
 from kompass.rules.iam.iam_007_admin_users import Iam007AdminUsers
 from kompass.rules.iam.iam_008_root_recent_use import Iam008RootRecentUse
 from kompass.rules.iam.iam_009_external_identity import Iam009ExternalIdentity
+from kompass.rules.iam.iam_010_instance_permissions import Iam010InstancePermissions
+from kompass.rules.iam.iam_011_network_permissions import Iam011NetworkPermissions
 from kompass.rules.logs.log_001_security_log_retention import Log001SecurityLogRetention
 from kompass.rules.rds.rds_001_storage_encryption import Rds001StorageEncryption
 from kompass.rules.rds.rds_002_public_access import Rds002PublicAccess
@@ -65,6 +67,8 @@ RULES: tuple[BaseRule, ...] = (
     Iam007AdminUsers(),
     Iam008RootRecentUse(),
     Iam009ExternalIdentity(),
+    Iam010InstancePermissions(),
+    Iam011NetworkPermissions(),
     Rds001StorageEncryption(),
     Rds002PublicAccess(),
     Rds003LogExports(),

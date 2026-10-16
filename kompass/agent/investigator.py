@@ -79,6 +79,8 @@ RULE_HINTS: dict[str, str] = {
     "LOG-001": "로그 그룹 보존 기간 변경 이력(PutRetentionPolicy·DeleteRetentionPolicy 이벤트)",
     "GD-001": "탐지기 생성·삭제·변경 이력(CreateDetector·DeleteDetector·UpdateDetector 이벤트)",
     "GD-002": "EventBridge 규칙 변경 이력(PutRule·DeleteRule·RemoveTargets 이벤트)",
+    "IAM-010": "정책 평가 시뮬레이션으로 인스턴스 생성·접속 작업의 실제 허용 여부, 권한 부여 이력",
+    "IAM-011": "정책 평가 시뮬레이션으로 보안그룹·라우팅 변경의 실제 허용 여부, 권한 부여 이력",
     "RDS-001": "데이터베이스 생성·수정 이력(CreateDBInstance·ModifyDBInstance 이벤트)",
     "RDS-002": "연결된 보안그룹 규칙과 서브넷 경로(인터넷 게이트웨이 여부), 공개 설정 변경 이력",
     "RDS-003": "데이터베이스 설정 변경 이력(ModifyDBInstance·ModifyDBCluster 이벤트)",

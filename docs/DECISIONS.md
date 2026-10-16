@@ -400,3 +400,14 @@
   - LOG-001: 새 collector `logs`가 로그 그룹과, 보안 로그 대상을 알기 위한 추적(`DescribeTrails`)·흐름 로그(`DescribeFlowLogs`)를 함께 수집한다. 보안 로그 그룹(추적·흐름 로그 대상, `logs.security_log_group_prefixes` 기본 `/aws/rds/`)만 판정하고 나머지(Lambda 실행 로그 등)는 판정하지 않는다. 보존 기간 미설정(영구 보관)은 PASS, 대상 그룹이 없으면 FAIL.
   - 로그 백업·주기적 검토는 사람이 확인한다 (CA-17 `partial`). KISA 매핑은 직접 근거이나 사용자 확인 전이라 `kisa_verified: false`. 로그 그룹 이름은 마스킹한다.
 - 이유: 전체 로그 그룹을 판정하면 보안과 무관한 FAIL이 많아 결과가 의미를 잃는다. 출처가 확인되는 보안 로그만 보고, 기관별 추가 대상은 설정으로 받는다.
+
+## ADR-044 인스턴스·네트워크 권한 보유 주체 현황 (IAM-010~011)
+- 상태: 채택 (사용자 결정, 2026-10-16). 5단계 수동 점검 항목 자동화 (CA-05·CA-06). 이로써 KISA 19개 항목 모두 자동 점검 룰이 하나 이상 있다 (partial 항목은 여전히 "검토 필요"가 상한).
+- 결정:
+  - 이미 수집하는 `GetAccountAuthorizationDetails`의 정책 문서를 정적으로 분석한다. `SimulatePrincipalPolicy`는 점검 collector에 쓰지 않는다 (원칙 2 예외를 넓히지 않음, ADR-036은 에이전트 조사 한정).
+  - 대상 작업은 설정으로 받는다: `iam.instance_actions`(CA-05: 인스턴스 생성·삭제·시작·중지·속성 변경, SSM 세션·명령, EC2 Instance Connect), `iam.network_actions`(CA-06: 보안그룹·NACL·VPC·서브넷·라우팅·게이트웨이·피어링·EIP 연결, ELB, Route 53).
+  - 주체: 사용자(직접·그룹 경유)와 역할. 서비스 연결 역할(`/aws-service-role/`)은 뺀다.
+  - 근사: Action 와일드카드·NotAction은 해석하고, Resource·Condition·Deny·권한 경계는 판정에 쓰지 않는다 (보수적으로 권한 보유로 봄). 조건부·NotAction 경유 여부와 경계 ARN은 evidence에 남긴다. 본문을 모르는 관리형 정책은 `unknown_policies`.
+  - 판정: 권한 보유 주체마다 REVIEW, 없으면 계정 PASS. 적절성 판단은 사람이 한다. KISA 매핑은 직접 근거이나 사용자 확인 전이라 `kisa_verified: false`.
+- 이유: "적절하게 부여"는 결정론적으로 판정할 수 없으므로 현황 증적이 목적이다. 정적 분석은 과대 추정 쪽으로 틀리므로(놓치지 않음) 현황 보고에 맞다. 정확한 유효 권한이 필요하면 에이전트 조사가 시뮬레이션으로 확인한다.
+- 실습 계정 확인 (2026-10-16): 그룹 경유 관리자 `kompass-lab-admin`이 두 룰 모두 REVIEW, SecurityAudit만 가진 `security_manager`와 서비스 연결 역할은 finding 없음.

@@ -45,6 +45,48 @@ class IamSettings(_Section):
     access_key_rotation_days: int = 90  # IAM-006
     root_recent_use_days: int = 90  # IAM-008
     password_policy: PasswordPolicySettings = PasswordPolicySettings()
+    # IAM-010 (KISA CA-05): 인스턴스 생성·삭제·수정·접속 작업. 와일드카드(*, ?) 허용
+    instance_actions: tuple[str, ...] = (
+        "ec2:RunInstances",
+        "ec2:TerminateInstances",
+        "ec2:StartInstances",
+        "ec2:StopInstances",
+        "ec2:ModifyInstanceAttribute",
+        "ssm:StartSession",
+        "ssm:SendCommand",
+        "ec2-instance-connect:SendSSHPublicKey",
+        "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+    )
+    # IAM-011 (KISA CA-06): 방화벽·라우팅·로드 밸런서·DNS 등 네트워크 리소스 생성·삭제·수정 작업
+    network_actions: tuple[str, ...] = (
+        "ec2:CreateSecurityGroup",
+        "ec2:DeleteSecurityGroup",
+        "ec2:AuthorizeSecurityGroupIngress",
+        "ec2:AuthorizeSecurityGroupEgress",
+        "ec2:RevokeSecurityGroupIngress",
+        "ec2:ModifySecurityGroupRules",
+        "ec2:CreateNetworkAclEntry",
+        "ec2:ReplaceNetworkAclEntry",
+        "ec2:CreateVpc",
+        "ec2:DeleteVpc",
+        "ec2:CreateSubnet",
+        "ec2:ModifySubnetAttribute",
+        "ec2:CreateRoute",
+        "ec2:ReplaceRoute",
+        "ec2:CreateRouteTable",
+        "ec2:AssociateRouteTable",
+        "ec2:CreateInternetGateway",
+        "ec2:AttachInternetGateway",
+        "ec2:CreateNatGateway",
+        "ec2:CreateVpcPeeringConnection",
+        "ec2:AssociateAddress",
+        "elasticloadbalancing:CreateLoadBalancer",
+        "elasticloadbalancing:DeleteLoadBalancer",
+        "elasticloadbalancing:CreateListener",
+        "elasticloadbalancing:ModifyListener",
+        "route53:CreateHostedZone",
+        "route53:ChangeResourceRecordSets",
+    )
 
 
 class RdsSettings(_Section):
