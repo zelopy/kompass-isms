@@ -15,6 +15,11 @@ regions: [ap-northeast-2]
 expectations:
   # CloudTrail
   - {rule: CT-001, resource: account, status: PASS}
+  - {rule: CT-002, resource: kompass-lab-logs, status: FAIL}
+
+  # CloudWatch Logs
+  - {rule: LOG-001, resource: /aws/rds/instance/kompass-lab-short/error, status: FAIL}
+  - {rule: LOG-001, resource: /aws/rds/instance/kompass-lab-long/error, status: PASS}
 
   # 보안그룹
   - {rule: SG-001, resource: kompass-lab-open-ssh, status: FAIL}

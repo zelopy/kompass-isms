@@ -140,6 +140,10 @@ terraform apply
 | 룰 | 대상 | 기대 결과 |
 |---|---|---|
 | CT-001 | `kompass-lab-trail` | PASS |
+| CT-002 | `logs` 버킷 (`cloudtrail/AWSLogs/` 30일 삭제) | FAIL |
+| LOG-001 | `/aws/rds/instance/kompass-lab-short/error` (30일) | FAIL |
+| LOG-001 | `/aws/rds/instance/kompass-lab-long/error` (400일) | PASS |
+| LOG-001 | RDS 로그 그룹 (`enable_public_rds = true`일 때, 1일) | FAIL |
 
 ### KISA 항목 단위 (집계 후)
 

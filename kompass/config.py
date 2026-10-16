@@ -52,6 +52,13 @@ class RdsSettings(_Section):
     min_backup_retention_days: int = Field(default=7, ge=1)
 
 
+class LogsSettings(_Section):
+    # LOG-001·CT-002 (KISA CA-17): 보안 로그 최소 보존 일수
+    min_retention_days: int = Field(default=365, ge=1)
+    # LOG-001: 보안 로그로 보는 CloudWatch 로그 그룹 이름 접두사 (추적·흐름 로그 대상 그룹 외)
+    security_log_group_prefixes: tuple[str, ...] = ("/aws/rds/",)
+
+
 class LlmSettings(_Section):
     """LLM 해설 설정 (3단계, ADR-029). 판정에는 쓰이지 않으므로 판정 결과 파일에 남기지 않는다."""
 
@@ -69,6 +76,7 @@ class Settings(_Section):
     s3: S3Settings = S3Settings()
     iam: IamSettings = IamSettings()
     rds: RdsSettings = RdsSettings()
+    logs: LogsSettings = LogsSettings()
     llm: LlmSettings = LlmSettings()
 
     def judgment_criteria(self) -> dict[str, Any]:

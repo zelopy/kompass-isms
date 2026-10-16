@@ -76,12 +76,51 @@ def test_collects_trail_status_and_selectors(setup: Any) -> None:
     assert trail["IsMultiRegionTrail"] is True
     assert snapshot.data["status"][arn]["IsLogging"] is True
     assert "EventSelectors" in snapshot.data["event_selectors"][arn]
+    assert snapshot.data["bucket_lifecycles"] == {BUCKET: None}  # 수명주기 설정 없음
+
+
+def test_collects_trail_bucket_lifecycle(setup: Any) -> None:
+    _create_trail(setup, "main")
+    rules = [
+        {
+            "ID": "expire",
+            "Status": "Enabled",
+            "Filter": {"Prefix": "AWSLogs/"},
+            "Expiration": {"Days": 30},
+        }
+    ]
+    setup.client("s3", region_name=HOME).put_bucket_lifecycle_configuration(
+        Bucket=BUCKET, LifecycleConfiguration={"Rules": rules}
+    )
+    snapshot = CloudTrailCollector().collect(_scan())
+    [rule] = snapshot.data["bucket_lifecycles"][BUCKET]
+    assert rule["Expiration"] == {"Days": 30}
+
+
+def test_lifecycle_failure_is_recorded_per_bucket(setup: Any) -> None:
+    # 조직 추적처럼 버킷이 다른 계정에 있으면 조회가 거부된다
+    _create_trail(setup, "main")
+    session = read_only_session()
+    s3 = session.client("s3", region_name=HOME)
+    with Stubber(s3) as stub:
+        stub.add_client_error("get_bucket_location", service_error_code="AccessDenied")
+        snapshot = CloudTrailCollector().collect(
+            _scan(StubbingSession(session, {("s3", HOME): s3}))
+        )
+    assert snapshot.data["bucket_lifecycles"] == {}
+    [error] = snapshot.errors
+    assert error.operation == "s3:GetBucketLocation" and error.resource == BUCKET
 
 
 def test_no_trails_is_empty_not_missing(setup: Any) -> None:
     # "추적 없음"(빈 목록)과 "수집 실패"(키 없음)를 구분한다
     snapshot = CloudTrailCollector().collect(_scan())
-    assert snapshot.data == {"trails": [], "status": {}, "event_selectors": {}}
+    assert snapshot.data == {
+        "trails": [],
+        "status": {},
+        "event_selectors": {},
+        "bucket_lifecycles": {},
+    }
     assert snapshot.errors == ()
 
 

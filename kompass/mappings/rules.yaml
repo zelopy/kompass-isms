@@ -8,6 +8,8 @@
 
 rules:
   CT-001: {kisa: [CA-13], isms_p: ["2.9.4", "2.10.2"], kisa_verified: true, isms_p_verified: false}
+  CT-002: {kisa: [CA-17], isms_p: ["2.9.4"], kisa_verified: false, isms_p_verified: false}
+  LOG-001: {kisa: [CA-17], isms_p: ["2.9.4"], kisa_verified: false, isms_p_verified: false}
 
   SG-001: {kisa: [CA-09], isms_p: ["2.6.1", "2.6.6", "2.10.1"], kisa_verified: true, isms_p_verified: false}
   SG-002: {kisa: [CA-09], isms_p: ["2.6.1", "2.10.1"], kisa_verified: true, isms_p_verified: false}

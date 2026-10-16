@@ -391,3 +391,12 @@
   - 최소 TLS 버전(`s3:TlsVersion`)과 ELB·RDS의 통신 암호화는 판정하지 않는다 (후보). 서버 원격 접근·데이터 이관 구간은 사람이 확인한다 (CA-12 `partial`).
   - KISA CA-12 매핑의 근거 수준은 해석(S3 API 통신을 리소스 접근 통신으로 봄). 사용자 확인 전이라 `kisa_verified: false`.
 - 이유: 이미 수집하는 S3에 호출 하나를 더해 CA-12의 일부를 자동화할 수 있다. 정책 문서는 스냅샷(커밋 안 함)에만 남고, LLM에는 S3-007 evidence(문장 Sid)와 마스킹한 도구 결과만 간다.
+
+## ADR-043 로그 보관 기간 (CT-002, LOG-001)
+- 상태: 채택 (사용자 결정, 2026-10-16). 5단계 수동 점검 항목 자동화 (CA-17).
+- 결정:
+  - 기준값 `logs.min_retention_days` 기본 365일 (국내 접속기록 최소 1년 보관 요구에 맞춤, 기관이 조정).
+  - CT-002: CloudTrail collector가 추적 버킷의 `GetBucketLocation`·`GetBucketLifecycleConfiguration`도 수집한다 (S3 호출이지만 룰이 스냅샷 하나만 보므로 같은 스냅샷에 담는다, ADR-015). 추적 로그 경로와 겹치는 활성 삭제 규칙이 기준보다 짧거나 날짜 지정이면 FAIL. 다른 계정 버킷(조직 추적)은 조회 거부로 ERROR.
+  - LOG-001: 새 collector `logs`가 로그 그룹과, 보안 로그 대상을 알기 위한 추적(`DescribeTrails`)·흐름 로그(`DescribeFlowLogs`)를 함께 수집한다. 보안 로그 그룹(추적·흐름 로그 대상, `logs.security_log_group_prefixes` 기본 `/aws/rds/`)만 판정하고 나머지(Lambda 실행 로그 등)는 판정하지 않는다. 보존 기간 미설정(영구 보관)은 PASS, 대상 그룹이 없으면 FAIL.
+  - 로그 백업·주기적 검토는 사람이 확인한다 (CA-17 `partial`). KISA 매핑은 직접 근거이나 사용자 확인 전이라 `kisa_verified: false`. 로그 그룹 이름은 마스킹한다.
+- 이유: 전체 로그 그룹을 판정하면 보안과 무관한 FAIL이 많아 결과가 의미를 잃는다. 출처가 확인되는 보안 로그만 보고, 기관별 추가 대상은 설정으로 받는다.

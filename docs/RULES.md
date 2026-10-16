@@ -280,6 +280,33 @@ finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 
 - ISMS-P(초안): 2.9.4 로그 및 접속기록 관리, 2.10.2 클라우드 보안
 - KISA: CA-13 클라우드 서비스 사용자 계정 로깅 설정 (상, 866쪽) — 근거 수준: 직접
 
+### CT-002 CloudTrail 로그 버킷 보존 기간 부족
+- 심각도: medium
+- API: `cloudtrail:DescribeTrails`, `s3:GetBucketLocation`, `s3:GetBucketLifecycleConfiguration` (CloudTrail collector가 추적 버킷에 대해 수집, ADR-043)
+- 판정: 추적이 로그를 보내는 S3 버킷마다, 추적 로그 경로(`<S3KeyPrefix>/AWSLogs/`)와 겹치는 활성(`Status == "Enabled"`) 수명주기 규칙이 `logs.min_retention_days`(기본 365일)보다 짧은 `Expiration.Days`를 가지면 FAIL. 날짜 지정 삭제(`Expiration.Date`)도 보존 일수를 보장할 수 없으므로 FAIL. 삭제 규칙이 없으면(수명주기 설정 없음 포함) PASS. 버킷별 finding.
+- 경로 겹침: 규칙 접두사(`Filter.Prefix`, `Filter.And.Prefix`, 옛 형식 `Prefix`, 없으면 버킷 전체)가 로그 경로의 앞부분이거나 로그 경로가 규칙 접두사의 앞부분이면 겹친다고 본다. 태그·크기 조건은 보지 않는다 (보수적으로 겹친다고 본다).
+- 해당 없음: S3로 로그를 보내는 추적이 없으면 `NOT_APPLICABLE`.
+- 오류: 추적 목록이나 버킷의 수명주기 설정을 수집하지 못하면 ERROR. 조직 추적처럼 버킷이 다른 계정에 있으면 보통 조회가 거부되어 ERROR가 된다.
+- 비고: 이전 버전 삭제(`NoncurrentVersionExpiration`)와 저장 등급 전환(Glacier 등)은 보존을 해치지 않으므로 보지 않는다. 로그 백업·주기적 검토는 사람이 확인한다 (CA-17 `partial`).
+- ISMS-P(초안): 2.9.4 로그 및 접속기록 관리
+- KISA: CA-17 로그 보관 기간 설정 (중, 870쪽) — 근거 수준: 직접 ("클라우드 서비스 로그 보관 기간을 기관 정책에 맞게 수립된 경우")
+
+## CloudWatch Logs
+
+### LOG-001 보안 로그 보존 기간 부족
+- 심각도: medium
+- API: `logs:DescribeLogGroups`, `ec2:DescribeFlowLogs`, `cloudtrail:DescribeTrails` (`logs` collector, ADR-043)
+- 판정 대상: 리전마다 보안 로그 그룹만 본다.
+  - 같은 계정·리전의 CloudTrail 추적이 보내는 그룹 (`CloudWatchLogsLogGroupArn`)
+  - VPC 흐름 로그가 보내는 그룹 (`LogDestinationType == "cloud-watch-logs"`)
+  - 이름이 `logs.security_log_group_prefixes`(기본 `/aws/rds/`)로 시작하는 그룹
+- 판정: `retentionInDays`가 `logs.min_retention_days`(기본 365일) 미만이면 FAIL, 이상이면 PASS. 키가 없으면(영구 보관) PASS. 추적·흐름 로그가 가리키는 그룹이 없으면 로그가 저장되지 않으므로 FAIL. 로그 그룹별 finding.
+- 해당 없음: 리전에 보안 로그 그룹이 없으면 리전 단위 `NOT_APPLICABLE` (evidence에 전체 로그 그룹 수).
+- 오류: 로그 그룹 목록, 흐름 로그 목록, 추적 목록 중 하나라도 수집하지 못하면 그 리전은 ERROR (보안 로그 그룹을 빠뜨릴 수 있으므로).
+- 비고: Lambda 실행 로그 등 보안 로그로 확인되지 않는 그룹은 판정하지 않는다. 기관이 보안 로그로 쓰는 그룹이 더 있으면 접두사를 설정에 더한다.
+- ISMS-P(초안): 2.9.4 로그 및 접속기록 관리
+- KISA: CA-17 로그 보관 기간 설정 (중, 870쪽) — 근거 수준: 직접 ("클라우드 서비스 로그 보관 기간을 기관 정책에 맞게 수립된 경우")
+
 ## RDS
 
 5단계에서 추가한 룰이다 (ADR-039). 점검 리전(`ScanContext.regions`)마다 `rds:DescribeDBInstances`와 `rds:DescribeDBClusters`로 수집한다.

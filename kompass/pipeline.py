@@ -19,6 +19,7 @@ from kompass.collectors.cloudtrail import CloudTrailCollector
 from kompass.collectors.ec2 import Ec2Collector
 from kompass.collectors.guardduty import GuardDutyCollector
 from kompass.collectors.iam import IamCollector
+from kompass.collectors.logs import LogsCollector
 from kompass.collectors.rds import RdsCollector
 from kompass.collectors.s3 import S3Collector
 from kompass.config import Settings
@@ -44,6 +45,7 @@ COLLECTORS: dict[str, Callable[[], Collector]] = {
     "ec2": Ec2Collector,
     "guardduty": GuardDutyCollector,
     "iam": IamCollector,
+    "logs": LogsCollector,
     "rds": RdsCollector,
     "s3": S3Collector,
 }

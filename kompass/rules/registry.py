@@ -7,6 +7,7 @@ from kompass.config import Settings
 from kompass.models import Finding, Snapshot
 from kompass.rules.base import BaseRule
 from kompass.rules.cloudtrail.ct_001_multi_region_trail import Ct001MultiRegionTrail
+from kompass.rules.cloudtrail.ct_002_log_bucket_retention import Ct002LogBucketRetention
 from kompass.rules.ec2.sg_001_admin_port_open import Sg001AdminPortOpen
 from kompass.rules.ec2.sg_002_all_ports_open import Sg002AllPortsOpen
 from kompass.rules.ec2.sg_003_db_port_open import Sg003DbPortOpen
@@ -25,6 +26,7 @@ from kompass.rules.iam.iam_006_access_key_rotation import Iam006AccessKeyRotatio
 from kompass.rules.iam.iam_007_admin_users import Iam007AdminUsers
 from kompass.rules.iam.iam_008_root_recent_use import Iam008RootRecentUse
 from kompass.rules.iam.iam_009_external_identity import Iam009ExternalIdentity
+from kompass.rules.logs.log_001_security_log_retention import Log001SecurityLogRetention
 from kompass.rules.rds.rds_001_storage_encryption import Rds001StorageEncryption
 from kompass.rules.rds.rds_002_public_access import Rds002PublicAccess
 from kompass.rules.rds.rds_003_log_exports import Rds003LogExports
@@ -39,6 +41,7 @@ from kompass.rules.s3.s3_007_secure_transport import S3007SecureTransport
 
 RULES: tuple[BaseRule, ...] = (
     Ct001MultiRegionTrail(),
+    Ct002LogBucketRetention(),
     Sg001AdminPortOpen(),
     Sg002AllPortsOpen(),
     Sg003DbPortOpen(),
@@ -68,6 +71,7 @@ RULES: tuple[BaseRule, ...] = (
     Rds004BackupRetention(),
     Gd001DetectorEnabled(),
     Gd002FindingAlerts(),
+    Log001SecurityLogRetention(),
 )
 
 

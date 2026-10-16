@@ -21,3 +21,32 @@ resource "aws_cloudtrail" "this" {
 
   depends_on = [aws_s3_bucket_policy.logs]
 }
+
+# --- 로그 보관 기간: CT-002 FAIL, LOG-001 FAIL·PASS (ADR-043) ---
+
+# 추적 로그를 30일 뒤 삭제 → CT-002 FAIL (기준 365일). 실습 저장 비용도 줄인다
+resource "aws_s3_bucket_lifecycle_configuration" "logs" {
+  bucket = aws_s3_bucket.logs.id
+
+  rule {
+    id     = "expire-cloudtrail-logs"
+    status = "Enabled"
+    filter {
+      prefix = "cloudtrail/AWSLogs/"
+    }
+    expiration {
+      days = 30
+    }
+  }
+}
+
+# /aws/rds/ 접두사는 기본 설정에서 보안 로그 그룹으로 본다. 데이터는 쌓이지 않는다
+resource "aws_cloudwatch_log_group" "retention_short" {
+  name              = "/aws/rds/instance/${local.name}-short/error"
+  retention_in_days = 30
+}
+
+resource "aws_cloudwatch_log_group" "retention_long" {
+  name              = "/aws/rds/instance/${local.name}-long/error"
+  retention_in_days = 400
+}

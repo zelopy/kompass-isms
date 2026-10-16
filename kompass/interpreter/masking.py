@@ -66,6 +66,7 @@ _NAME_KEYS = frozenset(
         "role",
         "db_identifier",
         "detector_id",
+        "log_group",
         "db_cluster",
         "endpoint",
         "subnet_group",

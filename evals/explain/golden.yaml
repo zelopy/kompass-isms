@@ -26,6 +26,11 @@ rules:
     example: >-
       aws cloudtrail create-trail --name org-audit-trail --s3-bucket-name audit-log-bucket
       --is-multi-region-trail
+  CT-002:
+    fail: [s3:PutBucketLifecycleConfiguration, s3:DeleteBucketLifecycle]
+    example: >-
+      aws s3api put-bucket-lifecycle-configuration --bucket {resource}
+      --lifecycle-configuration file://keep-trail-logs-365-days.json
   GD-001:
     fail: [guardduty:CreateDetector, guardduty:UpdateDetector]
     example: aws guardduty create-detector --enable --finding-publishing-frequency FIFTEEN_MINUTES
@@ -99,6 +104,9 @@ rules:
   S3-003:
     fail: [s3:PutBucketPolicy, s3:DeleteBucketPolicy, s3:PutPublicAccessBlock, s3control:PutPublicAccessBlock]
     example: aws s3api delete-bucket-policy --bucket {resource}
+  LOG-001:
+    fail: [logs:PutRetentionPolicy, logs:DeleteRetentionPolicy]
+    example: aws logs put-retention-policy --log-group-name {resource} --retention-in-days 365
   RDS-001:
     # 기존 인스턴스는 암호화를 켤 수 없어 스냅샷을 암호화 복사한 뒤 복원한다
     fail:

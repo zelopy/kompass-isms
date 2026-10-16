@@ -104,7 +104,8 @@
   - [x] GuardDuty: GD-001~002 (CA-19, ADR-041). 기본값 결과는 실습 계정에서 확인
   - [ ] GuardDuty `enable_guardduty = true` 실습 확인 (선택, 사용자 Terraform 적용 필요)
   - [x] S3 HTTPS 강제: S3-007 (CA-12, ADR-042). 실습 `private` 버킷에 HTTP 거부 정책
-  - [ ] VPC-003·S3-007 실습 계정 확인 (사용자 Terraform 적용 필요)
-  - [ ] 사용자 확인: VPC-003·GD-001~002·S3-007 KISA 매핑 원문 근거 (`kisa_verified`)
+  - [x] 로그 보관 기간: CT-002·LOG-001 (CA-17, ADR-043). 실습 추적 버킷 30일 삭제 규칙, 로그 그룹 2개
+  - [ ] VPC-003·S3-007·CT-002·LOG-001 실습 계정 확인 (사용자 Terraform 적용 필요)
+  - [ ] 사용자 확인: VPC-003·GD-001~002·S3-007·CT-002·LOG-001 KISA 매핑 원문 근거 (`kisa_verified`)
 - [ ] Azure 지원
 - [ ] 다른 기준 추가 (CSAP 등)
