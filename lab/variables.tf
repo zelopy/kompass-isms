@@ -63,3 +63,9 @@ variable "enable_public_rds" {
   type        = bool
   default     = false
 }
+
+variable "enable_guardduty" {
+  description = "GuardDuty 탐지기와 결과 알림 규칙(EventBridge → SNS) 생성 (GD-001~002 확인용). 30일 무료 체험 뒤 사용량 과금."
+  type        = bool
+  default     = false
+}

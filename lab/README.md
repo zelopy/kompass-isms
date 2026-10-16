@@ -15,6 +15,7 @@ kompass 룰이 기대한 FAIL/PASS/REVIEW를 내는지 확인하기 위한 **의
 | 공인 IPv4 1개 (`aws_eip.public_only`) | 시간당 과금, 월 약 3.6달러 |
 | CloudTrail 첫 관리 이벤트 추적 | 추적 요금 없음, S3 저장 비용만 발생 |
 | S3 버킷, VPC, 서브넷, 보안그룹, 연결되지 않은 ENI, IAM | 무료 또는 사실상 0 |
+| GuardDuty (`enable_guardduty = true`일 때만) | 30일 무료 체험 뒤 분석한 이벤트량에 따라 과금. 확인 후 끈다 |
 | RDS 2개 (`enable_public_rds = true`일 때만) | db.t4g.micro 2대 시간당 과금 + Secrets Manager 시크릿 2개. 확인 후 바로 끈다 |
 
 EC2 인스턴스, NAT 게이트웨이, 로드 밸런서는 만들지 않는다. 리소스 존재는 연결되지 않은 네트워크 인터페이스로 흉내 낸다.
@@ -42,6 +43,7 @@ terraform apply
 | `account_block_public_access` | `false` | 위 변수가 `true`일 때 `true` → S3-001 PASS. 대신 퍼블릭 버킷 3개가 생성되지 않는다 |
 | `cloudtrail_enabled` | `true` | `false` → CT-001 FAIL (로깅 중지) |
 | `cloudtrail_read_write_type` | `All` | `WriteOnly` → CT-001 FAIL (`require_read_events: true`일 때) |
+| `enable_guardduty` | `false` | `true` → GuardDuty 탐지기 + 결과 알림 규칙(EventBridge → SNS) 생성: GD-001·GD-002 PASS |
 | `enable_public_rds` | `false` | `true` → RDS 2개 생성 (`public`: RDS-001~004 FAIL·VPC-002 REVIEW, `private`: RDS-001~004 PASS) |
 
 ## 기대 결과표
@@ -110,6 +112,15 @@ terraform apply
 | VPC-003 | `mixed` (VPC 흐름 로그, REJECT만 기록) | PASS |
 | VPC-003 | `public-only` (흐름 로그 없음) | FAIL |
 | VPC-002 | 공개 RDS ENI (`enable_public_rds = true`일 때) | REVIEW (2026-10-16 확인, `RequesterId: amazon-rds`) |
+
+### GuardDuty
+
+| 룰 | `enable_guardduty = false` (기본) | `enable_guardduty = true` |
+|---|---|---|
+| GD-001 | FAIL (탐지기 없음) | PASS |
+| GD-002 | N/A (GuardDuty 꺼짐) | PASS (EventBridge 규칙 → SNS 주제) |
+
+기본값 결과는 실습 계정에서 확인했다 (2026-10-16). 실습 리전에 다른 경로로 만든 탐지기가 있으면 기본값에서도 GD-001이 PASS가 된다.
 
 ### RDS
 

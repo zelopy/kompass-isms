@@ -65,6 +65,7 @@ _NAME_KEYS = frozenset(
         "trail",
         "role",
         "db_identifier",
+        "detector_id",
         "db_cluster",
         "endpoint",
         "subnet_group",

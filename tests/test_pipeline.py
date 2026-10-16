@@ -78,7 +78,7 @@ def test_collect_all_services_by_default(
     monkeypatch.setitem(COLLECTORS, "iam", lambda: IamCollector(sleep=lambda _: None))
     result = collect(_scan(), store)
     _, report = evaluate_scan(result.scan_path, Settings())
-    assert set(result.errors_by_service) == {"cloudtrail", "ec2", "iam", "rds", "s3"}
+    assert set(result.errors_by_service) == {"cloudtrail", "ec2", "guardduty", "iam", "rds", "s3"}
     assert report.skipped_rules == ()
 
 

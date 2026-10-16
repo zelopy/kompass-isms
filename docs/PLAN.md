@@ -101,5 +101,7 @@
   - [ ] 사용자 확인: RDS 룰 KISA 매핑 원문 근거 (`kisa_verified`)
   - [x] VPC 흐름 로그: VPC-003 (CA-14, ADR-040). 실습 `mixed` VPC에 흐름 로그
   - [ ] VPC-003 실습 계정 확인 (사용자 Terraform 적용 필요)
+  - [x] GuardDuty: GD-001~002 (CA-19, ADR-041). 기본값 결과는 실습 계정에서 확인
+  - [ ] GuardDuty `enable_guardduty = true` 실습 확인 (선택, 사용자 Terraform 적용 필요)
 - [ ] Azure 지원
 - [ ] 다른 기준 추가 (CSAP 등)

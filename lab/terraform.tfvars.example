@@ -15,3 +15,4 @@ cloudtrail_read_write_type = "All" # All | WriteOnly
 
 # 비용이 드는 선택 리소스
 enable_public_rds = false
+enable_guardduty  = false

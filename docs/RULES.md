@@ -308,6 +308,30 @@ finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 
 - ISMS-P(초안): 2.9.3 백업 및 복구관리
 - KISA: CA-18 백업 사용 여부 (중, 871쪽) — 근거 수준: 직접 ("클라우드 리소스를 기관 정책에 따라 주기적으로 백업이 수행된 경우")
 
+## GuardDuty
+
+5단계에서 추가한 룰이다 (ADR-041). 점검 리전마다 `guardduty:ListDetectors`·`guardduty:GetDetector`와, GuardDuty 결과의 알림 경로를 보기 위해 `events:ListRules`·`events:ListTargetsByRule`(기본 이벤트 버스)을 같은 스냅샷에 수집한다 (룰은 스냅샷 하나만 본다, ADR-015).
+
+### GD-001 GuardDuty 미활성화
+- 심각도: medium
+- API: `guardduty:ListDetectors`, `guardduty:GetDetector`
+- 판정: 리전마다 `Status == "ENABLED"`인 탐지기가 있으면 PASS, 탐지기가 없거나 모두 `DISABLED`이면 FAIL. 리전 단위 finding 하나.
+- 오류: 탐지기 목록을 수집하지 못했거나, 활성 탐지기가 확인되지 않은 상태에서 탐지기 상세를 수집하지 못한 탐지기가 있으면 ERROR.
+- evidence: 탐지기별 상태, 결과 게시 주기(`FindingPublishingFrequency`), 보호 기능(`Features`) 상태.
+- 비고: Organizations 위임 관리자가 관리하는 멤버 계정도 자기 계정에 탐지기가 있으므로 같은 방식으로 판정한다.
+- ISMS-P(초안): 2.11.3 이상행위 분석 및 모니터링, 2.10.2 클라우드 보안
+- KISA: CA-19 가상 리소스 이상징후 알림 설정 (중, 872쪽) — 근거 수준: 해석 ("모니터링 또는 이상징후 알림 설정 확인". 이상징후 탐지 서비스 활성화를 알림 설정의 전제로 해석)
+
+### GD-002 GuardDuty 결과 알림 미설정
+- 심각도: medium
+- API: `events:ListRules`, `events:ListTargetsByRule`
+- 판정: GuardDuty가 활성화된 리전에서, 기본 이벤트 버스에 `State == "ENABLED"`이고 이벤트 패턴의 `source`에 `aws.guardduty`가 있으며 대상이 하나 이상인 규칙이 있으면 PASS, 없으면 FAIL.
+- 해당 없음: GuardDuty가 활성화되지 않은 리전(GD-001 FAIL)은 `NOT_APPLICABLE`. 탐지기 상태를 모르면 ERROR.
+- 오류: 규칙 목록을 수집하지 못했거나, 조건을 만족하는 규칙이 없는데 대상 목록을 수집하지 못한 GuardDuty 규칙이 있으면 ERROR.
+- 비고: 알림이 실제로 담당자에게 전달되는지(SNS 구독, 메신저 연동 등)와 Security Hub·다른 계정(위임 관리자) 경유 알림은 판정하지 않는다. 사람이 확인한다 (CA-19 `partial`).
+- ISMS-P(초안): 2.11.3 이상행위 분석 및 모니터링, 2.10.2 클라우드 보안
+- KISA: CA-19 가상 리소스 이상징후 알림 설정 (중, 872쪽) — 근거 수준: 직접 ("가상 리소스 이상징후 알림 설정이 적용된 경우")
+
 ## 룰 추가 절차
 
 1. 이 문서에 룰 항목을 먼저 추가한다 (ID, 심각도, API, 판정 기준, 매핑).

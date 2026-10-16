@@ -41,6 +41,10 @@ expectations:
   - {rule: VPC-003, resource: kompass-lab-mixed, status: PASS}
   - {rule: VPC-003, resource: kompass-lab-public-only, status: FAIL}
 
+  # GuardDuty (기본값 enable_guardduty = false)
+  - {rule: GD-001, resource: account, status: FAIL}
+  - {rule: GD-002, resource: account, status: N/A}
+
   # RDS (기본값 enable_public_rds = false: 대상 없음)
   - {rule: RDS-001, resource: account, status: N/A}
   - {rule: RDS-002, resource: account, status: N/A}

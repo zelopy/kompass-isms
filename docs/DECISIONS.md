@@ -372,3 +372,13 @@
   - KISA CA-14(인스턴스 로깅)에 매핑하되 근거 수준은 해석이다. 흐름 로그는 인스턴스의 네트워크 활동 기록이고, OS·애플리케이션 로그는 API로 확인할 수 없어 사람이 판단한다. 사용자 확인 전이라 `kisa_verified: false`.
   - 흐름 로그 ID(`fl-`)를 마스킹 대상 리소스 ID에 더한다.
 - 이유: 기존 collector에 호출 하나만 더해 수동 점검 항목을 줄일 수 있다.
+
+## ADR-041 GuardDuty 활성화·결과 알림 (GD-001~002)
+- 상태: 채택 (사용자 결정, 2026-10-16). 5단계 수동 점검 항목 자동화 ②.
+- 결정:
+  - 새 collector `guardduty`가 리전마다 GuardDuty 탐지기(`ListDetectors`·`GetDetector`)와 기본 이벤트 버스의 GuardDuty 규칙(`events:ListRules`·`ListTargetsByRule`)을 수집한다. 알림 경로는 EventBridge에 있지만 룰은 스냅샷 하나만 보므로(ADR-015) 같은 스냅샷에 담는다. 이벤트 패턴의 `source`에 `aws.guardduty`가 없는 규칙은 저장하지 않는다.
+  - GD-001: 리전에 활성 탐지기가 없으면 FAIL. GD-002: GuardDuty가 켜진 리전에서 GuardDuty 결과를 대상으로 보내는 활성 규칙이 없으면 FAIL, GuardDuty가 꺼진 리전은 N/A.
+  - 알림의 실제 전달(SNS 구독 등), Security Hub·위임 관리자 경유 알림, CloudWatch 경보는 판정하지 않는다 (CA-19 `partial`).
+  - KISA CA-19 매핑: GD-002는 직접, GD-001은 해석. 사용자 확인 전이라 `kisa_verified: false`. 탐지기 ID는 마스킹한다.
+  - 실습 환경 `enable_guardduty`(기본 false). 기본값에서 GD-001 FAIL·GD-002 N/A를 실습 계정에서 확인했다.
+- 이유: 모두 List/Get 호출이라 가드 허용 목록을 바꾸지 않고 CA-19를 자동화할 수 있다.

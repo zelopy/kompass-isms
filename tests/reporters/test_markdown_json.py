@@ -49,7 +49,7 @@ def test_all_kisa_items_listed_with_korean_outcomes() -> None:
 
 def test_summary_counts() -> None:
     assert "취약 1" in MD  # CA-09
-    assert "수동 점검 (미구현) 5" in MD
+    assert "수동 점검 (미구현) 4" in MD
     assert "finding: 취약 2, 확인 불가 0, 검토 필요 1, 양호 4, 해당 없음 0" in MD
 
 

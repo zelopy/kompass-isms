@@ -26,6 +26,14 @@ rules:
     example: >-
       aws cloudtrail create-trail --name org-audit-trail --s3-bucket-name audit-log-bucket
       --is-multi-region-trail
+  GD-001:
+    fail: [guardduty:CreateDetector, guardduty:UpdateDetector]
+    example: aws guardduty create-detector --enable --finding-publishing-frequency FIFTEEN_MINUTES
+  GD-002:
+    fail: [events:PutRule, events:PutTargets]
+    example: >-
+      aws events put-rule --name guardduty-findings
+      --event-pattern '{"source":["aws.guardduty"],"detail-type":["GuardDuty Finding"]}'
   IAM-001:
     # 루트 MFA는 루트로 콘솔에서 설정한다. CLI로는 설정 확인까지만 가능
     fail: [iam:GetAccountSummary, iam:CreateVirtualMFADevice, iam:EnableMFADevice]

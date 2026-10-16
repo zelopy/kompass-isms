@@ -17,6 +17,10 @@ rules:
   VPC-002: {kisa: [CA-08], isms_p: ["2.6.1", "2.10.2"], kisa_verified: true, isms_p_verified: false}
   VPC-003: {kisa: [CA-14], isms_p: ["2.9.4"], kisa_verified: false, isms_p_verified: false}
 
+  # GuardDuty (ADR-041). 사용자 확인 전이라 kisa_verified도 false
+  GD-001: {kisa: [CA-19], isms_p: ["2.11.3", "2.10.2"], kisa_verified: false, isms_p_verified: false}
+  GD-002: {kisa: [CA-19], isms_p: ["2.11.3", "2.10.2"], kisa_verified: false, isms_p_verified: false}
+
   # RDS (ADR-039). KISA 근거는 COVERAGE.md. 사용자 확인 전이라 kisa_verified도 false
   RDS-001: {kisa: [CA-11], isms_p: ["2.7.1"], kisa_verified: false, isms_p_verified: false}
   RDS-002: {kisa: [CA-08], isms_p: ["2.6.1", "2.10.2"], kisa_verified: false, isms_p_verified: false}
