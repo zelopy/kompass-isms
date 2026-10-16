@@ -29,7 +29,8 @@ _TOKEN = re.compile(r"MASKED_[A-Z0-9]+_\d+")
 _PARTIAL = re.compile(r"[A-Za-z0-9.-]MASKED_[A-Z0-9]+_\d+|MASKED_[A-Z0-9]+_\d+(?!\d)[A-Za-z-]")
 _KEEP = frozenset({"0.0.0.0/0", "::/0"})
 _MIN_NAME_LENGTH = 3
-_NOT_NAMES = frozenset({"account", "default"})  # 계정 단위 리소스 표기, AWS 기본값
+# 계정 단위 리소스 표기, AWS 기본값, 루트 사용자 (AWS가 정한 고정 이름이라 식별정보가 아니다)
+_NOT_NAMES = frozenset({"account", "default", "root"})
 
 _ARN = re.compile(
     r"arn:(?P<partition>aws[a-z-]*):(?P<service>[a-z0-9-]+):(?P<region>[a-z0-9-]*):"
@@ -47,7 +48,7 @@ _ACCOUNT = re.compile(r"(?<!\d)\d{12}(?!\d)")
 _IPV4 = re.compile(r"(?<![\d.])\d{1,3}(?:\.\d{1,3}){3}(?:/\d{1,2})?(?![\d.])")
 _IPV6 = re.compile(r"(?<![0-9A-Za-z:])(?:[0-9A-Fa-f]{0,4}:){2,7}[0-9A-Fa-f]{0,4}(?:/\d{1,3})?")
 _REGION = re.compile(r"[a-z]{2}(?:-gov)?-[a-z]+-\d")
-_AWS_SEGMENTS = frozenset({"aws-reserved", "aws-service-role", "service-role"})
+_AWS_SEGMENTS = frozenset({"aws-reserved", "aws-service-role", "service-role", "root"})
 
 # 이름이 들어 있는 증적·데이터 키 (실제 증적에서 확인한 키)
 _NAME_KEYS = frozenset(

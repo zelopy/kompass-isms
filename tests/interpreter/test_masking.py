@@ -299,3 +299,18 @@ def test_add_names_extends_vocabulary_and_keeps_tokens() -> None:
     assert "ab" not in masker.names and "default" not in masker.names
     assert masker.mask_text("alice in platform-admins").startswith(first)
     assert "platform-admins" not in masker.mask_text("alice in platform-admins")
+
+
+def test_root_principal_is_kept() -> None:
+    # 루트 사용자는 AWS가 정한 고정 주체라 식별정보가 아니다. 가리면 루트 사용 여부를 알 수 없다
+    data = {
+        "username": "root",
+        "user_arn": "arn:aws:iam::123456789012:root",
+        "other": "arn:aws:iam::123456789012:user/alice",
+    }
+    masker = Masker.for_values([data])
+    masker.add_names(["root", "alice"])
+    masked = masker.mask(data)
+    assert masked["username"] == "root"
+    assert masked["user_arn"] == "arn:aws:iam::MASKED_ACCOUNT_1:root"
+    assert "alice" not in masked["other"] and "123456789012" not in json.dumps(masked)
