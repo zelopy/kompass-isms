@@ -121,7 +121,11 @@ _CUSTOM_OPTIONS: dict[tuple[str, str], frozenset[str]] = {
         }
     ),
     ("iam", "CreateVirtualMFADevice"): frozenset({"outfile", "bootstrap-method"}),
+    # `Endpoint`는 전역 `--endpoint-url`과 겹치지 않게 CLI에서 이름이 바뀐다
+    ("sns", "Subscribe"): frozenset({"notification-endpoint"}),
 }
+# 증적의 권한 출처 "group:<그룹 이름>". 그룹 정책을 바꾸는 조치도 그 사용자를 대상으로 한다
+_VIA_GROUP = re.compile(r'"group:([^"]+)"')
 _WRITE_PREFIXES = (
     "Put",
     "Delete",
@@ -491,11 +495,14 @@ def _iam_action_to_botocore(operation: str) -> str | None:
 
 def _targets(findings: Sequence[Any]) -> set[str]:
     """변경 명령이 가리켜도 되는 리소스: finding의 리소스(값, ARN 마지막 구간)와 증적에 나온
-    관련 리소스(ENI의 서브넷·VPC·보안그룹 등). 계정 단위 finding만 있으면 비어 있다."""
+    관련 리소스(ENI의 서브넷·VPC·보안그룹, 권한 출처 그룹 등). 계정 단위 finding만 있으면
+    비어 있다."""
     targets: set[str] = set()
     for finding in findings:
         if finding.status in NEEDS_ACTION and finding.resource != ACCOUNT_RESOURCE:
             targets.add(finding.resource)
             targets.add(finding.resource.rsplit("/", 1)[-1].partition("#")[0])
-            targets |= set(_SENSITIVE[0].findall(json.dumps(finding.evidence)))
+            evidence = json.dumps(finding.evidence)
+            targets |= set(_SENSITIVE[0].findall(evidence))
+            targets |= {f"--group-name {name}" for name in _VIA_GROUP.findall(evidence)}
     return {t for t in targets if len(t) >= 3}
