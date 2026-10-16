@@ -4,6 +4,7 @@
 - 실습 전용 계정에 `lab/` Terraform이 배포되어 있어야 한다.
 - 점검 프로필(기본 `kompass-lab-audit`, `KOMPASS_LAB_PROFILE`로 변경)이 필요하다.
 - 호출은 읽기 전용 가드를 거친다. 스냅샷과 결과는 임시 디렉터리에만 남는다.
+- `when`이 있는 기대값은 `lab/terraform.tfvars`(없으면 변수 기본값)의 선택 변수가 맞을 때만 대조한다.
 """
 
 import os
@@ -20,7 +21,11 @@ from kompass.models import Finding, Snapshot
 from kompass.pipeline import collect, evaluate_scan
 from kompass.snapshots import SnapshotStore, load_scan
 
-EXPECTED = Path(__file__).parents[2] / "lab" / "expected.yaml"
+LAB = Path(__file__).parents[2] / "lab"
+EXPECTED = LAB / "expected.yaml"
+# expected.yaml의 when에 쓰는 선택 변수와 기본값 (lab/variables.tf)
+LAB_FLAGS = {"enable_public_rds": False, "enable_guardduty": False}
+_TFVAR = re.compile(r"^\s*(\w+)\s*=\s*(true|false)\b", re.M)
 _BUCKET_SUFFIX = re.compile(r"-[0-9a-f]{8}$")
 NONE = "NONE"
 
@@ -56,7 +61,7 @@ class _Labeler:
             return resource
         if finding.rule_id.startswith(("SG-", "VPC-")):
             return self._ec2.get(resource, resource)
-        if finding.rule_id.startswith("S3-"):
+        if finding.rule_id.startswith("S3-") or finding.rule_id == "CT-002":
             return _BUCKET_SUFFIX.sub("", resource)
         if resource.startswith("arn:"):
             label = resource.split(":", 5)[5]
@@ -81,6 +86,20 @@ def _compare(findings: tuple[Finding, ...], labeler: _Labeler, expected: list[di
     return problems
 
 
+def lab_flags(tfvars: Path = LAB / "terraform.tfvars") -> dict[str, bool]:
+    """배포에 쓴 선택 변수 값. 파일이 없거나 값이 없으면 기본값."""
+    flags = dict(LAB_FLAGS)
+    if tfvars.is_file():
+        for name, value in _TFVAR.findall(tfvars.read_text(encoding="utf-8")):
+            if name in flags:
+                flags[name] = value == "true"
+    return flags
+
+
+def applicable(items: list[dict[str, Any]], flags: dict[str, bool]) -> list[dict[str, Any]]:
+    return [i for i in items if all(flags.get(k) == v for k, v in i.get("when", {}).items())]
+
+
 @pytest.fixture(scope="module")
 def expected() -> dict[str, Any]:
     data: dict[str, Any] = yaml.safe_load(EXPECTED.read_text(encoding="utf-8"))
@@ -100,5 +119,6 @@ def test_lab_scan_matches_expected(expected: dict[str, Any], tmp_path: Path) -> 
     assert all(not ops for ops in collect_errors.values()), f"수집 실패: {collect_errors}"
     assert report.skipped_rules == ()
 
-    problems = _compare(report.findings, _Labeler(snapshots), expected["expectations"])
+    items = applicable(expected["expectations"], lab_flags())
+    problems = _compare(report.findings, _Labeler(snapshots), items)
     assert not problems, "기대 결과와 다르다:\n" + "\n".join(problems)

@@ -106,7 +106,9 @@
   - [x] S3 HTTPS 강제: S3-007 (CA-12, ADR-042). 실습 `private` 버킷에 HTTP 거부 정책
   - [x] 로그 보관 기간: CT-002·LOG-001 (CA-17, ADR-043). 실습 추적 버킷 30일 삭제 규칙, 로그 그룹 2개
   - [x] 권한 보유 주체 현황: IAM-010~011 (CA-05·CA-06, ADR-044). KISA 19개 항목 모두 자동 점검 룰 보유
-  - [ ] VPC-003·S3-007·CT-002·LOG-001·IAM-010~011 실습 계정 확인 (사용자 Terraform 적용 필요)
+  - [x] 실습 계정 확인 (2026-10-16, `enable_public_rds`·`enable_guardduty` 켬): VPC-003·S3-007·CT-002·LOG-001·IAM-010~011·GD-001~002·RDS-001~004 기대값 일치. `expected.yaml`에 선택 변수별 기대값(`when`)
+  - [x] 발견한 결함 수정: 자격증명 보고서 재사용으로 새 사용자가 빠지던 문제 → ERROR (ADR-045)
+  - [ ] 보고서 갱신 뒤 실습 통합 테스트 재실행 (IAM-003·005 `console-no-mfa` 확인)
   - [ ] 사용자 확인: VPC-003·GD-001~002·S3-007·CT-002·LOG-001·IAM-010~011 KISA 매핑 원문 근거 (`kisa_verified`)
 - [ ] Azure 지원
 - [ ] 다른 기준 추가 (CSAP 등)

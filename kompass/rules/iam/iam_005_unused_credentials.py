@@ -39,14 +39,14 @@ class Iam005UnusedCredentials(BaseRule):
         if rows is None:
             return [_iam.missing_section(self, snapshot, "credential_report", "자격증명 보고서")]
         users = [r for r in _iam.user_rows(rows) if _iam.has_credentials(r)]
-        if not users:
-            return [
-                _iam.account_finding(
-                    self, snapshot, Status.NOT_APPLICABLE, "활성 자격증명을 가진 사용자가 없음", {}
-                )
-            ]
         limit = settings.iam.unused_credential_days
-        return [self._judge(snapshot, row, limit) for row in users]
+        findings = [self._judge(snapshot, row, limit) for row in users]
+        findings += _iam.unreported_users(self, snapshot, rows)
+        return findings or [
+            _iam.account_finding(
+                self, snapshot, Status.NOT_APPLICABLE, "활성 자격증명을 가진 사용자가 없음", {}
+            )
+        ]
 
     def _judge(self, snapshot: Snapshot, row: dict[str, str], limit: int) -> Finding:
         now: datetime = snapshot.collected_at

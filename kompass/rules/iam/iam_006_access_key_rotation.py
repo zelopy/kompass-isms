@@ -23,14 +23,12 @@ class Iam006AccessKeyRotation(BaseRule):
         if rows is None:
             return [_iam.missing_section(self, snapshot, "credential_report", "자격증명 보고서")]
         keys = [(row, slot) for row in _iam.user_rows(rows) for slot in _iam.active_key_slots(row)]
-        if not keys:
-            return [
-                _iam.account_finding(
-                    self, snapshot, Status.NOT_APPLICABLE, "활성 액세스 키가 없음", {}
-                )
-            ]
         limit = settings.iam.access_key_rotation_days
-        return [self._judge(snapshot, row, slot, limit) for row, slot in keys]
+        findings = [self._judge(snapshot, row, slot, limit) for row, slot in keys]
+        findings += _iam.unreported_users(self, snapshot, rows)
+        return findings or [
+            _iam.account_finding(self, snapshot, Status.NOT_APPLICABLE, "활성 액세스 키가 없음", {})
+        ]
 
     def _judge(self, snapshot: Snapshot, row: dict[str, str], slot: int, limit: int) -> Finding:
         rotated = row.get(f"access_key_{slot}_last_rotated")

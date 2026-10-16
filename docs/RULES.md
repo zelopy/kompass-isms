@@ -9,7 +9,7 @@
 ## 공통 원칙
 
 - **설정이 존재하면 FAIL.** 공개 허용 정책·ACL처럼 "불필요한 규칙"이 설정되어 있으면, 다른 설정(퍼블릭 액세스 차단 등)으로 실제 효과가 막혀 있어도 FAIL로 판정한다. 막고 있는 설정은 evidence에 함께 남긴다. 차단 설정이 바뀌는 순간 바로 노출되기 때문이다.
-- **자격증명 보고서.** `GenerateCredentialReport`로 생성을 요청하고 완료될 때까지 기다린 뒤 `GetCredentialReport`로 받는다. 보고서는 최대 4시간 전 상태일 수 있으므로 `GeneratedTime`을 evidence에 남긴다. 제한 시간 안에 생성되지 않으면 ERROR.
+- **자격증명 보고서.** `GenerateCredentialReport`로 생성을 요청하고 완료될 때까지 기다린 뒤 `GetCredentialReport`로 받는다. 보고서는 최대 4시간 전 상태일 수 있으므로 `GeneratedTime`을 evidence에 남긴다. 제한 시간 안에 생성되지 않으면 ERROR. AWS는 4시간 안에 만든 보고서를 다시 돌려주므로, 그 뒤에 만든 사용자는 보고서에 없다. 보고서를 쓰는 룰(IAM-003·005·006)은 권한 정보(`GetAccountAuthorizationDetails`)에는 있지만 보고서에 없는 사용자마다 ERROR를 낸다 (ADR-045, 실습 계정에서 확인).
 - **날짜 값.** 스냅샷의 날짜는 모두 ISO 8601 문자열이다 (ADR-019). 경과 일수 계산은 `rules/base.py`의 공용 파싱 함수를 쓴다. 자격증명 보고서의 `N/A`, `no_information`, `not_supported` 같은 특수 값도 이 함수에서 처리한다.
 - **리전.** 리전별 룰(EC2·VPC)은 점검 대상 리전(`ScanContext.regions`) 전체를 본다. S3 버킷은 `--regions`와 관계없이 모두 점검하고 evidence에 버킷 리전을 남긴다 (ADR-021). 리전 전체가 접근 거부되는 리전(SCP 리전 제한 등)은 `--regions`를 지정하지 않았을 때 점검 범위에서 빼고 보고서에 "점검 범위 밖"으로 표시한다. 기본 리전까지 거부되면 권한 부족으로 보고 빼지 않는다 (ADR-028).
 

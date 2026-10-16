@@ -82,3 +82,38 @@ def missing_section(rule: BaseRule, snapshot: Snapshot, key: str, what: str) -> 
         f"{what}을(를) 수집하지 못함",
         {"errors": section_errors(snapshot, key)},
     )
+
+
+def unreported_users(
+    rule: BaseRule, snapshot: Snapshot, rows: list[dict[str, str]]
+) -> list[Finding]:
+    """권한 정보에는 있지만 자격증명 보고서에 없는 사용자마다 ERROR (ADR-045).
+
+    `GenerateCredentialReport`는 4시간 안에 만든 보고서를 다시 돌려주므로, 그 뒤에 만든 사용자는
+    보고서에 없다. 판정하지 못한 사용자를 조용히 빼면 "대상 없음"으로 잘못 보고하게 된다 (원칙 3).
+    권한 정보를 수집하지 못했으면 대조할 수 없으므로 아무것도 내지 않는다.
+    """
+    details = snapshot.data.get("authorization_details")
+    if details is None:
+        return []
+    reported = {row.get("user") for row in rows}
+    generated = snapshot.data["credential_report"]["generated_time"]
+    return [
+        rule.finding(
+            snapshot,
+            resource=user["Arn"],
+            region=None,
+            status=Status.ERROR,
+            message=(
+                f"자격증명 보고서 생성 이후 확인된 사용자라 판정할 수 없음: {user['UserName']}"
+            ),
+            evidence={
+                "user": user["UserName"],
+                "user_created": user.get("CreateDate"),
+                "report_generated_time": generated,
+                "note": "자격증명 보고서는 최대 4시간 전 상태일 수 있음. 다음 점검에서 확인 필요",
+            },
+        )
+        for user in details.get("users", [])
+        if user.get("UserName") not in reported
+    ]

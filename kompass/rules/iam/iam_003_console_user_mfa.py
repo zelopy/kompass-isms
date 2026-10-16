@@ -23,13 +23,13 @@ class Iam003ConsoleUserMfa(BaseRule):
         if rows is None:
             return [_iam.missing_section(self, snapshot, "credential_report", "자격증명 보고서")]
         console = [r for r in _iam.user_rows(rows) if _iam.is_true(r.get("password_enabled"))]
-        if not console:
-            return [
-                _iam.account_finding(
-                    self, snapshot, Status.NOT_APPLICABLE, "콘솔 비밀번호가 있는 사용자가 없음", {}
-                )
-            ]
-        return [self._judge(snapshot, row) for row in console]
+        findings = [self._judge(snapshot, row) for row in console]
+        findings += _iam.unreported_users(self, snapshot, rows)
+        return findings or [
+            _iam.account_finding(
+                self, snapshot, Status.NOT_APPLICABLE, "콘솔 비밀번호가 있는 사용자가 없음", {}
+            )
+        ]
 
     def _judge(self, snapshot: Snapshot, row: dict[str, str]) -> Finding:
         mfa = _iam.is_true(row.get("mfa_active"))

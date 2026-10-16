@@ -14,6 +14,7 @@ from kompass.rules.iam.iam_006_access_key_rotation import Iam006AccessKeyRotatio
 from tests.rules.iam.data import (
     collect_error,
     days_ago,
+    iam_user,
     report_row,
     root_row,
     snapshot,
@@ -214,3 +215,27 @@ def test_iam006_error() -> None:
         IAM006, missing=("credential_report",), errors=(collect_error("iam:GetCredentialReport"),)
     )
     assert finding.status == Status.ERROR
+
+
+# --- 자격증명 보고서에 없는 사용자 (ADR-045) ---
+
+
+@pytest.mark.parametrize(
+    "rule_cls", [Iam003ConsoleUserMfa, Iam005UnusedCredentials, Iam006AccessKeyRotation]
+)
+def test_user_missing_from_credential_report_is_error(rule_cls: Any) -> None:
+    # 보고서는 4시간 안에 만든 것이 재사용되므로 그 뒤에 만든 사용자는 보고서에 없다
+    data = snapshot(rows=[root_row()], users=[iam_user("new-user")])
+    findings = rule_cls().evaluate(data, Settings())
+    [finding] = findings
+    assert finding.status == Status.ERROR and finding.resource == user_arn("new-user")
+    assert "자격증명 보고서 생성 이후" in finding.message
+
+
+def test_reported_users_are_not_flagged_as_missing() -> None:
+    data = snapshot(
+        rows=[root_row(), report_row("dev", password=True, mfa=True)],
+        users=[iam_user("dev")],
+    )
+    [finding] = Iam003ConsoleUserMfa().evaluate(data, Settings())
+    assert finding.status == Status.PASS
