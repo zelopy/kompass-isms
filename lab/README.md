@@ -107,17 +107,17 @@ terraform apply
 | VPC-001 | `public-only` (퍼블릭 서브넷에만 ENI) | FAIL |
 | VPC-001 | 리전 기본 VPC | 실습 비교 대상 아님 (기존 리소스가 있으면 결과가 달라진다) |
 | VPC-002 | `public-only` ENI (EIP 연결) | REVIEW |
-| VPC-002 | 공개 RDS ENI (`enable_public_rds = true`일 때) | REVIEW. **RDS ENI 필드값 확인 대상** |
+| VPC-002 | 공개 RDS ENI (`enable_public_rds = true`일 때) | REVIEW (2026-10-16 확인, `RequesterId: amazon-rds`) |
 
 ### RDS
 
-`enable_public_rds = false`(기본)이면 RDS 룰은 리전 단위 해당 없음(N/A)이다.
+`enable_public_rds = false`(기본)이면 RDS 룰은 리전 단위 해당 없음(N/A)이다. 아래 표는 실습 계정에서 확인했다 (2026-10-16).
 
 | 룰 | 대상 (`enable_public_rds = true`일 때) | 기대 결과 |
 |---|---|---|
 | RDS-001 | `kompass-lab-public` / `kompass-lab-private` | FAIL / PASS |
 | RDS-002 | `kompass-lab-public` / `kompass-lab-private` | FAIL / PASS |
-| RDS-003 | `kompass-lab-public` / `kompass-lab-private` | FAIL / PASS. **로그 내보내기가 없을 때 `EnabledCloudwatchLogsExports` 키 생략 여부 확인 대상** |
+| RDS-003 | `kompass-lab-public` / `kompass-lab-private` | FAIL / PASS (로그 내보내기가 없으면 `EnabledCloudwatchLogsExports` 키가 생략됨) |
 | RDS-004 | `kompass-lab-public` (백업 0일) / `kompass-lab-private` (7일) | FAIL / PASS |
 
 ### CloudTrail

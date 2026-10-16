@@ -97,7 +97,7 @@
 - [ ] Prowler OCSF 출력 어댑터 (`rule_id` 형식에 출처 접두사 허용 여부 결정, ADR-019)
 - [ ] 서비스 추가: CloudTrail, KMS, RDS, VPC Flow Logs
   - [x] RDS collector + RDS-001~004 (CA-11·CA-08·CA-15·CA-18, ADR-039). 실습 환경 `enable_public_rds`로 인스턴스 2개
-  - [ ] RDS 실습 계정 확인: 로그 내보내기가 없을 때 `EnabledCloudwatchLogsExports` 키 생략 여부 (사용자 Terraform 적용 필요)
+  - [x] RDS 실습 계정 확인: RDS-001~004 기대값 일치, 로그 내보내기가 없으면 `EnabledCloudwatchLogsExports` 키 생략, VPC-002가 공개 RDS 인터페이스를 REVIEW로 냄 (2026-10-16)
   - [ ] 사용자 확인: RDS 룰 KISA 매핑 원문 근거 (`kisa_verified`)
 - [ ] Azure 지원
 - [ ] 다른 기준 추가 (CSAP 등)

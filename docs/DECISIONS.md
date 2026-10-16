@@ -358,7 +358,7 @@
   - RDS collector가 점검 리전마다 `rds:DescribeDBInstances`·`rds:DescribeDBClusters`를 수집한다 (읽기 전용, 가드 허용 목록 변경 없음).
   - 룰 4개: RDS-001 스토리지 암호화(CA-11), RDS-002 퍼블릭 접근(CA-08), RDS-003 로그 내보내기(CA-15), RDS-004 자동 백업 보존 기간(CA-18, 기본 7일, `rds.min_backup_retention_days`). SSL 강제(CA-12)와 공개 스냅샷은 이후로 미룬다.
   - DocumentDB·Neptune은 관계형 데이터베이스가 아니므로 뺀다. Aurora·Multi-AZ DB 클러스터 소속 인스턴스는 암호화·로그·백업을 클러스터 단위로 판정한다 (resource `cluster:<식별자>`). 퍼블릭 접근은 인스턴스 설정이라 인스턴스 단위다.
-  - 판정 필드가 응답에 없으면 ERROR (원칙 3). 예외는 `EnabledCloudwatchLogsExports`로, 내보내기가 없으면 키가 생략되므로 "내보내기 없음"으로 본다. 실습 계정에서 확인한다.
+  - 판정 필드가 응답에 없으면 ERROR (원칙 3). 예외는 `EnabledCloudwatchLogsExports`로, 내보내기가 없으면 키가 생략되므로 "내보내기 없음"으로 본다 (실습 계정에서 확인, 2026-10-16).
   - 읽기 전용 복제본은 RDS-004에서 해당 없음. AWS Backup 계획은 인정하지 않는다 (AWS Backup collector 이후).
   - KISA 매핑 근거 구절은 원문 색인과 대조했으나 사용자 확인 전이라 `kisa_verified: false`로 둔다 (원칙 7).
   - 평가셋 정답(`evals/explain/golden.yaml`)에 RDS 룰의 조치 작업을 더했다. 평가 케이스는 아직 없다.

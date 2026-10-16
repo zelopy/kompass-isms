@@ -226,7 +226,8 @@ finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 
 - 제외: 공개가 목적인 리소스만 뺀다.
   - NAT 게이트웨이: `InterfaceType == "nat_gateway"`
   - 로드 밸런서: `InterfaceType`이 `network_load_balancer` 또는 `gateway_load_balancer`이거나, `RequesterId == "amazon-elb"`
-- 비고: `RequesterManaged == true` 전체를 제외하지 않는다. 공개 RDS 같은 AWS 관리형 리소스의 인터페이스도 이 값이 true이고, 그것이 CA-08의 주요 점검 대상이기 때문이다. 각 리소스 유형의 실제 필드값은 실습 환경에서 확인한다.
+- 비고: `RequesterManaged == true` 전체를 제외하지 않는다. 공개 RDS 같은 AWS 관리형 리소스의 인터페이스도 이 값이 true이고, 그것이 CA-08의 주요 점검 대상이기 때문이다.
+- 확인됨 (실습 계정, 2026-10-16): 공개 RDS의 인터페이스는 `InterfaceType: interface`, `RequesterId: amazon-rds`, `RequesterManaged: true`, 설명 `RDSNetworkInterface`이며 REVIEW로 잡힌다. 비공개 RDS의 인터페이스는 공인 IP가 없어 잡히지 않는다.
 - 비고: 내부용 리소스인지는 사람이 판단한다 (CA-08 `partial`).
 - ISMS-P(초안): 2.6.1 네트워크 접근, 2.10.2 클라우드 보안
 - KISA: CA-08 가상 네트워크 리소스 관리 (중, 861쪽) — 근거 수준: 직접 ("각 서비스 리소스에 공인 IP주소가 존재하지 않고")
@@ -260,7 +261,9 @@ finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 
 
 - **대상 엔진.** 관계형 데이터베이스만 본다. `docdb`(DocumentDB)·`neptune`(Neptune)은 같은 API로 조회되지만 대상에서 빼고, 리전 finding의 evidence에 제외한 식별자를 남긴다.
 - **클러스터 단위 판정.** `DBClusterIdentifier`가 있는 인스턴스(Aurora, Multi-AZ DB 클러스터)는 암호화·로그·백업이 클러스터 설정이므로 클러스터로 판정한다. 클러스터 finding의 resource는 `cluster:<클러스터 식별자>`로 써서 같은 이름의 인스턴스와 구분한다. 퍼블릭 접근(`PubliclyAccessible`)은 인스턴스 설정이라 RDS-002는 클러스터 소속 인스턴스도 인스턴스 단위로 판정한다.
-- **오류.** 리전의 인스턴스 목록이나 클러스터 목록 중 판정에 필요한 것을 수집하지 못하면 그 리전은 ERROR 하나다. 대상 데이터베이스가 없으면 리전 단위 `NOT_APPLICABLE`. 판정에 쓰는 필드가 응답에 없으면 그 리소스는 ERROR다 (데이터가 없다고 양호로 보지 않는다). 예외: `EnabledCloudwatchLogsExports`는 내보내기가 없으면 키가 생략되므로 RDS-003은 키가 없는 것을 "내보내기 없음"으로 본다 (실습 계정 확인 대상).
+- **오류.** 리전의 인스턴스 목록이나 클러스터 목록 중 판정에 필요한 것을 수집하지 못하면 그 리전은 ERROR 하나다. 대상 데이터베이스가 없으면 리전 단위 `NOT_APPLICABLE`. 판정에 쓰는 필드가 응답에 없으면 그 리소스는 ERROR다 (데이터가 없다고 양호로 보지 않는다). 예외: `EnabledCloudwatchLogsExports`는 내보내기가 없으면 키가 생략되므로 RDS-003은 키가 없는 것을 "내보내기 없음"으로 본다 (실습 계정에서 확인, 2026-10-16).
+
+- 확인됨 (실습 계정, 2026-10-16): `enable_public_rds = true`로 만든 인스턴스 2개에서 RDS-001~004가 기대값(`public` FAIL, `private` PASS)과 일치한다. 로그 내보내기가 없는 인스턴스는 `EnabledCloudwatchLogsExports` 키가 응답에 없다.
 
 ### RDS-001 데이터베이스 스토리지 암호화 미적용
 - 심각도: high

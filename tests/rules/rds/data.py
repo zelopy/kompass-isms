@@ -1,6 +1,6 @@
 """RDS 룰 테스트용 가짜 데이터. `DescribeDBInstances`·`DescribeDBClusters` 응답 형태를 따른다.
 
-- 로그 내보내기가 없으면 `EnabledCloudwatchLogsExports` 키가 생략된다 (실습 계정 확인 대상)
+- 로그 내보내기가 없으면 `EnabledCloudwatchLogsExports` 키가 생략된다 (실습 계정에서 확인, 2026-10-16)
 """
 
 from datetime import UTC, datetime
