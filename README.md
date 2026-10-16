@@ -43,6 +43,9 @@ uv run kompass explain --assessment-only --report md   # 종합 위험 평가만
 # 담당자 증적 요청서 (자동 점검으로 확인할 수 없는 항목, LLM·AWS 호출 없음)
 uv run kompass evidence
 
+# MCP 서버 (Claude Code 등 MCP 클라이언트에서 판정 결과 조회·읽기 전용 추가 조사)
+claude mcp add kompass -- uv --directory <저장소 경로> run kompass mcp --profile <aws-profile>
+
 # 에이전트 추가 조사 (선택, 비용 발생. 취약·검토 필요 결과를 읽기 전용 도구로 더 조회)
 uv run kompass investigate --dry-run      # 대상과 최대 비용만 확인
 uv run kompass investigate --profile <aws-profile> --report md --report xlsx
@@ -67,6 +70,7 @@ uv run python scripts/run_explain_eval.py --variant v1                          
 - 판정 결과: `reports/findings/<계정>/<점검 ID>.findings.json`
 - 해설: `reports/explanations/<계정>/<점검 ID>.explanations.json` (원본 식별정보가 복원된 상태)
 - 추가 조사: `reports/investigations/<계정>/<점검 ID>.investigation.json` (도구 호출 기록 포함)
+- MCP 호출 로그: `reports/mcp/<계정>/<점검 ID>.<시작 시각>.mcp.jsonl` (원래 입력값과 마스킹한 결과)
 - 스냅샷: `reports/snapshots/<계정>/<점검 ID>/` (파일별 SHA-256 기록)
 
 종료 코드: 0 완료(취약 결과가 있어도 0), 1 `--fail-on` 해당, 2 사용법·설정 오류, 3 세션 오류, 4 스냅샷 오류, 5 LLM 해설·추가 조사 전부 실패.
@@ -76,6 +80,8 @@ uv run python scripts/run_explain_eval.py --variant v1                          
 `kompass explain`은 판정을 바꾸지 않는 참고 해설이다. LLM에는 계정 ID·IP·ARN·리소스 이름을 자리표시자로 바꾼 값만 보내고, 응답을 받은 뒤 로컬에서 되돌린다. 인용 구절은 원문 색인과 대조해 "검증됨"/"검증되지 않음"을 표시한다. 해설은 같은 판정 결과에만 붙으며, 다시 판정하면 해설을 다시 만들어야 보고서에 들어간다. 모델·effort는 `kompass.yaml`의 `llm:` 섹션에서 바꾼다.
 
 `kompass investigate`는 취약·검토 필요 결과를 룰 단위로 에이전트가 추가 조사하는 참고 기능이다. 판정과 같은 계정·리전 범위의 읽기 전용 세션으로 정해진 조회 도구 12개만 쓰고, 도구 결과도 마스킹한 뒤 LLM에 보낸다. 조사 결과의 사실마다 근거가 된 도구 호출 ID를 달고, 실제 호출과 대조해 "근거 검증됨"을 표시한다. 룰당 도구 호출 수(`--max-calls`)와 토큰(`--max-tokens`)에 상한이 있으며, 판정은 바꾸지 않는다.
+
+`kompass mcp`는 같은 도구를 MCP 서버로 노출한다. MCP 클라이언트 뒤의 LLM에도 식별정보를 가린 값만 보내며, 세션 동안 같은 리소스는 같은 자리표시자로 보인다. 도구 입력에 자리표시자를 쓰면 서버가 원래 값으로 바꿔 조회한다. 도구는 판정 결과 조회(`kompass_findings`)와 읽기 전용 조사 도구 12개뿐이고, 세션당 AWS 호출 상한(`--max-calls`, 기본 50)이 있다. 판정 결과와 다른 계정의 프로필이면 시작하지 않는다.
 
 ## 출력 예시
 

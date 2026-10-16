@@ -26,6 +26,13 @@ from kompass.agent.investigator import (
     investigation_groups,
 )
 from kompass.agent.llm import AgentProvider, ClaudeAgentProvider
+from kompass.agent.mcp_server import (
+    DEFAULT_MCP_MAX_CALLS,
+    McpSession,
+    build_server,
+    default_log_path,
+    serve_stdio,
+)
 from kompass.agent.toolbox import DEFAULT_MAX_CALLS
 from kompass.agent.tools import ToolContext
 from kompass.aws.guard import ReadOnlyViolation
@@ -257,7 +264,9 @@ def _audit_report(store: SnapshotStore, findings_path: Path) -> AuditReport:
         _abort(str(exc), EXIT_SNAPSHOT)
 
 
-def _findings_path(store: SnapshotStore, findings: Path | None, account_id: str | None) -> Path:
+def _findings_path(
+    store: SnapshotStore, findings: Path | None, account_id: str | None, *, err: bool = False
+) -> Path:
     if findings is not None:
         return findings
     try:
@@ -266,7 +275,7 @@ def _findings_path(store: SnapshotStore, findings: Path | None, account_id: str 
         _abort(str(exc), EXIT_USAGE)
     if latest is None:
         _abort(f"판정 결과가 없습니다: {store.root}", EXIT_SNAPSHOT)
-    typer.echo(f"판정 결과: {latest}")
+    typer.echo(f"판정 결과: {latest}", err=err)
     return latest
 
 
@@ -696,3 +705,41 @@ def investigate_command(
         _reports(snapshot_store, findings, report)
     if not result.investigations:
         raise typer.Exit(EXIT_LLM)
+
+
+@app.command("mcp")
+def mcp_command(
+    findings: Path | None = typer.Option(
+        None, "--findings", help="노출할 판정 결과 파일. 없으면 가장 최근에 판정한 결과."
+    ),
+    profile: str | None = ProfileOption,
+    region: str | None = RegionOption,
+    account_id: str | None = AccountOption,
+    store: Path | None = StoreOption,
+    max_calls: int = typer.Option(
+        DEFAULT_MCP_MAX_CALLS, "--max-calls", min=1, help="세션 하나의 AWS 조사 도구 호출 상한."
+    ),
+) -> None:
+    """판정 결과와 읽기 전용 조사 도구를 MCP 서버(stdio)로 노출합니다.
+
+    MCP 클라이언트(Claude Code 등)가 이 명령을 실행합니다. 식별정보는 가린 값만 내보내고,
+    AWS는 판정 결과와 같은 계정의 읽기 전용 점검 세션으로만 조회합니다. 표준 출력은 MCP
+    통신에 쓰므로 안내 메시지는 표준 오류로 출력합니다.
+    """
+    snapshot_store = SnapshotStore(store)
+    findings = _findings_path(snapshot_store, findings, account_id, err=True)
+    audit = _audit_report(snapshot_store, findings)
+    try:
+        scan = open_scan(
+            profile=profile,
+            region=region,
+            regions=list(audit.scan.regions),
+            expected_account_id=audit.scan.account_id,
+        )
+    except SessionError as exc:
+        _abort(str(exc), EXIT_SESSION)
+    log_path = default_log_path(snapshot_store.root, audit)
+    typer.echo(f"MCP 서버: 계정 {scan.account_id}, 점검 {audit.scan.scan_id}", err=True)
+    typer.echo(f"호출 로그: {log_path}", err=True)
+    session = McpSession(audit, ToolContext(scan), log_path, max_calls=max_calls)
+    serve_stdio(build_server(session))

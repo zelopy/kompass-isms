@@ -550,3 +550,30 @@ def test_evidence_is_also_a_report_format(aws: None, store: Path) -> None:
 def test_evidence_without_findings(store: Path) -> None:
     result = runner.invoke(app, ["evidence", "--store", str(store)])
     assert result.exit_code == EXIT_SNAPSHOT
+
+
+# --- MCP 서버 ---
+
+
+def test_mcp_serves_session_without_stdout_noise(
+    aws: None, store: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _scanned(store)
+    served: list[Any] = []
+    monkeypatch.setattr("kompass.cli.serve_stdio", served.append)
+    result = runner.invoke(app, ["mcp", "--store", str(store), "--profile", "audit"])
+    assert result.exit_code == 0, result.output
+    assert result.stdout == ""  # 표준 출력은 MCP 통신 전용이다
+    assert "MCP 서버: 계정 123456789012" in result.stderr
+    [server] = served
+    assert server.name == "kompass"
+
+
+def test_mcp_rejects_other_account(aws: None, store: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _scanned(store)
+    served: list[Any] = []
+    monkeypatch.setattr("kompass.cli.serve_stdio", served.append)
+    monkeypatch.setenv("MOTO_ACCOUNT_ID", "999999999999")
+    result = runner.invoke(app, ["mcp", "--store", str(store), "--profile", "audit"])
+    assert result.exit_code == EXIT_SESSION and served == []
+    assert result.stdout == ""
