@@ -179,3 +179,68 @@ def test_control_fail_from_rule() -> None:
 def test_control_with_only_skipped_rules_is_not_evaluated() -> None:
     report = _report(skipped=("IAM-004",))
     assert _control(report, "2.5.4").outcome == ItemOutcome.NOT_EVALUATED
+
+
+# --- 증적 요청 목록 (ADR-037) ---
+
+
+def _group(report: AuditReport, code: str) -> Any:
+    return next((g for g in report.evidence_requests if g.code == code), None)
+
+
+def test_partial_and_manual_items_always_get_requests() -> None:
+    report = _report(_finding("SG-001", Status.PASS, "sg-1"))
+    codes = {g.code for g in report.evidence_requests}
+    non_full = {c for c, i in MAPPINGS.kisa_items.items() if i.automation != "full"}
+    assert non_full <= codes
+    assert _group(report, "CA-09").targets == ()  # PASS는 확인 대상이 아니다
+
+
+def test_settled_full_item_gets_no_requests() -> None:
+    report = _report(
+        _finding("IAM-001", Status.PASS),
+        _finding("IAM-003", Status.FAIL, "alice"),
+        _finding("IAM-009", Status.PASS),
+        _finding("CT-001", Status.PASS),
+    )
+    assert _group(report, "CA-03") is None  # 취약으로 확정: 증적이 아니라 조치 대상
+    assert _group(report, "CA-13") is None
+
+
+def test_unsettled_full_items_get_requests() -> None:
+    report = _report(
+        _finding("IAM-001", Status.PASS),
+        _finding("IAM-003", Status.PASS, "alice"),
+        _finding("IAM-009", Status.REVIEW, "saml-idp"),
+        _finding("CT-001", Status.ERROR),
+        skipped=("S3-005",),
+    )
+    ca03 = _group(report, "CA-03")
+    assert ca03.outcome == ItemOutcome.REVIEW and "검토 필요" in ca03.reason
+    assert [t.finding_key for t in ca03.targets] == ["IAM-009:-:saml-idp"]
+    assert "수집 실패" in _group(report, "CA-13").reason
+    assert _group(report, "CA-16").outcome == ItemOutcome.NOT_EVALUATED
+    assert "자동 점검 룰 없음" in _group(report, "CA-11").reason  # 룰이 없는 full 항목
+
+
+def test_evidence_targets_are_review_and_error_findings() -> None:
+    report = _report(
+        _finding("IAM-007", Status.REVIEW, "admins"),
+        _finding("IAM-008", Status.ERROR),
+        _finding("IAM-002", Status.FAIL),
+        _finding("IAM-007", Status.PASS, "dev"),
+    )
+    ca02 = _group(report, "CA-02")
+    assert {(t.rule_id, t.status) for t in ca02.targets} == {
+        ("IAM-007", Status.REVIEW),
+        ("IAM-008", Status.ERROR),
+    }
+    assert ca02.requests == MAPPINGS.evidence["CA-02"].requests
+    assert ca02.verified is False
+
+
+def test_evidence_requests_do_not_change_status() -> None:
+    findings = (_finding("IAM-007", Status.REVIEW, "admins"), _finding("SG-001", Status.FAIL))
+    report = _report(*findings)
+    assert [f.status for f in report.findings] == [Status.REVIEW, Status.FAIL]
+    assert _item(report, "CA-02").outcome == ItemOutcome.REVIEW

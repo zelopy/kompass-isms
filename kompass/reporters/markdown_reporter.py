@@ -5,10 +5,19 @@ from collections import Counter
 
 import yaml
 
-from kompass.models import AuditReport, Finding, Investigation, ItemOutcome, RuleExplanation
+from kompass.models import (
+    AuditReport,
+    EvidenceRequestGroup,
+    Finding,
+    Investigation,
+    ItemOutcome,
+    RuleExplanation,
+)
 from kompass.reporters._format import (
     ACTION_STATUSES,
     DISCLAIMER,
+    EVIDENCE_NOTICE,
+    EVIDENCE_UNVERIFIED,
     EXPLANATION_NOTICE,
     INVESTIGATION_NOTICE,
     OUTCOME_LABELS,
@@ -18,6 +27,7 @@ from kompass.reporters._format import (
     STATUS_LABELS,
     STATUS_ORDER,
     compact_json,
+    evidence_summary,
     explanation_summary,
     investigation_summary,
     kst,
@@ -275,6 +285,42 @@ def _investigation_section(report: AuditReport) -> list[str]:
     return lines
 
 
+def _evidence_group(group: EvidenceRequestGroup) -> list[str]:
+    lines = [
+        "",
+        f"### {group.code} {group.title} ({group.importance}, {group.automation.value}, "
+        f"결과: {OUTCOME_LABELS[group.outcome]})",
+        "",
+        f"사유: {_text(group.reason)}",
+        "",
+        f"| 번호 | 요청 증적 | 확인 목적 | 원문 근거 ({group.page}쪽) |",
+        "|---|---|---|---|",
+    ]
+    lines += [_row(r.id, r.request, r.purpose, f'"{r.basis}"') for r in group.requests]
+    if group.targets:
+        lines += ["", f"확인 대상 ({len(group.targets)}건):", ""]
+        lines += [_row("룰", "결과", "리소스", "리전", "내용"), "|---|---|---|---|---|"]
+        lines += [
+            _row(t.rule_id, STATUS_LABELS[t.status], t.resource, t.region or "-", t.message)
+            for t in group.targets
+        ]
+    return lines
+
+
+def _evidence_section(report: AuditReport) -> list[str]:
+    groups = report.evidence_requests
+    if not groups:
+        return []
+    unverified = [g.code for g in groups if not g.verified]
+    lines = ["", "## 증적 요청 목록", "", f"> {EVIDENCE_NOTICE}"]
+    if unverified:
+        lines.append(f"> {EVIDENCE_UNVERIFIED}")
+    lines += ["", "담당자 배포용 요청서(xlsx)는 `kompass evidence`로 만듦."]
+    for group in groups:
+        lines += _evidence_group(group)
+    return lines
+
+
 def render_markdown(report: AuditReport) -> str:
     scan, evaluation = report.scan, report.evaluation
     lines: list[str] = [
@@ -299,6 +345,7 @@ def render_markdown(report: AuditReport) -> str:
         _row("보고서 생성", kst(report.generated_at)),
         _row("kompass 버전", evaluation.kompass_version),
         _row("매핑 데이터", report.mapping_digest[:12]),
+        _row("증적 요청", evidence_summary(report)),
         _row("AI 해설", explanation_summary(report)),
         _row("추가 조사", investigation_summary(report)),
         "",
@@ -375,6 +422,7 @@ def render_markdown(report: AuditReport) -> str:
     else:
         lines.append("결과가 없음.")
 
+    lines += _evidence_section(report)
     lines += _explanation_section(report)
     lines += _investigation_section(report)
 

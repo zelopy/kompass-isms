@@ -525,3 +525,28 @@ def test_investigate_rejects_other_account(
     result = runner.invoke(app, args)
     assert result.exit_code == EXIT_SESSION
     assert fake_agent.tasks == []
+
+
+# --- 증적 요청서 ---
+
+
+def test_evidence_writes_request_workbook(aws: None, store: Path) -> None:
+    _scanned(store)
+    result = runner.invoke(app, ["evidence", "--store", str(store)])
+    assert result.exit_code == 0, result.output
+    assert "증적 요청: KISA 항목" in result.output and "초안입니다" in result.output
+    [path] = store.rglob("*.evidence.xlsx")
+    assert path.parent == store / "123456789012"
+    assert f"요청서: {path}" in result.output.replace("\n", "")
+
+
+def test_evidence_is_also_a_report_format(aws: None, store: Path) -> None:
+    _scanned(store)
+    result = runner.invoke(app, ["report", "--store", str(store), "--format", "evidence"])
+    assert result.exit_code == 0, result.output
+    assert len(list(store.rglob("*.evidence.xlsx"))) == 1
+
+
+def test_evidence_without_findings(store: Path) -> None:
+    result = runner.invoke(app, ["evidence", "--store", str(store)])
+    assert result.exit_code == EXIT_SNAPSHOT

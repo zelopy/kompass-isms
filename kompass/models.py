@@ -132,6 +132,22 @@ class RuleMapping(_Frozen):
     isms_p_verified: bool
 
 
+class EvidenceRequest(_Frozen):
+    """담당자에게 요청할 증적 하나 (`mappings/evidence_requests.yaml`, ADR-037)."""
+
+    id: str  # "CA-01-1" (항목 코드 + 순번)
+    request: str  # 요청 증적
+    purpose: str  # 확인 목적
+    basis: str  # 근거가 된 KISA 원문 구절
+
+
+class EvidenceCatalogItem(_Frozen):
+    """KISA 항목 하나의 증적 요청 목록."""
+
+    verified: bool  # 요청 문구를 사용자가 원문과 대조해 확인했다
+    requests: tuple[EvidenceRequest, ...]
+
+
 class Finding(_Frozen):
     """룰 하나가 리소스 하나에 내린 판정."""
 
@@ -229,17 +245,45 @@ class IsmsPControlResult(_Frozen):
     rule_ids: tuple[str, ...]
 
 
+class EvidenceTarget(_Frozen):
+    """증적 요청과 함께 담당자가 확인할 리소스 (검토 필요·확인 불가 finding)."""
+
+    finding_key: str
+    rule_id: str
+    resource: str
+    region: str | None
+    status: Status
+    message: str
+
+
+class EvidenceRequestGroup(_Frozen):
+    """KISA 항목 하나에 대해 담당자에게 요청할 증적 (ADR-037). 판정에는 영향이 없다."""
+
+    code: str
+    title: str
+    importance: KisaImportance
+    page: int
+    automation: Automation
+    outcome: ItemOutcome
+    reason: str  # 사람의 확인이 필요한 이유
+    verified: bool  # 요청 문구의 원문 대조 확인 여부
+    requests: tuple[EvidenceRequest, ...]
+    targets: tuple[EvidenceTarget, ...]
+
+
 class AuditReport(_Frozen):
     """보고서 원본 데이터. 리포터(JSON·Markdown·Excel)는 이것만 읽는다."""
 
     format_version: Literal[1] = 1
     scan: ScanManifest
     evaluation: EvaluationReport
-    mapping_digest: str  # 매핑 데이터 세 파일의 SHA-256
+    mapping_digest: str  # 매핑 데이터 파일의 SHA-256
     generated_at: UtcDatetime
     kisa_items: tuple[KisaItemResult, ...]
     isms_p_controls: tuple[IsmsPControlResult, ...]
     findings: tuple[Finding, ...]  # 매핑을 붙인 finding
+    # 담당자 증적 요청 목록 (ADR-037). 매핑 데이터로 정해지며 LLM을 쓰지 않는다
+    evidence_requests: tuple[EvidenceRequestGroup, ...] = ()
     # LLM 해설 (참고). 같은 판정 결과를 해설한 것만 붙는다. 판정에는 영향이 없다 (원칙 1)
     explanations: "ExplanationReport | None" = None
 

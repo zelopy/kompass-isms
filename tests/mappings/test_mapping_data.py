@@ -98,3 +98,42 @@ def test_coverage_md_summary_matches() -> None:
         assert item.page == int(page), code
         assert item.automation == Automation(automation), code
         assert _expand(rule_cell) == set(DATA.rules_for_item(code)), code
+
+
+# --- 증적 요청 카탈로그 (ADR-037) ---
+
+
+def test_every_kisa_item_has_evidence_requests() -> None:
+    assert set(DATA.evidence) == set(DATA.kisa_items)
+    for code, item in DATA.evidence.items():
+        assert item.requests, code
+        assert [r.id for r in item.requests] == [
+            f"{code}-{n}" for n in range(1, len(item.requests) + 1)
+        ]
+
+
+def test_evidence_requests_are_marked_unverified() -> None:
+    # 요청 문구는 원문을 근거로 작성한 것이라 사용자가 확인하기 전까지 초안이다 (원칙 7)
+    assert not any(item.verified for item in DATA.evidence.values())
+
+
+def test_evidence_request_sentences_are_terse() -> None:
+    # 보고서 문장은 개조식 명사형으로 끝맺는다 (CLAUDE.md)
+    for item in DATA.evidence.values():
+        for r in item.requests:
+            for text in (r.request, r.purpose):
+                assert not text.rstrip(".").endswith(("다", "요")), text
+
+
+def test_evidence_basis_quotes_exist_in_source() -> None:
+    # 원문 색인은 커밋하지 않으므로(ADR-012) 색인이 있는 환경에서만 대조한다
+    from kompass.interpreter.sources import SourceIndexError, SourceLookup, load_index
+
+    try:
+        lookup = SourceLookup(load_index())
+    except SourceIndexError:
+        pytest.skip("원문 색인 없음 (knowledge/SOURCES.md)")
+    for code, item in DATA.evidence.items():
+        for r in item.requests:
+            assert lookup.contains_quote("kisa", code, r.basis), (r.id, r.basis)
+            assert not lookup.is_boilerplate("kisa", r.basis), (r.id, r.basis)

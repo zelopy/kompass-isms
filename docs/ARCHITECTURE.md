@@ -37,6 +37,7 @@ kompass-isms/
 │   │   └── cloudtrail/
 │   ├── mappings/
 │   │   ├── rules.yaml       # 룰 → KISA → ISMS-P
+│   │   ├── evidence_requests.yaml  # KISA 항목별 담당자 증적 요청 (ADR-037)
 │   │   └── mapper.py
 │   ├── interpreter/         # 3단계
 │   │   ├── llm.py           # 공급자 인터페이스, Claude 구현체 (ADR-030)
@@ -230,7 +231,7 @@ IAM 역할을 `SecurityAudit`로 제한하는 것과 별개로, 코드 레벨에
 
 ## 매핑 데이터
 
-매핑은 `kompass/mappings/`의 YAML 파일 3개로 나눈다 (ADR-025). 중요도와 자동화 분류는 KISA 항목의 속성이므로 룰마다 적지 않는다.
+매핑은 `kompass/mappings/`의 YAML 파일 4개로 나눈다 (ADR-025, ADR-037). 중요도와 자동화 분류는 KISA 항목의 속성이므로 룰마다 적지 않는다.
 
 ```yaml
 # kisa_items.yaml — 항목 속성의 정본 (COVERAGE.md 요약표와 테스트로 대조)
@@ -250,9 +251,19 @@ rules:
 # isms_p_controls.yaml — 별표 7의 101개 통제항목 번호와 명칭
 controls:
   "2.10.2": 클라우드 보안
+
+# evidence_requests.yaml — KISA 항목별 담당자 증적 요청 (근거 구절은 원문 색인과 테스트로 대조)
+items:
+  CA-09:
+    verified: false             # 요청 문구를 사용자가 원문과 대조해 확인했는가
+    requests:
+      - request: 보안그룹·방화벽 규칙 주기적 검토 기록
+        purpose: 접근 제어 정책의 주기적 검토 수행 여부 확인
+        basis: 접근 제어 정책을 주기적으로 검토하고 불필요한 규칙이 존재하지 않는 경우
 ```
 
-- 매핑은 판정(`findings.json`) 때가 아니라 보고서를 만들 때 붙인다. 매핑을 고쳐도 다시 판정할 필요 없이 보고서만 다시 만든다. 보고서에는 세 파일의 SHA-256을 남긴다.
+- 매핑은 판정(`findings.json`) 때가 아니라 보고서를 만들 때 붙인다. 매핑을 고쳐도 다시 판정할 필요 없이 보고서만 다시 만든다. 보고서에는 네 파일의 SHA-256을 남긴다.
+- 증적 요청 목록(`AuditReport.evidence_requests`)도 보고서를 만들 때 정한다. partial·manual 항목은 항상, full 항목은 결과가 확정되지 않았을 때(검토 필요·확인 불가·점검하지 않음·미구현)만 넣고, 그 항목 룰의 검토 필요·확인 불가 finding을 확인 대상으로 붙인다. LLM을 쓰지 않는다.
 - `kisa_verified`(원문 근거를 사용자가 확인)와 `isms_p_verified`(공식 대응표가 없는 초안)를 나눠 기록하고, 보고서에 ISMS-P 매핑이 초안임을 표시한다.
 
 ## 설정

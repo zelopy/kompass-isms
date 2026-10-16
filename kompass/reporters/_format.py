@@ -100,3 +100,21 @@ def investigation_summary(report: AuditReport) -> str:
         f"{investigated.model} (effort {investigated.effort}), {kst(investigated.generated_at)}, "
         f"근거 검증됨 {verified} · 검증되지 않음 {unverified} · 실패 {len(investigated.failures)}"
     )
+
+
+# --- 증적 요청 ---
+
+EVIDENCE_NOTICE = (
+    "자동 점검만으로 확인할 수 없는 판단 기준에 대해 담당자에게 요청할 증적임. 판정은 바꾸지 않음. "
+    "요청 문구는 KISA 원문 구절(원문 근거)을 바탕으로 작성한 것이며 원문이 아님."
+)
+EVIDENCE_UNVERIFIED = "요청 문구는 원문 대조 확인 전 초안임."
+
+
+def evidence_summary(report: AuditReport) -> str:
+    groups = report.evidence_requests
+    if not groups:
+        return "없음"
+    requests = sum(len(g.requests) for g in groups)
+    targets = sum(len(g.targets) for g in groups)
+    return f"KISA 항목 {len(groups)}개, 요청 {requests}건, 확인 대상 리소스 {targets}건"

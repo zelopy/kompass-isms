@@ -3,8 +3,9 @@
 - `kisa_items.yaml`: KISA 클라우드 항목의 속성 (이름, 중요도, 쪽, 자동화 분류, ISMS-P 후보)
 - `rules.yaml`: 룰 → KISA 항목, 룰별 ISMS-P 후보, 확인 여부
 - `isms_p_controls.yaml`: ISMS-P 통제항목 101개 (별표 7)
+- `evidence_requests.yaml`: KISA 항목별 담당자 증적 요청 목록 (ADR-037)
 
-세 파일의 SHA-256(`digest`)을 보고서에 남겨, 어떤 매핑으로 보고서를 만들었는지 재현할 수 있게 한다.
+네 파일의 SHA-256(`digest`)을 보고서에 남겨, 어떤 매핑으로 보고서를 만들었는지 재현할 수 있게 한다.
 """
 
 import hashlib
@@ -15,9 +16,9 @@ from typing import Any
 
 import yaml
 
-from kompass.models import KisaItem, RuleMapping
+from kompass.models import EvidenceCatalogItem, EvidenceRequest, KisaItem, RuleMapping
 
-_FILES = ("kisa_items.yaml", "rules.yaml", "isms_p_controls.yaml")
+_FILES = ("kisa_items.yaml", "rules.yaml", "isms_p_controls.yaml", "evidence_requests.yaml")
 _CRLF = bytes([13, 10])
 _LF = bytes([10])
 
@@ -28,7 +29,8 @@ class MappingData:
     rules: dict[str, RuleMapping]
     isms_p_controls: dict[str, str]  # 항목 번호 → 명칭
     isms_p_areas: dict[str, str]  # "1" → "관리체계 수립 및 운영"
-    digest: str  # 세 파일 내용의 SHA-256
+    evidence: dict[str, EvidenceCatalogItem]  # KISA 항목 코드 → 증적 요청 목록
+    digest: str  # 매핑 파일 내용의 SHA-256
 
     def rules_for_item(self, code: str) -> list[str]:
         return [rule_id for rule_id, m in self.rules.items() if code in m.kisa]
@@ -58,5 +60,19 @@ def load_mappings() -> MappingData:
         },
         isms_p_controls={str(k): v for k, v in controls["controls"].items()},
         isms_p_areas={str(k): v for k, v in controls["areas"].items()},
+        evidence={
+            code: _evidence(code, attrs)
+            for code, attrs in parsed["evidence_requests.yaml"]["items"].items()
+        },
         digest=hashlib.sha256(b"".join(raws)).hexdigest(),
+    )
+
+
+def _evidence(code: str, attrs: dict[str, Any]) -> EvidenceCatalogItem:
+    return EvidenceCatalogItem(
+        verified=attrs["verified"],
+        requests=tuple(
+            EvidenceRequest(id=f"{code}-{n}", **request)
+            for n, request in enumerate(attrs["requests"], start=1)
+        ),
     )

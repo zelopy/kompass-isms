@@ -1,4 +1,4 @@
-"""Excel 점검표. 시트: 요약, KISA 항목, 점검 결과(finding 전체), ISMS-P (초안),
+"""Excel 점검표. 시트: 요약, KISA 항목, 점검 결과(finding 전체), ISMS-P (초안), 증적 요청,
 AI 해설 (참고, 해설이 있을 때만).
 
 보안: 보고서에는 점검 대상 계정 안의 누군가가 정할 수 있는 값(ENI 설명, 태그, 리소스 이름 등)이
@@ -19,12 +19,15 @@ from openpyxl.utils import get_column_letter
 from kompass.models import AuditReport, ItemOutcome
 from kompass.reporters._format import (
     DISCLAIMER,
+    EVIDENCE_NOTICE,
+    EVIDENCE_UNVERIFIED,
     EXPLANATION_NOTICE,
     OUTCOME_LABELS,
     PRIORITY_LABELS,
     SCHEME_LABELS,
     STATUS_LABELS,
     STATUS_ORDER,
+    evidence_summary,
     explanation_summary,
     investigation_summary,
     kst,
@@ -107,6 +110,7 @@ def _summary(sheet: Any, report: AuditReport) -> None:
             ", ".join(f"{STATUS_LABELS[s]} {finding_counts.get(s, 0)}" for s in STATUS_ORDER),
         ),
         ("건너뛴 룰 (양호 아님)", ", ".join(evaluation.skipped_rules) or "없음"),
+        ("증적 요청", evidence_summary(report)),
         ("AI 해설 (참고)", explanation_summary(report)),
         ("추가 조사 (참고)", investigation_summary(report)),
         *([("AI 해설 주의", EXPLANATION_NOTICE)] if report.explanations is not None else []),
@@ -195,6 +199,9 @@ def render_xlsx(report: AuditReport) -> bytes:
         [9, 26, 34, 18, 20, 40],
         outcome_column="결과",
     )
+
+    if report.evidence_requests:
+        _evidence_sheet(book.create_sheet("증적 요청"), report)
 
     if report.explanations is not None:
         _explanation_sheet(book.create_sheet("AI 해설 (참고)"), report)
@@ -338,3 +345,93 @@ def _investigation_sheet(sheet: Any, report: AuditReport) -> None:
         ]
     rows += [(f.rule_id, "조사 실패", "", f.error, "") for f in investigated.failures]
     _table(sheet, ["룰", "구분", "표시", "내용", "근거·결과"], rows, [9, 14, 30, 90, 20])
+
+
+# --- 증적 요청 (ADR-037) ---
+
+_EVIDENCE_COLUMNS = ["번호", "KISA 항목", "항목명", "결과", "요청 증적", "확인 목적", "원문 근거"]
+_EVIDENCE_WIDTHS = [9, 9, 22, 14, 50, 40, 40]
+
+
+def _evidence_rows(report: AuditReport) -> list[tuple[Any, ...]]:
+    return [
+        (
+            r.id,
+            g.code,
+            g.title,
+            OUTCOME_LABELS[g.outcome],
+            r.request,
+            r.purpose,
+            f'"{r.basis}" ({g.page}쪽)',
+        )
+        for g in report.evidence_requests
+        for r in g.requests
+    ]
+
+
+def _target_rows(report: AuditReport) -> list[tuple[Any, ...]]:
+    return [
+        (g.code, t.rule_id, STATUS_LABELS[t.status], t.resource, t.region or "-", t.message)
+        for g in report.evidence_requests
+        for t in g.targets
+    ]
+
+
+_TARGET_COLUMNS = ["KISA 항목", "룰", "결과", "리소스", "리전", "내용"]
+_TARGET_WIDTHS = [9, 9, 12, 40, 16, 70]
+
+
+def _evidence_sheet(sheet: Any, report: AuditReport) -> None:
+    reasons = {g.code: g.reason for g in report.evidence_requests}
+    counts = Counter(g.code for g in report.evidence_requests for _ in g.targets)
+    rows = [(*row, reasons[row[1]], counts.get(row[1], 0)) for row in _evidence_rows(report)]
+    _table(
+        sheet,
+        [*_EVIDENCE_COLUMNS, "사유", "확인 대상 리소스"],
+        rows,
+        [*_EVIDENCE_WIDTHS, 40, 12],
+        outcome_column="결과",
+    )
+
+
+def render_evidence_xlsx(report: AuditReport) -> bytes:
+    """담당자에게 보내는 증적 요청서. 제출 현황을 적을 빈 칸을 둔다."""
+    scan = report.scan
+    book = Workbook()
+    guide = book.active
+    guide.title = "안내"
+    notices = [EVIDENCE_NOTICE]
+    if any(not g.verified for g in report.evidence_requests):
+        notices.append(EVIDENCE_UNVERIFIED)
+    rows: list[tuple[str, Any]] = [
+        ("안내", " ".join(notices)),
+        ("계정", scan.account_id),
+        ("점검 ID", scan.scan_id),
+        ("판정 시각", kst(report.evaluation.evaluated_at)),
+        ("요청서 생성", kst(report.generated_at)),
+        ("요청 범위", evidence_summary(report)),
+        ("작성 방법", "요청 증적 시트의 담당자·제출일·제출 여부·비고 칸을 채워 회신"),
+    ]
+    for r, (label, value) in enumerate(rows, start=1):
+        _set(guide, r, 1, label).font = Font(bold=True)
+        _set(guide, r, 2, value).alignment = _WRAP
+    guide.column_dimensions["A"].width = 14
+    guide.column_dimensions["B"].width = 100
+
+    _table(
+        book.create_sheet("요청 증적"),
+        [*_EVIDENCE_COLUMNS, "담당자", "제출일", "제출 여부", "비고"],
+        [(*row, "", "", "", "") for row in _evidence_rows(report)],
+        [*_EVIDENCE_WIDTHS, 12, 12, 10, 30],
+        outcome_column="결과",
+    )
+    _table(
+        book.create_sheet("확인 대상"),
+        _TARGET_COLUMNS,
+        _target_rows(report),
+        _TARGET_WIDTHS,
+        outcome_column="결과",
+    )
+    buffer = io.BytesIO()
+    book.save(buffer)
+    return buffer.getvalue()

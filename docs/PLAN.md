@@ -83,7 +83,8 @@
 - [x] collector 기능을 에이전트 도구로 노출 (읽기 전용 가드 유지) — 목적별 읽기 도구 12개(`agent/tools.py`), 결과에 새 이름 목록 첨부, 허용 목록 확대(ADR-035·036)
 - [x] 에이전트 루프: 도구 러너 + 공급자 인터페이스, 마스킹 다리, 예산(호출·반복·토큰), 조사 로그 — `agent/llm.py`·`agent/toolbox.py`, 실제 API로 러너+구조화 출력 확인
 - [x] 추가 조사 루프: 예) 퍼블릭 S3 발견 → 버킷 정책·ACL·CloudTrail 데이터 이벤트 추가 조회 — 사실마다 도구 호출 참조 검증(`agent/investigator.py`), `kompass investigate`(최대 비용 확인, `--dry-run`), 보고서 "추가 조사 (참고)" 절·시트
-- [ ] 수동 항목 인터뷰: 담당자에게 증적 요청 (업로드 문서 RAG 검토는 5단계로, ADR-035)
+- [x] 수동 항목 인터뷰: 담당자에게 증적 요청 (업로드 문서 RAG 검토는 5단계로, ADR-035) — 고정 카탈로그 `mappings/evidence_requests.yaml`(근거 구절 원문 대조), 보고서 "증적 요청 목록" 절·시트, `kompass evidence` 요청서(ADR-037)
+  - [ ] 사용자 확인: 요청 문구 원문 대조 후 `verified: true`
 - [ ] MCP 서버로 도구 노출
 - [x] 에이전트가 status를 변경할 수 없음을 보장하는 테스트 — 응답 스키마에 status·severity 없음, 조사 전후 finding 불변, Finding 동결 (`tests/agent/test_investigator.py`)
 

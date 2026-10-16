@@ -1,0 +1,190 @@
+# 증적 요청 카탈로그 (ADR-037)
+#
+# KISA 클라우드 항목별로 자동 점검만으로 확인할 수 없는 조건에 대해 담당자에게 요청할 증적이다.
+# 요청 문구는 KISA 판단 기준·점검 및 조치 사례를 근거로 작성한 것이며 원문이 아니다.
+#   verified: 요청 문구를 사용자가 원문과 대조해 확인했는가. 확인 전까지 false (원칙 7)
+#   request: 요청 증적 (보고서 문장, 개조식)
+#   purpose: 확인 목적 (개조식)
+#   basis: 근거가 된 KISA 원문 구절. 원문 색인이 있으면 해당 항목 원문에 있는지 테스트로 검사한다
+#
+# 보고서에 넣는 항목: 자동화 분류가 partial·manual인 항목 전부, full 항목은 결과가 검토 필요·
+# 확인 불가·점검하지 않음·수동 점검(미구현)일 때만 (kompass/mappings/mapper.py).
+
+items:
+  CA-01:
+    verified: false
+    requests:
+      - request: IAM 사용자·콘솔 로그인 계정 목록과 계정별 사용자의 재직·직무 상태 대조표
+        purpose: 퇴직·전직·휴직 등으로 불필요해진 계정의 활성 여부 확인
+        basis: 퇴직, 전직, 휴직 등의 사유로 사용하지 않는 계정
+      - request: 최근 계정 정리(삭제·비활성화) 내역 또는 계정 관리 절차서
+        purpose: 퇴사자·장기 미사용 계정을 삭제·비활성화하는 절차의 운영 여부 확인
+        basis: 퇴사자 및 장기 미사용 계정은 삭제 또는 비활성화
+  CA-02:
+    verified: false
+    requests:
+      - request: 사용자·그룹별 부여 권한과 직무(역할) 대조표
+        purpose: 목적에 맞지 않게 할당된 역할·권한 여부 확인
+        basis: 사용자/그룹의 목적에 맞게 역할/권한이 할당
+      - request: 권한 정책 주기적 검토 기록 (검토일, 검토자, 조치 결과)
+        purpose: 권한 오남용 방지를 위한 주기적 정책 검토 수행 여부 확인
+        basis: 권한 오남용이 발생하지 않도록 주기적인 정책 검토
+      - request: 공용 계정 존재 여부와 관리자·일반 사용자 계정 분리 현황
+        purpose: 1인 1계정 운영과 관리자·일반 사용자 권한 분리 여부 확인
+        basis: 1인 1계정으로 운영
+      - request: 루트(최초 가입) 계정 사용 내역과 사용 사유
+        purpose: 최상위 관리자 계정의 서비스 운영 활용 여부 확인
+        basis: 최상위 관리자(최초 가입계정) 계정은 서비스 운영에 활용 금지
+  CA-03:
+    verified: false
+    requests:
+      - request: 외부 IdP(SAML·OIDC)·IAM Identity Center 사용 시 해당 IdP의 2차 인증 강제 설정 자료
+        purpose: IAM 사용자가 아닌 로그인 경로의 계정별 2차 인증 설정 여부 확인
+        basis: 각 계정별 2차 인증이 설정된 경우
+  CA-04:
+    verified: false
+    requests:
+      - request: 로그인 시도 횟수 제한 설정 자료 (IAM Identity Center·외부 IdP의 계정 잠금 정책)
+        purpose: IAM 비밀번호 정책으로 확인할 수 없는 로그인 시도 제한 설정 여부 확인
+        basis: 로그인 시도 횟수 제한 설정
+      - request: 기관 비밀번호 정책 문서
+        purpose: 비밀번호 정책이 기관 보안 정책에 맞게 설정되었는지 확인
+        basis: 비밀번호 정책을 해당 기관의 보안 정책에 적합하게 설정
+  CA-05:
+    verified: false
+    requests:
+      - request: 인스턴스 생성·삭제·수정·접속 권한 보유 사용자·역할 목록과 권한 부여 사유
+        purpose: 인스턴스 접근 권한의 적절한 부여 여부 확인
+        basis: 인스턴스 생성, 삭제, 수정 등에 대한 접근 권한을 설정
+      - request: 인스턴스 생성·접근 권한 부여 기준 (관리자 계정 한정 여부)
+        purpose: 인스턴스 생성·접근 권한을 관리자 계정에 별도로 부여하는지 확인
+        basis: 인스턴스 생성 및 접근 권한을 관리자 계정에 별도로 부여
+  CA-06:
+    verified: false
+    requests:
+      - request: 방화벽·로드 밸런서·DNS 등 네트워크 리소스 생성·삭제·수정 권한 보유 사용자·역할 목록과 권한 부여 사유
+        purpose: 네트워크 서비스 리소스 접근 권한의 적절한 부여 여부 확인
+        basis: 네트워크 리소스 생성, 삭제, 수정 등에 대한 접근 권한을 설정
+      - request: 네트워크 리소스 생성·접근 권한 부여 기준 (관리자 계정 한정 여부)
+        purpose: 네트워크 리소스 생성·접근 권한을 관리자 계정에 별도로 부여하는지 확인
+        basis: 네트워크 서비스 리소스 생성 및 접근 권한을 관리자 계정에 별도로 부여
+  CA-07:
+    verified: false
+    requests:
+      - request: 네트워크 구성도 (공개용·내부 서브넷 구분과 서브넷별 배치 리소스)
+        purpose: 공개용 네트워크와 내부 네트워크의 분리 여부 확인
+        basis: 공개용 네트워크와 내부 네트워크를 분리
+      - request: 퍼블릭 서브넷에 배치한 리소스별 외부 공개 필요 사유
+        purpose: 퍼블릭·프라이빗 서브넷의 리소스 혼용 여부 확인
+        basis: Public/Private 서브넷에 네트워크 리소스를 혼용하여 사용할 경우
+  CA-08:
+    verified: false
+    requests:
+      - request: 공인 IP가 할당된 리소스 목록과 리소스별 공인 IP 필요 사유
+        purpose: 내부용 리소스의 공인 IP 보유 여부 확인
+        basis: 각 서비스 리소스에 공인 IP주소가 존재하지 않고
+      - request: 가상 네트워크 리소스 접근통제 정책
+        purpose: 접근 권한이 없는 사용자의 내부 리소스 접속 차단 정책 수립 여부 확인
+        basis: 클라우드 가상 네트워크 리소스 접근에 대한 접근통제 정책을 수립
+  CA-09:
+    verified: false
+    requests:
+      - request: 보안그룹·방화벽 규칙 주기적 검토 기록 (검토 주기, 최근 검토일, 검토 결과)
+        purpose: 접근 제어 정책의 주기적 검토 수행 여부 확인
+        basis: 접근 제어 정책을 주기적으로 검토하고 불필요한 규칙이 존재하지 않는 경우
+      - request: 외부 허용 규칙별 허용 사유와 승인 내역 (출발지 IP 범위, 프로토콜·포트, 용도)
+        purpose: 남아 있는 허용 규칙의 필요성 확인
+        basis: 출발지와 목적지의 IP주소 범위, 프로토콜/포트
+      - request: 관리자 접속 허용 IP·계정 목록
+        purpose: 관리자 IP·특정 IP·계정으로 접속을 제한하는지 확인
+        basis: 관리자 IP 또는 특정 IP 및 계정에서만 접속할 수 있도록 설정
+  CA-10:
+    verified: false
+    requests:
+      - request: 스토리지 접근 제어 정책 주기적 검토 기록 (검토 주기, 최근 검토일, 검토 결과)
+        purpose: 스토리지 접근 제어 정책의 주기적 검토 수행 여부 확인
+        basis: 접근 제어 정책을 주기적으로 검토하는 경우
+      - request: 버킷별 접근 권한 보유 계정·역할 목록과 권한 부여 사유 (공개 버킷은 공개 사유 포함)
+        purpose: 스토리지 리소스에 불필요한 권한이 부여된 계정 여부 확인
+        basis: 스토리지 리소스 접근 권한이 부여된 계정 확인
+  CA-11:
+    verified: false
+    requests:
+      - request: 관계형 데이터베이스(RDS·Aurora 등) 목록과 스토리지 암호화 설정 자료
+        purpose: 데이터베이스 스토리지 암호화 적용 여부 확인
+        basis: 데이터 스토리지 암호화 적용 여부 확인
+      - request: 개인정보 등 중요정보의 DB 저장 시 암호화 적용 내역 (대상 컬럼, 암호화 알고리즘)
+        purpose: 클라우드 스토리지 암호화와 별도로 중요정보 암호화 적용 여부 확인
+        basis: 개인정보 등 중요정보의 경우 DB 저장시 안전한 암호화 알고리즘으로 암호화 적용
+  CA-12:
+    verified: false
+    requests:
+      - request: 중요 정보 이동 구간 목록과 구간별 암호화 방식 (서버 원격 접근, 데이터 이관, 웹·API 통신)
+        purpose: 중요 정보 이동 구간의 암호화 통신 채널 사용 여부 확인
+        basis: 중요 정보가 이동하는 구간에 암호화된 통신 채널 사용 여부 확인
+      - request: 로드 밸런서·웹 서버의 TLS 버전·암호 스위트 설정 자료
+        purpose: 웹·API 통신의 TLS 1.2 이상 사용 여부 확인
+        basis: TLS v1.2 이상, TLS v1.3 권장
+  CA-13:
+    verified: false
+    requests:
+      - request: 사용자 계정 로깅 기관 정책 (기록 대상 이벤트, 저장 위치)
+        purpose: 사용자 계정 로깅 설정이 기관 정책에 맞는지 확인
+        basis: 사용자 계정 로깅 설정이 기관 정책에 따라 설정
+  CA-14:
+    verified: false
+    requests:
+      - request: 인스턴스 로깅 기관 정책과 인스턴스별 OS·애플리케이션 로그 수집 설정 자료
+        purpose: 인스턴스 활동 로그 기록 여부 확인
+        basis: 인스턴스 로깅 설정 적용 및 활동 로그 기록 여부 확인
+      - request: 인스턴스 로그 주기적 검토 기록
+        purpose: 인스턴스 로그의 주기적 검토 수행 여부 확인
+        basis: 인스턴스 로깅의 주기적 검토 수행 여부 확인
+  CA-15:
+    verified: false
+    requests:
+      - request: 데이터베이스 로깅 기관 정책과 DB별 로그 설정 자료 (감사·오류 로그 등)
+        purpose: 관계형 데이터베이스 활동 로그 기록 여부 확인
+        basis: 관계형 데이터베이스 로깅 설정 적용 및 활동 로그 기록 여부 확인
+      - request: 데이터베이스 로그 주기적 검토 기록
+        purpose: 데이터베이스 로그의 주기적 검토 수행 여부 확인
+        basis: 관계형 데이터베이스 로깅의 주기적 검토 수행 여부 확인
+  CA-16:
+    verified: false
+    requests:
+      - request: 버킷 로깅 기관 정책 (로깅 대상 버킷, CloudTrail 데이터 이벤트 사용 여부)
+        purpose: 버킷 로깅 설정이 기관 정책에 맞는지 확인
+        basis: Object 스토리지 버킷 로깅 설정이 기관 정책에 따라 설정
+      - request: 버킷 접근 로그 주기적 검토 기록
+        purpose: 버킷 로그의 주기적 검토 수행 여부 확인
+        basis: Object 스토리지 버킷 로깅의 주기적 검토 수행 여부 확인
+  CA-17:
+    verified: false
+    requests:
+      - request: 로그 보관 기간을 정한 기관 정책
+        purpose: 로그 보관 기간의 기관 정책 수립 여부 확인
+        basis: 클라우드 서비스 로그 보관 기간을 기관 정책에 맞게 수립
+      - request: 로그 저장소별 보존 기간 설정 자료 (CloudWatch Logs 보존 기간, 로그 버킷 수명주기 등)
+        purpose: 로그 보관 주기 설정과 정상 기록 여부 확인
+        basis: 로그 보관 주기 및 정상적인 로그 기록수행 여부 확인
+      - request: 로그 주기적 검토·백업 수행 기록
+        purpose: 로그의 주기적 검토와 백업 수행 여부 확인
+        basis: 로그의 주기적 검토 및 백업 수행 여부 확인
+  CA-18:
+    verified: false
+    requests:
+      - request: 백업·복구 절차서
+        purpose: 기관 정책에 맞는 백업·복구 절차 수립 여부 확인
+        basis: 백업 및 복구 절차를 기관의 정책에 맞게 수립 적용
+      - request: 백업 대상 리소스별 백업 설정과 최근 백업 수행·검토 내역
+        purpose: 주기적 백업 수행과 검토 여부 확인
+        basis: 주기적 백업 수행 여부 및 검토 진행
+  CA-19:
+    verified: false
+    requests:
+      - request: 이상징후 탐지·알림 설정 자료 (GuardDuty 등 탐지 서비스, CloudWatch 경보, 알림 경로)
+        purpose: 가상 리소스 이상징후 알림 설정 적용 여부 확인
+        basis: 모니터링 또는 이상징후 알림 설정 확인
+      - request: 알림 수신 수단과 수신자 목록 (SMS, 이메일 등)
+        purpose: 알림이 담당자에게 전달되도록 설정되었는지 확인
+        basis: SMS, 이메일, 알람 등으로 설정 적용

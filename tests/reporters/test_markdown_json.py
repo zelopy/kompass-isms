@@ -240,3 +240,23 @@ def test_json_includes_investigations() -> None:
     from tests.reporters.sample import INVESTIGATED
 
     assert AuditReport.model_validate_json(render_json(INVESTIGATED)) == INVESTIGATED
+
+
+# --- 증적 요청 (ADR-037) ---
+
+
+def test_evidence_section_lists_requests_and_targets() -> None:
+    section = MD.split("## 증적 요청 목록", 1)[1].split("\n## ", 1)[0]
+    assert "원문 대조 확인 전 초안임" in section
+    assert "### CA-02 사용자 정책 관리 (중, partial, 결과: 점검하지 않음)" in section
+    assert "| CA-02-4 | 루트(최초 가입) 계정 사용 내역과 사용 사유 |" in section
+    assert "확인 대상 (1건):" in section and "| IAM-008 | 검토 필요 | account |" in section
+    assert "### CA-03" in section and "### CA-13" not in section
+    assert "| 증적 요청 | KISA 항목" in MD  # 점검 정보 표
+
+
+def test_evidence_section_precedes_ai_sections() -> None:
+    from tests.reporters.sample import INVESTIGATED
+
+    md = render_markdown(INVESTIGATED)
+    assert md.index("## 증적 요청 목록") < md.index("## AI 해설 (참고)")

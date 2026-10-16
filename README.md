@@ -40,6 +40,9 @@ uv run kompass explain --dry-run          # 대상과 예상 비용만 확인
 uv run kompass explain --report md --report xlsx
 uv run kompass explain --assessment-only --report md   # 종합 위험 평가만 다시 만들기
 
+# 담당자 증적 요청서 (자동 점검으로 확인할 수 없는 항목, LLM·AWS 호출 없음)
+uv run kompass evidence
+
 # 에이전트 추가 조사 (선택, 비용 발생. 취약·검토 필요 결과를 읽기 전용 도구로 더 조회)
 uv run kompass investigate --dry-run      # 대상과 최대 비용만 확인
 uv run kompass investigate --profile <aws-profile> --report md --report xlsx
@@ -57,10 +60,10 @@ uv run python scripts/run_explain_eval.py --variant v1                          
 | `--service` | 수집할 서비스 (`cloudtrail`, `ec2`, `iam`, `s3`). 없으면 전체 |
 | `--config` | 판정 기준값 파일. 없으면 현재 디렉터리의 `kompass.yaml` |
 | `--fail-on` | `fail`·`error`·`review` 이상의 결과가 있으면 종료 코드 1 (CI용) |
-| `--report` / `--format` | 보고서 형식: `md`(Markdown), `xlsx`(Excel 점검표), `json`(전체 데이터) |
+| `--report` / `--format` | 보고서 형식: `md`(Markdown), `xlsx`(Excel 점검표), `json`(전체 데이터), `evidence`(담당자 증적 요청서) |
 
 결과는 어느 폴더에서 실행하든 저장소 최상위의 `reports/` 아래에 저장된다. 다른 위치를 쓰려면 `--store` 옵션이나 `KOMPASS_STORE` 환경 변수를 지정한다. 실제 계정 데이터이므로 `reports/`는 `.gitignore` 대상이며, 폴더 안에도 `.gitignore`가 자동으로 만들어진다.
-- 보고서: `reports/<계정>/<점검 ID>.md`, `.xlsx`, `.report.json`
+- 보고서: `reports/<계정>/<점검 ID>.md`, `.xlsx`, `.report.json`, `.evidence.xlsx`(증적 요청서)
 - 판정 결과: `reports/findings/<계정>/<점검 ID>.findings.json`
 - 해설: `reports/explanations/<계정>/<점검 ID>.explanations.json` (원본 식별정보가 복원된 상태)
 - 추가 조사: `reports/investigations/<계정>/<점검 ID>.investigation.json` (도구 호출 기록 포함)

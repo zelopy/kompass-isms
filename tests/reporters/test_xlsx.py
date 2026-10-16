@@ -6,10 +6,10 @@ from typing import Any
 from openpyxl import load_workbook
 
 from kompass.models import Status
-from kompass.reporters.xlsx_reporter import render_xlsx
+from kompass.reporters.xlsx_reporter import render_evidence_xlsx, render_xlsx
 from tests.reporters.sample import DEFAULT, EXPLAINED, finding, sample_report
 
-SHEETS = ["요약", "KISA 항목", "점검 결과", "ISMS-P (초안)"]
+SHEETS = ["요약", "KISA 항목", "점검 결과", "ISMS-P (초안)", "증적 요청"]
 
 
 def _book(report: Any = DEFAULT) -> Any:
@@ -148,3 +148,39 @@ def test_investigation_sheet() -> None:
         "도구 호출",
         "조사 실패",
     ]
+
+
+# --- 증적 요청 (ADR-037) ---
+
+
+def test_evidence_sheet_lists_requests_with_reasons() -> None:
+    rows = _rows(_book()["증적 요청"])
+    assert rows[0][:4] == ("번호", "KISA 항목", "항목명", "결과")
+    ca02 = [r for r in rows[1:] if r[1] == "CA-02"]
+    assert [r[0] for r in ca02] == ["CA-02-1", "CA-02-2", "CA-02-3", "CA-02-4"]
+    assert all(r[-1] == 1 for r in ca02)  # IAM-008 검토 필요 1건
+    codes = {r[1] for r in rows[1:]}
+    assert "CA-03" in codes  # full 항목이라도 룰을 건너뛰었으면 넣는다
+    assert "CA-13" not in codes  # full 항목은 결과가 확정되면 빠진다
+
+
+def test_evidence_workbook_has_blank_columns_and_targets() -> None:
+    book = load_workbook(io.BytesIO(render_evidence_xlsx(DEFAULT)))
+    assert book.sheetnames == ["안내", "요청 증적", "확인 대상"]
+    guide = [v for row in _rows(book["안내"]) for v in row if v is not None]
+    assert any("원문 대조 확인 전 초안" in str(v) for v in guide)
+    requests = _rows(book["요청 증적"])
+    assert requests[0][-4:] == ("담당자", "제출일", "제출 여부", "비고")
+    assert all(r[-4:] == (None, None, None, None) for r in requests[1:])
+    targets = _rows(book["확인 대상"])
+    assert targets[1:] == [("CA-02", "IAM-008", "검토 필요", "account", "-", DEFAULT_IAM_008)]
+
+
+def test_evidence_target_cells_are_not_formulas() -> None:
+    report = sample_report(finding("IAM-007", Status.REVIEW, "=cmd|' /C calc'!A0"))
+    book = load_workbook(io.BytesIO(render_evidence_xlsx(report)))
+    [cell] = [c for row in book["확인 대상"].iter_rows(min_row=2) for c in row if c.column == 4]
+    assert cell.data_type == "s" and cell.value.startswith("=")
+
+
+DEFAULT_IAM_008 = "루트 비밀번호 사용 이력을 확인할 수 없다"

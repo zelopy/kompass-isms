@@ -58,6 +58,7 @@ from kompass.pipeline import (
     write_report,
     write_reports,
 )
+from kompass.reporters._format import evidence_summary
 from kompass.snapshots import (
     IncompleteScanError,
     SnapshotIntegrityError,
@@ -90,6 +91,7 @@ class ReportFormat(StrEnum):
     MD = "md"
     XLSX = "xlsx"
     JSON = "json"
+    EVIDENCE = "evidence"  # 담당자 증적 요청서 (xlsx)
 
 
 DEFAULT_REPORT_FORMATS = (ReportFormat.MD, ReportFormat.XLSX)
@@ -348,7 +350,9 @@ def scan_command(
     output: Path | None = OutputOption,
     fail_on: FailOn | None = FailOnOption,
     report: list[ReportFormat] | None = typer.Option(
-        None, "--report", help="판정 후 이 형식의 보고서도 만듭니다 (md, xlsx, json). 여러 번 지정."
+        None,
+        "--report",
+        help="판정 후 이 형식의 보고서도 만듭니다 (md, xlsx, json, evidence). 여러 번 지정.",
     ),
 ) -> None:
     """수집과 판정을 이어서 실행합니다."""
@@ -371,13 +375,43 @@ def report_command(
     account_id: str | None = AccountOption,
     store: Path | None = StoreOption,
     formats: list[ReportFormat] | None = typer.Option(
-        None, "--format", help="보고서 형식 (md, xlsx, json). 여러 번 지정. 없으면 md와 xlsx."
+        None,
+        "--format",
+        help="보고서 형식 (md, xlsx, json, evidence). 여러 번 지정. 없으면 md와 xlsx.",
     ),
 ) -> None:
     """판정 결과에 KISA·ISMS-P 매핑(해설이 있으면 해설도)을 붙여 보고서를 만듭니다."""
     snapshot_store = SnapshotStore(store)
     findings = _findings_path(snapshot_store, findings, account_id)
     _reports(snapshot_store, findings, list(formats or DEFAULT_REPORT_FORMATS))
+
+
+@app.command("evidence")
+def evidence_command(
+    findings: Path | None = typer.Option(
+        None, "--findings", help="판정 결과 파일. 없으면 가장 최근에 판정한 결과."
+    ),
+    account_id: str | None = AccountOption,
+    store: Path | None = StoreOption,
+) -> None:
+    """자동 점검만으로 확인할 수 없는 항목에 대해 담당자에게 보낼 증적 요청서(xlsx)를 만듭니다.
+
+    요청 목록은 매핑 데이터로 정해지며 LLM과 AWS를 호출하지 않습니다.
+    """
+    snapshot_store = SnapshotStore(store)
+    findings = _findings_path(snapshot_store, findings, account_id)
+    report = _audit_report(snapshot_store, findings)
+    if not report.evidence_requests:
+        typer.echo("증적을 요청할 항목이 없습니다.")
+        return
+    typer.echo(f"증적 요청: {evidence_summary(report)}")
+    if any(not g.verified for g in report.evidence_requests):
+        typer.echo("참고: 요청 문구는 원문 대조 확인 전 초안입니다.")
+    paths = write_reports(
+        report, [ReportFormat.EVIDENCE.value], default_reports_dir(snapshot_store, report)
+    )
+    for path in paths:
+        typer.echo(f"요청서: {path}")
 
 
 @app.command("explain")
@@ -401,7 +435,9 @@ def explain_command(
         help="저장된 룰별 해설을 그대로 두고 종합 위험 평가만 다시 만듭니다 (LLM 1회).",
     ),
     report: list[ReportFormat] | None = typer.Option(
-        None, "--report", help="해설 후 이 형식의 보고서도 다시 만듭니다 (md, xlsx, json)."
+        None,
+        "--report",
+        help="해설 후 이 형식의 보고서도 다시 만듭니다 (md, xlsx, json, evidence).",
     ),
 ) -> None:
     """조치가 필요한 결과를 룰별로 묶어 LLM 해설을 만듭니다. 판정은 바꾸지 않습니다.
@@ -583,7 +619,9 @@ def investigate_command(
         DEFAULT_MAX_TOTAL_TOKENS, "--max-tokens", min=10_000, help="룰 하나의 토큰 상한(입력+출력)."
     ),
     report: list[ReportFormat] | None = typer.Option(
-        None, "--report", help="조사 후 이 형식의 보고서도 다시 만듭니다 (md, xlsx, json)."
+        None,
+        "--report",
+        help="조사 후 이 형식의 보고서도 다시 만듭니다 (md, xlsx, json, evidence).",
     ),
 ) -> None:
     """취약·검토 필요 결과를 에이전트가 읽기 전용 도구로 추가 조사합니다. 판정은 바꾸지 않습니다.
