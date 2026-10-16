@@ -264,7 +264,7 @@ items:
 ```
 
 - 매핑은 판정(`findings.json`) 때가 아니라 보고서를 만들 때 붙인다. 매핑을 고쳐도 다시 판정할 필요 없이 보고서만 다시 만든다. 보고서에는 네 파일의 SHA-256을 남긴다.
-- 증적 요청 목록(`AuditReport.evidence_requests`)도 보고서를 만들 때 정한다. partial·manual 항목은 항상, full 항목은 결과가 확정되지 않았을 때(검토 필요·확인 불가·점검하지 않음·미구현)만 넣고, 그 항목 룰의 검토 필요·확인 불가 finding을 확인 대상으로 붙인다. LLM을 쓰지 않는다.
+- 증적 요청 목록(`AuditReport.evidence_requests`)도 보고서를 만들 때 정한다. partial·manual 항목은 항상, full 항목은 결과가 확정되지 않았거나(검토 필요·확인 불가·점검하지 않음·미구현) 검토 필요·확인 불가 finding이 있을 때만 넣고, 그 finding을 확인 대상으로 붙인다. LLM을 쓰지 않는다.
 - `kisa_verified`(원문 근거를 사용자가 확인)와 `isms_p_verified`(공식 대응표가 없는 초안)를 나눠 기록하고, 보고서에 ISMS-P 매핑이 초안임을 표시한다.
 
 ## 설정

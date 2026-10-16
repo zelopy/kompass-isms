@@ -207,6 +207,18 @@ def test_settled_full_item_gets_no_requests() -> None:
     assert _group(report, "CA-13") is None
 
 
+def test_failed_full_item_with_review_findings_gets_requests() -> None:
+    # 취약이 확정돼도 외부 IdP처럼 사람이 확인할 결과가 있으면 증적을 요청한다
+    report = _report(
+        _finding("IAM-001", Status.PASS),
+        _finding("IAM-003", Status.FAIL, "alice"),
+        _finding("IAM-009", Status.REVIEW, "saml-idp"),
+    )
+    ca03 = _group(report, "CA-03")
+    assert ca03.outcome == ItemOutcome.FAIL and "취약 판정과 별도로" in ca03.reason
+    assert [t.finding_key for t in ca03.targets] == ["IAM-009:-:saml-idp"]
+
+
 def test_unsettled_full_items_get_requests() -> None:
     report = _report(
         _finding("IAM-001", Status.PASS),
