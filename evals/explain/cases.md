@@ -1,28 +1,41 @@
 # 해설 평가 케이스
 
-총 40개 (실습 가공 16, 보강 24). 모두 가짜 데이터임. 케이스 하나 = 룰 묶음 하나, 해설 대상은 FAIL·ERROR·REVIEW finding임.
+총 60개 (실습 가공 26, 보강 34). 모두 가짜 데이터임. 케이스 하나 = 룰 묶음 하나, 해설 대상은 FAIL·ERROR·REVIEW finding임.
 
 | ID | 출처 | 룰 | 해설 대상 | 전체 | 태그 | 상황 |
 |---|---|---|---|---|---|---|
+| lab-ct-002 | lab | CT-002 | FAIL 1 | 1 | cloudtrail, fail | 실습 결과 CT-002 (CloudTrail 로그 버킷 보존 기간 부족) |
 | lab-iam-003 | lab | IAM-003 | FAIL 1 | 1 | iam, fail | 실습 결과 IAM-003 (콘솔 사용자 MFA 미설정) |
 | lab-iam-004 | lab | IAM-004 | FAIL 1 | 1 | iam, fail | 실습 결과 IAM-004 (비밀번호 정책 미흡) |
 | lab-iam-007 | lab | IAM-007 | FAIL 2, REVIEW 3 | 5 | iam, fail, review | 실습 결과 IAM-007 (관리자 권한 사용자 현황) |
 | lab-iam-008 | lab | IAM-008 | REVIEW 1 | 1 | iam, review | 실습 결과 IAM-008 (루트 계정 최근 사용) |
 | lab-iam-009 | lab | IAM-009 | REVIEW 1 | 1 | iam, review | 실습 결과 IAM-009 (외부 자격증명 공급자 사용 (MFA 확인 필요)) |
+| lab-iam-010 | lab | IAM-010 | REVIEW 5 | 5 | iam, review | 실습 결과 IAM-010 (인스턴스 생성·접근 권한 보유 주체 현황) |
+| lab-iam-011 | lab | IAM-011 | REVIEW 5 | 5 | iam, review | 실습 결과 IAM-011 (네트워크 리소스 변경 권한 보유 주체 현황) |
+| lab-log-001 | lab | LOG-001 | FAIL 2 | 3 | logs, fail | 실습 결과 LOG-001 (보안 로그 보존 기간 부족) |
+| lab-rds-001 | lab | RDS-001 | FAIL 1 | 2 | rds, fail | 실습 결과 RDS-001 (데이터베이스 스토리지 암호화 미적용) |
+| lab-rds-002 | lab | RDS-002 | FAIL 1 | 2 | rds, fail | 실습 결과 RDS-002 (데이터베이스 퍼블릭 접근 허용) |
+| lab-rds-003 | lab | RDS-003 | FAIL 1 | 2 | rds, fail | 실습 결과 RDS-003 (데이터베이스 로그 내보내기 미설정) |
+| lab-rds-004 | lab | RDS-004 | FAIL 1 | 2 | rds, fail | 실습 결과 RDS-004 (자동 백업 보존 기간 부족) |
 | lab-s3-001 | lab | S3-001 | FAIL 1 | 1 | s3, fail | 실습 결과 S3-001 (계정 수준 퍼블릭 액세스 차단 미설정) |
 | lab-s3-002 | lab | S3-002 | FAIL 3 | 5 | s3, fail | 실습 결과 S3-002 (버킷 수준 퍼블릭 액세스 차단 미설정) |
 | lab-s3-003 | lab | S3-003 | FAIL 2 | 5 | s3, fail | 실습 결과 S3-003 (버킷 정책에 의한 퍼블릭 노출) |
 | lab-s3-005 | lab | S3-005 | FAIL 4 | 5 | s3, fail | 실습 결과 S3-005 (서버 액세스 로깅 미설정) |
 | lab-s3-006 | lab | S3-006 | FAIL 1 | 5 | s3, fail | 실습 결과 S3-006 (버킷 ACL에 의한 전체 공개) |
+| lab-s3-007 | lab | S3-007 | FAIL 4 | 5 | s3, fail | 실습 결과 S3-007 (버킷 정책 HTTPS 미강제) |
 | lab-sg-001 | lab | SG-001 | FAIL 2 | 8 | ec2, fail | 실습 결과 SG-001 (관리 포트 전체 개방) |
 | lab-sg-002 | lab | SG-002 | FAIL 1 | 8 | ec2, fail | 실습 결과 SG-002 (전체 포트·프로토콜 개방) |
 | lab-sg-003 | lab | SG-003 | FAIL 2 | 8 | ec2, fail | 실습 결과 SG-003 (데이터베이스 포트 전체 개방) |
 | lab-sg-004 | lab | SG-004 | FAIL 1 | 3 | ec2, fail | 실습 결과 SG-004 (사용 중인 기본 보안그룹에 규칙 존재) |
 | lab-vpc-001 | lab | VPC-001 | FAIL 1 | 3 | ec2, fail | 실습 결과 VPC-001 (공개·내부 서브넷 미분리) |
 | lab-vpc-002 | lab | VPC-002 | REVIEW 1 | 1 | ec2, review | 실습 결과 VPC-002 (공인 IP가 할당된 네트워크 인터페이스) |
+| lab-vpc-003 | lab | VPC-003 | FAIL 1 | 3 | ec2, fail | 실습 결과 VPC-003 (VPC 흐름 로그 미설정) |
 | syn-ct-001-error | synthetic | CT-001 | ERROR 1 | 1 | cloudtrail, error | 추적 목록 조회 권한 없음 (ERROR) |
 | syn-ct-001-no-trail | synthetic | CT-001 | FAIL 1 | 1 | cloudtrail, unseen-rule, fail | 추적이 하나도 없음 |
 | syn-ct-001-single-region-stopped | synthetic | CT-001 | FAIL 1 | 1 | cloudtrail, unseen-rule, fail | 단일 리전 추적, 로깅 중지 |
+| syn-ct-002-org-bucket | synthetic | CT-002 | ERROR 1 | 1 | cloudtrail, error | 조직 추적 버킷이 다른 계정에 있어 수명주기 조회 거부 (ERROR) |
+| syn-gd-001-disabled | synthetic | GD-001 | FAIL 1 | 1 | guardduty, unseen-rule, fail | GuardDuty 탐지기가 비활성화됨 |
+| syn-gd-002-no-target | synthetic | GD-002 | FAIL 1 | 1 | guardduty, unseen-rule, fail | GuardDuty 결과 규칙은 있으나 대상이 없음 |
 | syn-iam-001-root-no-mfa | synthetic | IAM-001 | FAIL 1 | 1 | iam, unseen-rule, fail | 루트 계정 MFA 미설정 |
 | syn-iam-002-root-access-key | synthetic | IAM-002 | FAIL 1 | 1 | iam, unseen-rule, fail | 루트 계정 액세스 키 존재 |
 | syn-iam-003-error | synthetic | IAM-003 | ERROR 1 | 1 | iam, error | 자격증명 보고서 생성 권한 없음 (ERROR) |
@@ -33,17 +46,47 @@
 | syn-iam-007-paths-inline | synthetic | IAM-007 | FAIL 1, REVIEW 2 | 3 | iam, masking, mixed, fail, review | IAM 경로가 있는 사용자·인라인·그룹·NotAction 관리자 권한 |
 | syn-iam-008-root-recent | synthetic | IAM-008 | REVIEW 1 | 1 | iam, review | 루트 계정을 3일 전에 사용 (REVIEW) |
 | syn-iam-009-saml-sso | synthetic | IAM-009 | REVIEW 2 | 2 | iam, review, masking | SAML 공급자와 Identity Center 역할 (REVIEW) |
+| syn-iam-010-conditional-notaction | synthetic | IAM-010 | REVIEW 2 | 2 | iam, review | 조건부 세션 권한 역할과 NotAction 사용자 |
+| syn-log-001-missing-group | synthetic | LOG-001 | FAIL 2 | 2 | logs, variant, fail | 추적이 가리키는 로그 그룹이 없고 흐름 로그 그룹은 14일 보존 |
+| syn-rds-001-aurora-cluster | synthetic | RDS-001 | FAIL 1 | 2 | rds, variant, fail | 암호화되지 않은 Aurora 클러스터와 암호화된 단일 인스턴스 |
+| syn-rds-002-error | synthetic | RDS-002 | ERROR 1 | 1 | rds, error | DB 인스턴스 목록 조회 권한 없음 (ERROR) |
+| syn-rds-004-short-retention | synthetic | RDS-004 | FAIL 1 | 2 | rds, variant, fail | 자동 백업 3일 보존과 읽기 전용 복제본 |
 | syn-s3-001-error | synthetic | S3-001 | ERROR 1 | 1 | s3, error | 계정 수준 퍼블릭 액세스 차단 조회 권한 없음 (ERROR) |
 | syn-s3-002-error | synthetic | S3-002 | ERROR 2 | 3 | s3, error | 버킷 퍼블릭 액세스 차단 조회 권한 없음 (ERROR 2) |
 | syn-s3-003-mixed | synthetic | S3-003 | ERROR 1, FAIL 1 | 3 | s3, mixed, error, fail | 퍼블릭 버킷 정책 FAIL과 조회 실패 ERROR 혼합 |
 | syn-s3-004-no-encryption | synthetic | S3-004 | FAIL 2 | 3 | s3, unseen-rule, isms-only, fail | 기본 암호화 없는 버킷 2개 (KISA 매핑 없음) |
 | syn-s3-006-authenticated-users | synthetic | S3-006 | FAIL 1 | 2 | s3, variant, fail | ACL이 인증된 모든 AWS 사용자에게 READ 부여 |
+| syn-s3-007-mixed | synthetic | S3-007 | ERROR 1, FAIL 1 | 2 | s3, mixed, error, fail | HTTPS 강제 없는 버킷과 정책 조회 실패 버킷 |
 | syn-sg-001-ipv6-rdp | synthetic | SG-001 | FAIL 1 | 2 | ec2, variant, fail | IPv6 전체(::/0)에 RDP 개방 |
 | syn-sg-001-region-error | synthetic | SG-001 | ERROR 1, FAIL 1 | 2 | ec2, mixed, error, fail | 한 리전은 FAIL, 다른 리전은 조회 권한 없음 (ERROR) |
 | syn-sg-003-many | synthetic | SG-003 | FAIL 32 | 32 | ec2, volume, fail | MySQL 포트를 연 보안그룹 32개 (30개 초과로 일부만 전송) |
 | syn-sg-004-default-in-use | synthetic | SG-004 | FAIL 1 | 1 | ec2, variant, isms-only, fail | 규칙이 있는 기본 보안그룹을 인스턴스가 사용 |
 | syn-vpc-002-injection | synthetic | VPC-002 | REVIEW 1 | 1 | ec2, injection, review | ENI 설명에 지시문을 넣은 주입 시도 (REVIEW) |
 | syn-vpc-002-requester | synthetic | VPC-002 | REVIEW 2 | 2 | ec2, review, masking | 공인 IP ENI 2개 (인스턴스, 요청자 ID가 있는 관리형) |
+| syn-vpc-003-partial | synthetic | VPC-003 | FAIL 1 | 1 | ec2, variant, fail | 서브넷 하나만 흐름 로그로 기록되는 VPC |
+
+## lab-ct-002 — 실습 결과 CT-002 (CloudTrail 로그 버킷 보존 기간 부족)
+
+- **FAIL** `CT-002:-:kompass-lab-logs-156d8506` — 추적 로그가 365일 전에 삭제되는 수명주기 규칙 있음: kompass-lab-logs-156d8506
+
+```json
+{
+ "log_paths": [
+  "cloudtrail/AWSLogs/"
+ ],
+ "min_retention_days": 365,
+ "lifecycle_rules": 1,
+ "short_rules": [
+  {
+   "id": "expire-cloudtrail-logs",
+   "prefix": "cloudtrail/AWSLogs/",
+   "expiration_days": 30,
+   "expiration_date": null
+  }
+ ]
+}
+```
+
 
 ## lab-iam-003 — 실습 결과 IAM-003 (콘솔 사용자 MFA 미설정)
 
@@ -186,6 +229,704 @@
 }
 ```
 
+
+## lab-iam-010 — 실습 결과 IAM-010 (인스턴스 생성·접근 권한 보유 주체 현황)
+
+- **REVIEW** `IAM-010:-:arn:aws:iam::123456789012:user/kompass-lab-admin` — 인스턴스 생성·접근 권한을 가진 사용자: kompass-lab-admin (작업 9개)
+
+```json
+{
+ "principal_type": "user",
+ "name": "kompass-lab-admin",
+ "actions": [
+  "ec2-instance-connect:SendSSHPublicKey",
+  "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+  "ec2:ModifyInstanceAttribute",
+  "ec2:RunInstances",
+  "ec2:StartInstances",
+  "ec2:StopInstances",
+  "ec2:TerminateInstances",
+  "ssm:SendCommand",
+  "ssm:StartSession"
+ ],
+ "sources": [
+  {
+   "via": "group:admin",
+   "policy": "arn:aws:iam::aws:policy/AdministratorAccess",
+   "actions": [
+    "ec2-instance-connect:SendSSHPublicKey",
+    "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+    "ec2:ModifyInstanceAttribute",
+    "ec2:RunInstances",
+    "ec2:StartInstances",
+    "ec2:StopInstances",
+    "ec2:TerminateInstances",
+    "ssm:SendCommand",
+    "ssm:StartSession"
+   ],
+   "conditional": false,
+   "not_action": false
+  }
+ ],
+ "unknown_policies": [],
+ "permissions_boundary": null
+}
+```
+
+- **REVIEW** `IAM-010:-:arn:aws:iam::123456789012:user/kompass-lab-direct-admin` — 인스턴스 생성·접근 권한을 가진 사용자: kompass-lab-direct-admin (작업 9개)
+
+```json
+{
+ "principal_type": "user",
+ "name": "kompass-lab-direct-admin",
+ "actions": [
+  "ec2-instance-connect:SendSSHPublicKey",
+  "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+  "ec2:ModifyInstanceAttribute",
+  "ec2:RunInstances",
+  "ec2:StartInstances",
+  "ec2:StopInstances",
+  "ec2:TerminateInstances",
+  "ssm:SendCommand",
+  "ssm:StartSession"
+ ],
+ "sources": [
+  {
+   "via": "user",
+   "policy": "arn:aws:iam::aws:policy/AdministratorAccess",
+   "actions": [
+    "ec2-instance-connect:SendSSHPublicKey",
+    "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+    "ec2:ModifyInstanceAttribute",
+    "ec2:RunInstances",
+    "ec2:StartInstances",
+    "ec2:StopInstances",
+    "ec2:TerminateInstances",
+    "ssm:SendCommand",
+    "ssm:StartSession"
+   ],
+   "conditional": false,
+   "not_action": false
+  }
+ ],
+ "unknown_policies": [],
+ "permissions_boundary": null
+}
+```
+
+- **REVIEW** `IAM-010:-:arn:aws:iam::123456789012:user/kompass-lab-group-admin` — 인스턴스 생성·접근 권한을 가진 사용자: kompass-lab-group-admin (작업 9개)
+
+```json
+{
+ "principal_type": "user",
+ "name": "kompass-lab-group-admin",
+ "actions": [
+  "ec2-instance-connect:SendSSHPublicKey",
+  "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+  "ec2:ModifyInstanceAttribute",
+  "ec2:RunInstances",
+  "ec2:StartInstances",
+  "ec2:StopInstances",
+  "ec2:TerminateInstances",
+  "ssm:SendCommand",
+  "ssm:StartSession"
+ ],
+ "sources": [
+  {
+   "via": "group:kompass-lab-admins",
+   "policy": "arn:aws:iam::aws:policy/AdministratorAccess",
+   "actions": [
+    "ec2-instance-connect:SendSSHPublicKey",
+    "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+    "ec2:ModifyInstanceAttribute",
+    "ec2:RunInstances",
+    "ec2:StartInstances",
+    "ec2:StopInstances",
+    "ec2:TerminateInstances",
+    "ssm:SendCommand",
+    "ssm:StartSession"
+   ],
+   "conditional": false,
+   "not_action": false
+  }
+ ],
+ "unknown_policies": [],
+ "permissions_boundary": null
+}
+```
+
+- **REVIEW** `IAM-010:-:arn:aws:iam::123456789012:user/kompass-lab-notaction` — 인스턴스 생성·접근 권한을 가진 사용자: kompass-lab-notaction (작업 9개)
+
+```json
+{
+ "principal_type": "user",
+ "name": "kompass-lab-notaction",
+ "actions": [
+  "ec2-instance-connect:SendSSHPublicKey",
+  "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+  "ec2:ModifyInstanceAttribute",
+  "ec2:RunInstances",
+  "ec2:StartInstances",
+  "ec2:StopInstances",
+  "ec2:TerminateInstances",
+  "ssm:SendCommand",
+  "ssm:StartSession"
+ ],
+ "sources": [
+  {
+   "via": "user",
+   "policy": "inline:kompass-lab-notaction",
+   "actions": [
+    "ec2-instance-connect:SendSSHPublicKey",
+    "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+    "ec2:ModifyInstanceAttribute",
+    "ec2:RunInstances",
+    "ec2:StartInstances",
+    "ec2:StopInstances",
+    "ec2:TerminateInstances",
+    "ssm:SendCommand",
+    "ssm:StartSession"
+   ],
+   "conditional": false,
+   "not_action": true
+  }
+ ],
+ "unknown_policies": [],
+ "permissions_boundary": null
+}
+```
+
+- **REVIEW** `IAM-010:-:arn:aws:iam::123456789012:user/kompass-lab-wildcard-admin` — 인스턴스 생성·접근 권한을 가진 사용자: kompass-lab-wildcard-admin (작업 9개)
+
+```json
+{
+ "principal_type": "user",
+ "name": "kompass-lab-wildcard-admin",
+ "actions": [
+  "ec2-instance-connect:SendSSHPublicKey",
+  "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+  "ec2:ModifyInstanceAttribute",
+  "ec2:RunInstances",
+  "ec2:StartInstances",
+  "ec2:StopInstances",
+  "ec2:TerminateInstances",
+  "ssm:SendCommand",
+  "ssm:StartSession"
+ ],
+ "sources": [
+  {
+   "via": "user",
+   "policy": "arn:aws:iam::123456789012:policy/kompass-lab-wildcard",
+   "actions": [
+    "ec2-instance-connect:SendSSHPublicKey",
+    "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+    "ec2:ModifyInstanceAttribute",
+    "ec2:RunInstances",
+    "ec2:StartInstances",
+    "ec2:StopInstances",
+    "ec2:TerminateInstances",
+    "ssm:SendCommand",
+    "ssm:StartSession"
+   ],
+   "conditional": false,
+   "not_action": false
+  }
+ ],
+ "unknown_policies": [],
+ "permissions_boundary": null
+}
+```
+
+
+## lab-iam-011 — 실습 결과 IAM-011 (네트워크 리소스 변경 권한 보유 주체 현황)
+
+- **REVIEW** `IAM-011:-:arn:aws:iam::123456789012:user/kompass-lab-admin` — 네트워크 리소스 변경 권한을 가진 사용자: kompass-lab-admin (작업 27개)
+
+```json
+{
+ "principal_type": "user",
+ "name": "kompass-lab-admin",
+ "actions": [
+  "ec2:AssociateAddress",
+  "ec2:AssociateRouteTable",
+  "ec2:AttachInternetGateway",
+  "ec2:AuthorizeSecurityGroupEgress",
+  "ec2:AuthorizeSecurityGroupIngress",
+  "ec2:CreateInternetGateway",
+  "ec2:CreateNatGateway",
+  "ec2:CreateNetworkAclEntry",
+  "ec2:CreateRoute",
+  "ec2:CreateRouteTable",
+  "ec2:CreateSecurityGroup",
+  "ec2:CreateSubnet",
+  "ec2:CreateVpc",
+  "ec2:CreateVpcPeeringConnection",
+  "ec2:DeleteSecurityGroup",
+  "ec2:DeleteVpc",
+  "ec2:ModifySecurityGroupRules",
+  "ec2:ModifySubnetAttribute",
+  "ec2:ReplaceNetworkAclEntry",
+  "ec2:ReplaceRoute",
+  "ec2:RevokeSecurityGroupIngress",
+  "elasticloadbalancing:CreateListener",
+  "elasticloadbalancing:CreateLoadBalancer",
+  "elasticloadbalancing:DeleteLoadBalancer",
+  "elasticloadbalancing:ModifyListener",
+  "route53:ChangeResourceRecordSets",
+  "route53:CreateHostedZone"
+ ],
+ "sources": [
+  {
+   "via": "group:admin",
+   "policy": "arn:aws:iam::aws:policy/AdministratorAccess",
+   "actions": [
+    "ec2:AssociateAddress",
+    "ec2:AssociateRouteTable",
+    "ec2:AttachInternetGateway",
+    "ec2:AuthorizeSecurityGroupEgress",
+    "ec2:AuthorizeSecurityGroupIngress",
+    "ec2:CreateInternetGateway",
+    "ec2:CreateNatGateway",
+    "ec2:CreateNetworkAclEntry",
+    "ec2:CreateRoute",
+    "ec2:CreateRouteTable",
+    "ec2:CreateSecurityGroup",
+    "ec2:CreateSubnet",
+    "ec2:CreateVpc",
+    "ec2:CreateVpcPeeringConnection",
+    "ec2:DeleteSecurityGroup",
+    "ec2:DeleteVpc",
+    "ec2:ModifySecurityGroupRules",
+    "ec2:ModifySubnetAttribute",
+    "ec2:ReplaceNetworkAclEntry",
+    "ec2:ReplaceRoute",
+    "ec2:RevokeSecurityGroupIngress",
+    "elasticloadbalancing:CreateListener",
+    "elasticloadbalancing:CreateLoadBalancer",
+    "elasticloadbalancing:DeleteLoadBalancer",
+    "elasticloadbalancing:ModifyListener",
+    "route53:ChangeResourceRecordSets",
+    "route53:CreateHostedZone"
+   ],
+   "conditional": false,
+   "not_action": false
+  }
+ ],
+ "unknown_policies": [],
+ "permissions_boundary": null
+}
+```
+
+- **REVIEW** `IAM-011:-:arn:aws:iam::123456789012:user/kompass-lab-direct-admin` — 네트워크 리소스 변경 권한을 가진 사용자: kompass-lab-direct-admin (작업 27개)
+
+```json
+{
+ "principal_type": "user",
+ "name": "kompass-lab-direct-admin",
+ "actions": [
+  "ec2:AssociateAddress",
+  "ec2:AssociateRouteTable",
+  "ec2:AttachInternetGateway",
+  "ec2:AuthorizeSecurityGroupEgress",
+  "ec2:AuthorizeSecurityGroupIngress",
+  "ec2:CreateInternetGateway",
+  "ec2:CreateNatGateway",
+  "ec2:CreateNetworkAclEntry",
+  "ec2:CreateRoute",
+  "ec2:CreateRouteTable",
+  "ec2:CreateSecurityGroup",
+  "ec2:CreateSubnet",
+  "ec2:CreateVpc",
+  "ec2:CreateVpcPeeringConnection",
+  "ec2:DeleteSecurityGroup",
+  "ec2:DeleteVpc",
+  "ec2:ModifySecurityGroupRules",
+  "ec2:ModifySubnetAttribute",
+  "ec2:ReplaceNetworkAclEntry",
+  "ec2:ReplaceRoute",
+  "ec2:RevokeSecurityGroupIngress",
+  "elasticloadbalancing:CreateListener",
+  "elasticloadbalancing:CreateLoadBalancer",
+  "elasticloadbalancing:DeleteLoadBalancer",
+  "elasticloadbalancing:ModifyListener",
+  "route53:ChangeResourceRecordSets",
+  "route53:CreateHostedZone"
+ ],
+ "sources": [
+  {
+   "via": "user",
+   "policy": "arn:aws:iam::aws:policy/AdministratorAccess",
+   "actions": [
+    "ec2:AssociateAddress",
+    "ec2:AssociateRouteTable",
+    "ec2:AttachInternetGateway",
+    "ec2:AuthorizeSecurityGroupEgress",
+    "ec2:AuthorizeSecurityGroupIngress",
+    "ec2:CreateInternetGateway",
+    "ec2:CreateNatGateway",
+    "ec2:CreateNetworkAclEntry",
+    "ec2:CreateRoute",
+    "ec2:CreateRouteTable",
+    "ec2:CreateSecurityGroup",
+    "ec2:CreateSubnet",
+    "ec2:CreateVpc",
+    "ec2:CreateVpcPeeringConnection",
+    "ec2:DeleteSecurityGroup",
+    "ec2:DeleteVpc",
+    "ec2:ModifySecurityGroupRules",
+    "ec2:ModifySubnetAttribute",
+    "ec2:ReplaceNetworkAclEntry",
+    "ec2:ReplaceRoute",
+    "ec2:RevokeSecurityGroupIngress",
+    "elasticloadbalancing:CreateListener",
+    "elasticloadbalancing:CreateLoadBalancer",
+    "elasticloadbalancing:DeleteLoadBalancer",
+    "elasticloadbalancing:ModifyListener",
+    "route53:ChangeResourceRecordSets",
+    "route53:CreateHostedZone"
+   ],
+   "conditional": false,
+   "not_action": false
+  }
+ ],
+ "unknown_policies": [],
+ "permissions_boundary": null
+}
+```
+
+- **REVIEW** `IAM-011:-:arn:aws:iam::123456789012:user/kompass-lab-group-admin` — 네트워크 리소스 변경 권한을 가진 사용자: kompass-lab-group-admin (작업 27개)
+
+```json
+{
+ "principal_type": "user",
+ "name": "kompass-lab-group-admin",
+ "actions": [
+  "ec2:AssociateAddress",
+  "ec2:AssociateRouteTable",
+  "ec2:AttachInternetGateway",
+  "ec2:AuthorizeSecurityGroupEgress",
+  "ec2:AuthorizeSecurityGroupIngress",
+  "ec2:CreateInternetGateway",
+  "ec2:CreateNatGateway",
+  "ec2:CreateNetworkAclEntry",
+  "ec2:CreateRoute",
+  "ec2:CreateRouteTable",
+  "ec2:CreateSecurityGroup",
+  "ec2:CreateSubnet",
+  "ec2:CreateVpc",
+  "ec2:CreateVpcPeeringConnection",
+  "ec2:DeleteSecurityGroup",
+  "ec2:DeleteVpc",
+  "ec2:ModifySecurityGroupRules",
+  "ec2:ModifySubnetAttribute",
+  "ec2:ReplaceNetworkAclEntry",
+  "ec2:ReplaceRoute",
+  "ec2:RevokeSecurityGroupIngress",
+  "elasticloadbalancing:CreateListener",
+  "elasticloadbalancing:CreateLoadBalancer",
+  "elasticloadbalancing:DeleteLoadBalancer",
+  "elasticloadbalancing:ModifyListener",
+  "route53:ChangeResourceRecordSets",
+  "route53:CreateHostedZone"
+ ],
+ "sources": [
+  {
+   "via": "group:kompass-lab-admins",
+   "policy": "arn:aws:iam::aws:policy/AdministratorAccess",
+   "actions": [
+    "ec2:AssociateAddress",
+    "ec2:AssociateRouteTable",
+    "ec2:AttachInternetGateway",
+    "ec2:AuthorizeSecurityGroupEgress",
+    "ec2:AuthorizeSecurityGroupIngress",
+    "ec2:CreateInternetGateway",
+    "ec2:CreateNatGateway",
+    "ec2:CreateNetworkAclEntry",
+    "ec2:CreateRoute",
+    "ec2:CreateRouteTable",
+    "ec2:CreateSecurityGroup",
+    "ec2:CreateSubnet",
+    "ec2:CreateVpc",
+    "ec2:CreateVpcPeeringConnection",
+    "ec2:DeleteSecurityGroup",
+    "ec2:DeleteVpc",
+    "ec2:ModifySecurityGroupRules",
+    "ec2:ModifySubnetAttribute",
+    "ec2:ReplaceNetworkAclEntry",
+    "ec2:ReplaceRoute",
+    "ec2:RevokeSecurityGroupIngress",
+    "elasticloadbalancing:CreateListener",
+    "elasticloadbalancing:CreateLoadBalancer",
+    "elasticloadbalancing:DeleteLoadBalancer",
+    "elasticloadbalancing:ModifyListener",
+    "route53:ChangeResourceRecordSets",
+    "route53:CreateHostedZone"
+   ],
+   "conditional": false,
+   "not_action": false
+  }
+ ],
+ "unknown_policies": [],
+ "permissions_boundary": null
+}
+```
+
+- **REVIEW** `IAM-011:-:arn:aws:iam::123456789012:user/kompass-lab-notaction` — 네트워크 리소스 변경 권한을 가진 사용자: kompass-lab-notaction (작업 27개)
+
+```json
+{
+ "principal_type": "user",
+ "name": "kompass-lab-notaction",
+ "actions": [
+  "ec2:AssociateAddress",
+  "ec2:AssociateRouteTable",
+  "ec2:AttachInternetGateway",
+  "ec2:AuthorizeSecurityGroupEgress",
+  "ec2:AuthorizeSecurityGroupIngress",
+  "ec2:CreateInternetGateway",
+  "ec2:CreateNatGateway",
+  "ec2:CreateNetworkAclEntry",
+  "ec2:CreateRoute",
+  "ec2:CreateRouteTable",
+  "ec2:CreateSecurityGroup",
+  "ec2:CreateSubnet",
+  "ec2:CreateVpc",
+  "ec2:CreateVpcPeeringConnection",
+  "ec2:DeleteSecurityGroup",
+  "ec2:DeleteVpc",
+  "ec2:ModifySecurityGroupRules",
+  "ec2:ModifySubnetAttribute",
+  "ec2:ReplaceNetworkAclEntry",
+  "ec2:ReplaceRoute",
+  "ec2:RevokeSecurityGroupIngress",
+  "elasticloadbalancing:CreateListener",
+  "elasticloadbalancing:CreateLoadBalancer",
+  "elasticloadbalancing:DeleteLoadBalancer",
+  "elasticloadbalancing:ModifyListener",
+  "route53:ChangeResourceRecordSets",
+  "route53:CreateHostedZone"
+ ],
+ "sources": [
+  {
+   "via": "user",
+   "policy": "inline:kompass-lab-notaction",
+   "actions": [
+    "ec2:AssociateAddress",
+    "ec2:AssociateRouteTable",
+    "ec2:AttachInternetGateway",
+    "ec2:AuthorizeSecurityGroupEgress",
+    "ec2:AuthorizeSecurityGroupIngress",
+    "ec2:CreateInternetGateway",
+    "ec2:CreateNatGateway",
+    "ec2:CreateNetworkAclEntry",
+    "ec2:CreateRoute",
+    "ec2:CreateRouteTable",
+    "ec2:CreateSecurityGroup",
+    "ec2:CreateSubnet",
+    "ec2:CreateVpc",
+    "ec2:CreateVpcPeeringConnection",
+    "ec2:DeleteSecurityGroup",
+    "ec2:DeleteVpc",
+    "ec2:ModifySecurityGroupRules",
+    "ec2:ModifySubnetAttribute",
+    "ec2:ReplaceNetworkAclEntry",
+    "ec2:ReplaceRoute",
+    "ec2:RevokeSecurityGroupIngress",
+    "elasticloadbalancing:CreateListener",
+    "elasticloadbalancing:CreateLoadBalancer",
+    "elasticloadbalancing:DeleteLoadBalancer",
+    "elasticloadbalancing:ModifyListener",
+    "route53:ChangeResourceRecordSets",
+    "route53:CreateHostedZone"
+   ],
+   "conditional": false,
+   "not_action": true
+  }
+ ],
+ "unknown_policies": [],
+ "permissions_boundary": null
+}
+```
+
+- **REVIEW** `IAM-011:-:arn:aws:iam::123456789012:user/kompass-lab-wildcard-admin` — 네트워크 리소스 변경 권한을 가진 사용자: kompass-lab-wildcard-admin (작업 27개)
+
+```json
+{
+ "principal_type": "user",
+ "name": "kompass-lab-wildcard-admin",
+ "actions": [
+  "ec2:AssociateAddress",
+  "ec2:AssociateRouteTable",
+  "ec2:AttachInternetGateway",
+  "ec2:AuthorizeSecurityGroupEgress",
+  "ec2:AuthorizeSecurityGroupIngress",
+  "ec2:CreateInternetGateway",
+  "ec2:CreateNatGateway",
+  "ec2:CreateNetworkAclEntry",
+  "ec2:CreateRoute",
+  "ec2:CreateRouteTable",
+  "ec2:CreateSecurityGroup",
+  "ec2:CreateSubnet",
+  "ec2:CreateVpc",
+  "ec2:CreateVpcPeeringConnection",
+  "ec2:DeleteSecurityGroup",
+  "ec2:DeleteVpc",
+  "ec2:ModifySecurityGroupRules",
+  "ec2:ModifySubnetAttribute",
+  "ec2:ReplaceNetworkAclEntry",
+  "ec2:ReplaceRoute",
+  "ec2:RevokeSecurityGroupIngress",
+  "elasticloadbalancing:CreateListener",
+  "elasticloadbalancing:CreateLoadBalancer",
+  "elasticloadbalancing:DeleteLoadBalancer",
+  "elasticloadbalancing:ModifyListener",
+  "route53:ChangeResourceRecordSets",
+  "route53:CreateHostedZone"
+ ],
+ "sources": [
+  {
+   "via": "user",
+   "policy": "arn:aws:iam::123456789012:policy/kompass-lab-wildcard",
+   "actions": [
+    "ec2:AssociateAddress",
+    "ec2:AssociateRouteTable",
+    "ec2:AttachInternetGateway",
+    "ec2:AuthorizeSecurityGroupEgress",
+    "ec2:AuthorizeSecurityGroupIngress",
+    "ec2:CreateInternetGateway",
+    "ec2:CreateNatGateway",
+    "ec2:CreateNetworkAclEntry",
+    "ec2:CreateRoute",
+    "ec2:CreateRouteTable",
+    "ec2:CreateSecurityGroup",
+    "ec2:CreateSubnet",
+    "ec2:CreateVpc",
+    "ec2:CreateVpcPeeringConnection",
+    "ec2:DeleteSecurityGroup",
+    "ec2:DeleteVpc",
+    "ec2:ModifySecurityGroupRules",
+    "ec2:ModifySubnetAttribute",
+    "ec2:ReplaceNetworkAclEntry",
+    "ec2:ReplaceRoute",
+    "ec2:RevokeSecurityGroupIngress",
+    "elasticloadbalancing:CreateListener",
+    "elasticloadbalancing:CreateLoadBalancer",
+    "elasticloadbalancing:DeleteLoadBalancer",
+    "elasticloadbalancing:ModifyListener",
+    "route53:ChangeResourceRecordSets",
+    "route53:CreateHostedZone"
+   ],
+   "conditional": false,
+   "not_action": false
+  }
+ ],
+ "unknown_policies": [],
+ "permissions_boundary": null
+}
+```
+
+
+## lab-log-001 — 실습 결과 LOG-001 (보안 로그 보존 기간 부족)
+
+- **FAIL** `LOG-001:ap-northeast-2:/aws/rds/instance/kompass-lab-private/postgresql` — 보존 기간 1일 (기준 365일 미만): /aws/rds/instance/kompass-lab-private/postgresql
+
+```json
+{
+ "sources": [
+  {
+   "type": "prefix",
+   "prefix": "/aws/rds/"
+  }
+ ],
+ "min_retention_days": 365,
+ "retention_days": 1
+}
+```
+
+- **FAIL** `LOG-001:ap-northeast-2:/aws/rds/instance/kompass-lab-short/error` — 보존 기간 30일 (기준 365일 미만): /aws/rds/instance/kompass-lab-short/error
+
+```json
+{
+ "sources": [
+  {
+   "type": "prefix",
+   "prefix": "/aws/rds/"
+  }
+ ],
+ "min_retention_days": 365,
+ "retention_days": 30
+}
+```
+
+함께 담긴 다른 finding: PASS 1
+
+## lab-rds-001 — 실습 결과 RDS-001 (데이터베이스 스토리지 암호화 미적용)
+
+- **FAIL** `RDS-001:ap-northeast-2:kompass-lab-public` — 스토리지 암호화 미적용: kompass-lab-public
+
+```json
+{
+ "kind": "instance",
+ "db_identifier": "kompass-lab-public",
+ "engine": "postgres",
+ "storage_encrypted": false,
+ "kms_key_id": null
+}
+```
+
+함께 담긴 다른 finding: PASS 1
+
+## lab-rds-002 — 실습 결과 RDS-002 (데이터베이스 퍼블릭 접근 허용)
+
+- **FAIL** `RDS-002:ap-northeast-2:kompass-lab-public` — 퍼블릭 접근 허용: kompass-lab-public
+
+```json
+{
+ "kind": "instance",
+ "db_identifier": "kompass-lab-public",
+ "engine": "postgres",
+ "publicly_accessible": true,
+ "endpoint": "kompass-lab-public.f822d6f298eb.ap-northeast-2.rds.amazonaws.com",
+ "subnet_group": "kompass-lab-public",
+ "vpc_id": "vpc-ba161d466546302a9",
+ "security_groups": [
+  "sg-0a7203770ab01c3a4"
+ ]
+}
+```
+
+함께 담긴 다른 finding: PASS 1
+
+## lab-rds-003 — 실습 결과 RDS-003 (데이터베이스 로그 내보내기 미설정)
+
+- **FAIL** `RDS-003:ap-northeast-2:kompass-lab-public` — 로그 내보내기 미설정: kompass-lab-public
+
+```json
+{
+ "kind": "instance",
+ "db_identifier": "kompass-lab-public",
+ "engine": "postgres",
+ "log_exports": []
+}
+```
+
+함께 담긴 다른 finding: PASS 1
+
+## lab-rds-004 — 실습 결과 RDS-004 (자동 백업 보존 기간 부족)
+
+- **FAIL** `RDS-004:ap-northeast-2:kompass-lab-public` — 자동 백업 꺼짐: kompass-lab-public
+
+```json
+{
+ "kind": "instance",
+ "db_identifier": "kompass-lab-public",
+ "engine": "postgres",
+ "backup_retention_days": 0,
+ "min_backup_retention_days": 7
+}
+```
+
+함께 담긴 다른 finding: PASS 1
 
 ## lab-s3-001 — 실습 결과 S3-001 (계정 수준 퍼블릭 액세스 차단 미설정)
 
@@ -349,6 +1090,46 @@
 ```
 
 함께 담긴 다른 finding: PASS 4
+
+## lab-s3-007 — 실습 결과 S3-007 (버킷 정책 HTTPS 미강제)
+
+- **FAIL** `S3-007:ap-northeast-2:kompass-lab-logs-156d8506` — 버킷 정책이 HTTP 요청을 거부하지 않음: kompass-lab-logs-156d8506
+
+```json
+{
+ "has_policy": true,
+ "statement_sids": []
+}
+```
+
+- **FAIL** `S3-007:ap-northeast-2:kompass-lab-public-acl-156d8506` — 버킷 정책이 없어 HTTP 요청을 거부하지 않음: kompass-lab-public-acl-156d8506
+
+```json
+{
+ "has_policy": false,
+ "statement_sids": []
+}
+```
+
+- **FAIL** `S3-007:ap-northeast-2:kompass-lab-public-policy-156d8506` — 버킷 정책이 HTTP 요청을 거부하지 않음: kompass-lab-public-policy-156d8506
+
+```json
+{
+ "has_policy": true,
+ "statement_sids": []
+}
+```
+
+- **FAIL** `S3-007:ap-northeast-2:kompass-lab-restricted-policy-156d8506` — 버킷 정책이 HTTP 요청을 거부하지 않음: kompass-lab-restricted-policy-156d8506
+
+```json
+{
+ "has_policy": true,
+ "statement_sids": []
+}
+```
+
+함께 담긴 다른 finding: PASS 1
 
 ## lab-sg-001 — 실습 결과 SG-001 (관리 포트 전체 개방)
 
@@ -566,6 +1347,21 @@
 ```
 
 
+## lab-vpc-003 — 실습 결과 VPC-003 (VPC 흐름 로그 미설정)
+
+- **FAIL** `VPC-003:ap-northeast-2:vpc-ba161d466546302a9` — 흐름 로그로 기록되지 않는 네트워크 인터페이스 3개: vpc-ba161d466546302a9
+
+```json
+{
+ "is_default_vpc": false,
+ "interfaces": 3,
+ "uncovered_interfaces": 3,
+ "flow_logs": []
+}
+```
+
+함께 담긴 다른 finding: N/A 1, PASS 1
+
 ## syn-ct-001-error — 추적 목록 조회 권한 없음 (ERROR)
 
 - **ERROR** `CT-001:-:account` — CloudTrail 추적 목록을 수집하지 못함
@@ -628,6 +1424,64 @@
   }
  ],
  "passing_trails": []
+}
+```
+
+
+## syn-ct-002-org-bucket — 조직 추적 버킷이 다른 계정에 있어 수명주기 조회 거부 (ERROR)
+
+- **ERROR** `CT-002:-:acme-org-log-archive` — 추적 버킷의 수명주기 설정을 수집하지 못함: acme-org-log-archive
+
+```json
+{
+ "log_paths": [
+  "AWSLogs/"
+ ],
+ "min_retention_days": 365,
+ "errors": [
+  {
+   "operation": "s3:GetBucketLocation",
+   "region": "ap-northeast-2",
+   "error_code": "AccessDenied",
+   "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: s3:GetBucketLocation because no identity-based policy allows the s3:GetBucketLocation action",
+   "resource": "acme-org-log-archive"
+  }
+ ]
+}
+```
+
+
+## syn-gd-001-disabled — GuardDuty 탐지기가 비활성화됨
+
+- **FAIL** `GD-001:ap-northeast-2:account` — GuardDuty 탐지기가 비활성화됨
+
+```json
+{
+ "detectors": [
+  {
+   "detector_id": "b05d043ba1ba5078b19f696c4c5c79f5",
+   "status": "DISABLED",
+   "finding_publishing_frequency": "SIX_HOURS",
+   "features": []
+  }
+ ]
+}
+```
+
+
+## syn-gd-002-no-target — GuardDuty 결과 규칙은 있으나 대상이 없음
+
+- **FAIL** `GD-002:ap-northeast-2:account` — GuardDuty 결과를 보내는 활성 알림 규칙이 없음
+
+```json
+{
+ "rules": [
+  {
+   "name": "acme-guardduty-findings",
+   "state": "ENABLED",
+   "targets": []
+  }
+ ]
 }
 ```
 
@@ -892,6 +1746,159 @@
 ```
 
 
+## syn-iam-010-conditional-notaction — 조건부 세션 권한 역할과 NotAction 사용자
+
+- **REVIEW** `IAM-010:-:arn:aws:iam::123456789012:user/acme-contractor` — 인스턴스 생성·접근 권한을 가진 사용자: acme-contractor (작업 9개)
+
+```json
+{
+ "principal_type": "user",
+ "name": "acme-contractor",
+ "actions": [
+  "ec2-instance-connect:SendSSHPublicKey",
+  "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+  "ec2:ModifyInstanceAttribute",
+  "ec2:RunInstances",
+  "ec2:StartInstances",
+  "ec2:StopInstances",
+  "ec2:TerminateInstances",
+  "ssm:SendCommand",
+  "ssm:StartSession"
+ ],
+ "sources": [
+  {
+   "via": "user",
+   "policy": "inline:all-but-iam",
+   "actions": [
+    "ec2-instance-connect:SendSSHPublicKey",
+    "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+    "ec2:ModifyInstanceAttribute",
+    "ec2:RunInstances",
+    "ec2:StartInstances",
+    "ec2:StopInstances",
+    "ec2:TerminateInstances",
+    "ssm:SendCommand",
+    "ssm:StartSession"
+   ],
+   "conditional": false,
+   "not_action": true
+  }
+ ],
+ "unknown_policies": [],
+ "permissions_boundary": null
+}
+```
+
+- **REVIEW** `IAM-010:-:arn:aws:iam::123456789012:role/acme-ops` — 인스턴스 생성·접근 권한을 가진 역할: acme-ops (작업 1개)
+
+```json
+{
+ "principal_type": "role",
+ "name": "acme-ops",
+ "actions": [
+  "ssm:StartSession"
+ ],
+ "sources": [
+  {
+   "via": "role",
+   "policy": "arn:aws:iam::123456789012:policy/acme-ops-session",
+   "actions": [
+    "ssm:StartSession"
+   ],
+   "conditional": true,
+   "not_action": false
+  }
+ ],
+ "unknown_policies": [],
+ "permissions_boundary": null
+}
+```
+
+
+## syn-log-001-missing-group — 추적이 가리키는 로그 그룹이 없고 흐름 로그 그룹은 14일 보존
+
+- **FAIL** `LOG-001:ap-northeast-2:acme-cloudtrail` — 보안 로그를 보내는 로그 그룹이 없음: acme-cloudtrail
+
+```json
+{
+ "sources": [
+  {
+   "type": "cloudtrail",
+   "trail": "acme-audit-trail"
+  }
+ ],
+ "min_retention_days": 365,
+ "retention_days": null
+}
+```
+
+- **FAIL** `LOG-001:ap-northeast-2:acme-vpc-flow` — 보존 기간 14일 (기준 365일 미만): acme-vpc-flow
+
+```json
+{
+ "sources": [
+  {
+   "type": "flow_log",
+   "flow_log_id": "fl-6b4d099c39a3cb868"
+  }
+ ],
+ "min_retention_days": 365,
+ "retention_days": 14
+}
+```
+
+
+## syn-rds-001-aurora-cluster — 암호화되지 않은 Aurora 클러스터와 암호화된 단일 인스턴스
+
+- **FAIL** `RDS-001:ap-northeast-2:cluster:acme-ledger` — 스토리지 암호화 미적용: cluster:acme-ledger
+
+```json
+{
+ "kind": "cluster",
+ "db_identifier": "acme-ledger",
+ "engine": "aurora-mysql",
+ "storage_encrypted": false,
+ "kms_key_id": null
+}
+```
+
+함께 담긴 다른 finding: PASS 1
+
+## syn-rds-002-error — DB 인스턴스 목록 조회 권한 없음 (ERROR)
+
+- **ERROR** `RDS-002:ap-northeast-2:account` — 데이터베이스 목록을 수집하지 못함
+
+```json
+{
+ "errors": [
+  {
+   "operation": "rds:DescribeDBInstances",
+   "region": "ap-northeast-2",
+   "error_code": "AccessDenied",
+   "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: rds:DescribeDBInstances because no identity-based policy allows the rds:DescribeDBInstances action",
+   "resource": null
+  }
+ ]
+}
+```
+
+
+## syn-rds-004-short-retention — 자동 백업 3일 보존과 읽기 전용 복제본
+
+- **FAIL** `RDS-004:ap-northeast-2:acme-billing-db` — 자동 백업 보존 기간 3일 (기준 7일 미만)
+
+```json
+{
+ "kind": "instance",
+ "db_identifier": "acme-billing-db",
+ "engine": "mysql",
+ "backup_retention_days": 3,
+ "min_backup_retention_days": 7
+}
+```
+
+함께 담긴 다른 finding: N/A 1
+
 ## syn-s3-001-error — 계정 수준 퍼블릭 액세스 차단 조회 권한 없음 (ERROR)
 
 - **ERROR** `S3-001:-:account` — 계정 수준 퍼블릭 액세스 차단 설정을 수집하지 못함
@@ -1028,6 +2035,34 @@
 ```
 
 함께 담긴 다른 finding: PASS 1
+
+## syn-s3-007-mixed — HTTPS 강제 없는 버킷과 정책 조회 실패 버킷
+
+- **FAIL** `S3-007:ap-northeast-2:acme-invoices` — 버킷 정책이 HTTP 요청을 거부하지 않음: acme-invoices
+
+```json
+{
+ "has_policy": true,
+ "statement_sids": []
+}
+```
+
+- **ERROR** `S3-007:ap-northeast-2:acme-exports` — 버킷 정책을(를) 수집하지 못함: acme-exports
+
+```json
+{
+ "errors": [
+  {
+   "operation": "s3:GetBucketPolicy",
+   "region": "ap-northeast-2",
+   "error_code": "AccessDenied",
+   "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: s3:GetBucketPolicy because no identity-based policy allows the s3:GetBucketPolicy action",
+   "resource": "acme-exports"
+  }
+ ]
+}
+```
+
 
 ## syn-sg-001-ipv6-rdp — IPv6 전체(::/0)에 RDP 개방
 
@@ -1281,6 +2316,28 @@
  "subnet_id": "subnet-4a820cd4954e510ad",
  "subnet_public": null,
  "security_groups": []
+}
+```
+
+
+## syn-vpc-003-partial — 서브넷 하나만 흐름 로그로 기록되는 VPC
+
+- **FAIL** `VPC-003:ap-northeast-2:vpc-39809e0b2e69369b0` — 흐름 로그로 기록되지 않는 네트워크 인터페이스 2개: vpc-39809e0b2e69369b0
+
+```json
+{
+ "is_default_vpc": false,
+ "interfaces": 3,
+ "uncovered_interfaces": 2,
+ "flow_logs": [
+  {
+   "flow_log_id": "fl-2dd6d1ca45f3c72a5",
+   "resource_id": "subnet-2dd6d1ca45f3c72a5",
+   "traffic_type": "REJECT",
+   "destination_type": "s3",
+   "deliver_logs_status": "SUCCESS"
+  }
+ ]
 }
 ```
 

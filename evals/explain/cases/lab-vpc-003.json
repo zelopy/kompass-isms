@@ -1,0 +1,68 @@
+{
+ "id": "lab-vpc-003",
+ "title": "실습 결과 VPC-003 (VPC 흐름 로그 미설정)",
+ "source": "lab",
+ "rule_id": "VPC-003",
+ "tags": [
+  "ec2",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "VPC-003",
+   "resource": "vpc-ba161d466546302a9",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "흐름 로그로 기록되지 않는 네트워크 인터페이스 3개: vpc-ba161d466546302a9",
+   "evidence": {
+    "is_default_vpc": false,
+    "interfaces": 3,
+    "uncovered_interfaces": 3,
+    "flow_logs": []
+   },
+   "collected_at": "2026-10-16T13:18:32.694684Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "VPC-003",
+   "resource": "vpc-89469366cca9389f6",
+   "region": "ap-northeast-2",
+   "status": "N/A",
+   "severity": "medium",
+   "message": "VPC에 네트워크 인터페이스가 없음: vpc-89469366cca9389f6",
+   "evidence": {
+    "is_default_vpc": true,
+    "interfaces": 0,
+    "uncovered_interfaces": 0,
+    "flow_logs": []
+   },
+   "collected_at": "2026-10-16T13:18:32.694684Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "VPC-003",
+   "resource": "vpc-fd04ae5f610077318",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "medium",
+   "message": "모든 네트워크 인터페이스가 흐름 로그로 기록됨: vpc-fd04ae5f610077318",
+   "evidence": {
+    "is_default_vpc": false,
+    "interfaces": 1,
+    "uncovered_interfaces": 0,
+    "flow_logs": [
+     {
+      "flow_log_id": "fl-f72e220d2483a2c35",
+      "resource_id": "vpc-fd04ae5f610077318",
+      "traffic_type": "REJECT",
+      "destination_type": "s3",
+      "deliver_logs_status": "SUCCESS"
+     }
+    ]
+   },
+   "collected_at": "2026-10-16T13:18:32.694684Z",
+   "mappings": null
+  }
+ ]
+}

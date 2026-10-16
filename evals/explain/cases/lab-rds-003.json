@@ -1,0 +1,46 @@
+{
+ "id": "lab-rds-003",
+ "title": "실습 결과 RDS-003 (데이터베이스 로그 내보내기 미설정)",
+ "source": "lab",
+ "rule_id": "RDS-003",
+ "tags": [
+  "rds",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "RDS-003",
+   "resource": "kompass-lab-private",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "medium",
+   "message": "로그 내보내기 설정됨: postgresql",
+   "evidence": {
+    "kind": "instance",
+    "db_identifier": "kompass-lab-private",
+    "engine": "postgres",
+    "log_exports": [
+     "postgresql"
+    ]
+   },
+   "collected_at": "2026-10-16T13:19:05.152210Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "RDS-003",
+   "resource": "kompass-lab-public",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "로그 내보내기 미설정: kompass-lab-public",
+   "evidence": {
+    "kind": "instance",
+    "db_identifier": "kompass-lab-public",
+    "engine": "postgres",
+    "log_exports": []
+   },
+   "collected_at": "2026-10-16T13:19:05.152210Z",
+   "mappings": null
+  }
+ ]
+}

@@ -1,0 +1,48 @@
+{
+ "id": "syn-rds-004-short-retention",
+ "title": "자동 백업 3일 보존과 읽기 전용 복제본",
+ "source": "synthetic",
+ "rule_id": "RDS-004",
+ "tags": [
+  "rds",
+  "variant",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "RDS-004",
+   "resource": "acme-billing-db",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "자동 백업 보존 기간 3일 (기준 7일 미만)",
+   "evidence": {
+    "kind": "instance",
+    "db_identifier": "acme-billing-db",
+    "engine": "mysql",
+    "backup_retention_days": 3,
+    "min_backup_retention_days": 7
+   },
+   "collected_at": "2026-10-16T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "RDS-004",
+   "resource": "acme-billing-replica",
+   "region": "ap-northeast-2",
+   "status": "N/A",
+   "severity": "medium",
+   "message": "읽기 전용 복제본은 원본의 백업을 따름",
+   "evidence": {
+    "kind": "instance",
+    "db_identifier": "acme-billing-replica",
+    "engine": "mysql",
+    "backup_retention_days": 0,
+    "min_backup_retention_days": 7,
+    "read_replica_source": "acme-billing-db"
+   },
+   "collected_at": "2026-10-16T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

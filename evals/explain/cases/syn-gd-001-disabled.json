@@ -1,0 +1,33 @@
+{
+ "id": "syn-gd-001-disabled",
+ "title": "GuardDuty 탐지기가 비활성화됨",
+ "source": "synthetic",
+ "rule_id": "GD-001",
+ "tags": [
+  "guardduty",
+  "unseen-rule",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "GD-001",
+   "resource": "account",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "GuardDuty 탐지기가 비활성화됨",
+   "evidence": {
+    "detectors": [
+     {
+      "detector_id": "b05d043ba1ba5078b19f696c4c5c79f5",
+      "status": "DISABLED",
+      "finding_publishing_frequency": "SIX_HOURS",
+      "features": []
+     }
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

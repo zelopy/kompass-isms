@@ -1,0 +1,53 @@
+{
+ "id": "syn-log-001-missing-group",
+ "title": "추적이 가리키는 로그 그룹이 없고 흐름 로그 그룹은 14일 보존",
+ "source": "synthetic",
+ "rule_id": "LOG-001",
+ "tags": [
+  "logs",
+  "variant",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "LOG-001",
+   "resource": "acme-cloudtrail",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "보안 로그를 보내는 로그 그룹이 없음: acme-cloudtrail",
+   "evidence": {
+    "sources": [
+     {
+      "type": "cloudtrail",
+      "trail": "acme-audit-trail"
+     }
+    ],
+    "min_retention_days": 365,
+    "retention_days": null
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "LOG-001",
+   "resource": "acme-vpc-flow",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "보존 기간 14일 (기준 365일 미만): acme-vpc-flow",
+   "evidence": {
+    "sources": [
+     {
+      "type": "flow_log",
+      "flow_log_id": "fl-6b4d099c39a3cb868"
+     }
+    ],
+    "min_retention_days": 365,
+    "retention_days": 14
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

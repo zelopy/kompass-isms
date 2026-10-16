@@ -1,0 +1,37 @@
+{
+ "id": "lab-ct-002",
+ "title": "실습 결과 CT-002 (CloudTrail 로그 버킷 보존 기간 부족)",
+ "source": "lab",
+ "rule_id": "CT-002",
+ "tags": [
+  "cloudtrail",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "CT-002",
+   "resource": "kompass-lab-logs-156d8506",
+   "region": null,
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "추적 로그가 365일 전에 삭제되는 수명주기 규칙 있음: kompass-lab-logs-156d8506",
+   "evidence": {
+    "log_paths": [
+     "cloudtrail/AWSLogs/"
+    ],
+    "min_retention_days": 365,
+    "lifecycle_rules": 1,
+    "short_rules": [
+     {
+      "id": "expire-cloudtrail-logs",
+      "prefix": "cloudtrail/AWSLogs/",
+      "expiration_days": 30,
+      "expiration_date": null
+     }
+    ]
+   },
+   "collected_at": "2026-10-16T13:18:32.276409Z",
+   "mappings": null
+  }
+ ]
+}

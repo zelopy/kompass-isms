@@ -1,0 +1,242 @@
+{
+ "id": "lab-iam-010",
+ "title": "실습 결과 IAM-010 (인스턴스 생성·접근 권한 보유 주체 현황)",
+ "source": "lab",
+ "rule_id": "IAM-010",
+ "tags": [
+  "iam",
+  "review"
+ ],
+ "findings": [
+  {
+   "rule_id": "IAM-010",
+   "resource": "arn:aws:iam::123456789012:user/kompass-lab-admin",
+   "region": null,
+   "status": "REVIEW",
+   "severity": "medium",
+   "message": "인스턴스 생성·접근 권한을 가진 사용자: kompass-lab-admin (작업 9개)",
+   "evidence": {
+    "principal_type": "user",
+    "name": "kompass-lab-admin",
+    "actions": [
+     "ec2-instance-connect:SendSSHPublicKey",
+     "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+     "ec2:ModifyInstanceAttribute",
+     "ec2:RunInstances",
+     "ec2:StartInstances",
+     "ec2:StopInstances",
+     "ec2:TerminateInstances",
+     "ssm:SendCommand",
+     "ssm:StartSession"
+    ],
+    "sources": [
+     {
+      "via": "group:admin",
+      "policy": "arn:aws:iam::aws:policy/AdministratorAccess",
+      "actions": [
+       "ec2-instance-connect:SendSSHPublicKey",
+       "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+       "ec2:ModifyInstanceAttribute",
+       "ec2:RunInstances",
+       "ec2:StartInstances",
+       "ec2:StopInstances",
+       "ec2:TerminateInstances",
+       "ssm:SendCommand",
+       "ssm:StartSession"
+      ],
+      "conditional": false,
+      "not_action": false
+     }
+    ],
+    "unknown_policies": [],
+    "permissions_boundary": null
+   },
+   "collected_at": "2026-10-16T13:18:33.954522Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-010",
+   "resource": "arn:aws:iam::123456789012:user/kompass-lab-direct-admin",
+   "region": null,
+   "status": "REVIEW",
+   "severity": "medium",
+   "message": "인스턴스 생성·접근 권한을 가진 사용자: kompass-lab-direct-admin (작업 9개)",
+   "evidence": {
+    "principal_type": "user",
+    "name": "kompass-lab-direct-admin",
+    "actions": [
+     "ec2-instance-connect:SendSSHPublicKey",
+     "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+     "ec2:ModifyInstanceAttribute",
+     "ec2:RunInstances",
+     "ec2:StartInstances",
+     "ec2:StopInstances",
+     "ec2:TerminateInstances",
+     "ssm:SendCommand",
+     "ssm:StartSession"
+    ],
+    "sources": [
+     {
+      "via": "user",
+      "policy": "arn:aws:iam::aws:policy/AdministratorAccess",
+      "actions": [
+       "ec2-instance-connect:SendSSHPublicKey",
+       "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+       "ec2:ModifyInstanceAttribute",
+       "ec2:RunInstances",
+       "ec2:StartInstances",
+       "ec2:StopInstances",
+       "ec2:TerminateInstances",
+       "ssm:SendCommand",
+       "ssm:StartSession"
+      ],
+      "conditional": false,
+      "not_action": false
+     }
+    ],
+    "unknown_policies": [],
+    "permissions_boundary": null
+   },
+   "collected_at": "2026-10-16T13:18:33.954522Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-010",
+   "resource": "arn:aws:iam::123456789012:user/kompass-lab-group-admin",
+   "region": null,
+   "status": "REVIEW",
+   "severity": "medium",
+   "message": "인스턴스 생성·접근 권한을 가진 사용자: kompass-lab-group-admin (작업 9개)",
+   "evidence": {
+    "principal_type": "user",
+    "name": "kompass-lab-group-admin",
+    "actions": [
+     "ec2-instance-connect:SendSSHPublicKey",
+     "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+     "ec2:ModifyInstanceAttribute",
+     "ec2:RunInstances",
+     "ec2:StartInstances",
+     "ec2:StopInstances",
+     "ec2:TerminateInstances",
+     "ssm:SendCommand",
+     "ssm:StartSession"
+    ],
+    "sources": [
+     {
+      "via": "group:kompass-lab-admins",
+      "policy": "arn:aws:iam::aws:policy/AdministratorAccess",
+      "actions": [
+       "ec2-instance-connect:SendSSHPublicKey",
+       "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+       "ec2:ModifyInstanceAttribute",
+       "ec2:RunInstances",
+       "ec2:StartInstances",
+       "ec2:StopInstances",
+       "ec2:TerminateInstances",
+       "ssm:SendCommand",
+       "ssm:StartSession"
+      ],
+      "conditional": false,
+      "not_action": false
+     }
+    ],
+    "unknown_policies": [],
+    "permissions_boundary": null
+   },
+   "collected_at": "2026-10-16T13:18:33.954522Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-010",
+   "resource": "arn:aws:iam::123456789012:user/kompass-lab-notaction",
+   "region": null,
+   "status": "REVIEW",
+   "severity": "medium",
+   "message": "인스턴스 생성·접근 권한을 가진 사용자: kompass-lab-notaction (작업 9개)",
+   "evidence": {
+    "principal_type": "user",
+    "name": "kompass-lab-notaction",
+    "actions": [
+     "ec2-instance-connect:SendSSHPublicKey",
+     "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+     "ec2:ModifyInstanceAttribute",
+     "ec2:RunInstances",
+     "ec2:StartInstances",
+     "ec2:StopInstances",
+     "ec2:TerminateInstances",
+     "ssm:SendCommand",
+     "ssm:StartSession"
+    ],
+    "sources": [
+     {
+      "via": "user",
+      "policy": "inline:kompass-lab-notaction",
+      "actions": [
+       "ec2-instance-connect:SendSSHPublicKey",
+       "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+       "ec2:ModifyInstanceAttribute",
+       "ec2:RunInstances",
+       "ec2:StartInstances",
+       "ec2:StopInstances",
+       "ec2:TerminateInstances",
+       "ssm:SendCommand",
+       "ssm:StartSession"
+      ],
+      "conditional": false,
+      "not_action": true
+     }
+    ],
+    "unknown_policies": [],
+    "permissions_boundary": null
+   },
+   "collected_at": "2026-10-16T13:18:33.954522Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-010",
+   "resource": "arn:aws:iam::123456789012:user/kompass-lab-wildcard-admin",
+   "region": null,
+   "status": "REVIEW",
+   "severity": "medium",
+   "message": "인스턴스 생성·접근 권한을 가진 사용자: kompass-lab-wildcard-admin (작업 9개)",
+   "evidence": {
+    "principal_type": "user",
+    "name": "kompass-lab-wildcard-admin",
+    "actions": [
+     "ec2-instance-connect:SendSSHPublicKey",
+     "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+     "ec2:ModifyInstanceAttribute",
+     "ec2:RunInstances",
+     "ec2:StartInstances",
+     "ec2:StopInstances",
+     "ec2:TerminateInstances",
+     "ssm:SendCommand",
+     "ssm:StartSession"
+    ],
+    "sources": [
+     {
+      "via": "user",
+      "policy": "arn:aws:iam::123456789012:policy/kompass-lab-wildcard",
+      "actions": [
+       "ec2-instance-connect:SendSSHPublicKey",
+       "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+       "ec2:ModifyInstanceAttribute",
+       "ec2:RunInstances",
+       "ec2:StartInstances",
+       "ec2:StopInstances",
+       "ec2:TerminateInstances",
+       "ssm:SendCommand",
+       "ssm:StartSession"
+      ],
+      "conditional": false,
+      "not_action": false
+     }
+    ],
+    "unknown_policies": [],
+    "permissions_boundary": null
+   },
+   "collected_at": "2026-10-16T13:18:33.954522Z",
+   "mappings": null
+  }
+ ]
+}

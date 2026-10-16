@@ -1,0 +1,47 @@
+{
+ "id": "syn-rds-001-aurora-cluster",
+ "title": "암호화되지 않은 Aurora 클러스터와 암호화된 단일 인스턴스",
+ "source": "synthetic",
+ "rule_id": "RDS-001",
+ "tags": [
+  "rds",
+  "variant",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "RDS-001",
+   "resource": "acme-orders-db",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "high",
+   "message": "스토리지 암호화 적용됨",
+   "evidence": {
+    "kind": "instance",
+    "db_identifier": "acme-orders-db",
+    "engine": "postgres",
+    "storage_encrypted": true,
+    "kms_key_id": null
+   },
+   "collected_at": "2026-10-16T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "RDS-001",
+   "resource": "cluster:acme-ledger",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "스토리지 암호화 미적용: cluster:acme-ledger",
+   "evidence": {
+    "kind": "cluster",
+    "db_identifier": "acme-ledger",
+    "engine": "aurora-mysql",
+    "storage_encrypted": false,
+    "kms_key_id": null
+   },
+   "collected_at": "2026-10-16T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

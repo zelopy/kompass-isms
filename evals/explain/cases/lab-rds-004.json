@@ -1,0 +1,46 @@
+{
+ "id": "lab-rds-004",
+ "title": "실습 결과 RDS-004 (자동 백업 보존 기간 부족)",
+ "source": "lab",
+ "rule_id": "RDS-004",
+ "tags": [
+  "rds",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "RDS-004",
+   "resource": "kompass-lab-private",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "medium",
+   "message": "자동 백업 보존 기간 7일",
+   "evidence": {
+    "kind": "instance",
+    "db_identifier": "kompass-lab-private",
+    "engine": "postgres",
+    "backup_retention_days": 7,
+    "min_backup_retention_days": 7
+   },
+   "collected_at": "2026-10-16T13:19:05.152210Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "RDS-004",
+   "resource": "kompass-lab-public",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "자동 백업 꺼짐: kompass-lab-public",
+   "evidence": {
+    "kind": "instance",
+    "db_identifier": "kompass-lab-public",
+    "engine": "postgres",
+    "backup_retention_days": 0,
+    "min_backup_retention_days": 7
+   },
+   "collected_at": "2026-10-16T13:19:05.152210Z",
+   "mappings": null
+  }
+ ]
+}

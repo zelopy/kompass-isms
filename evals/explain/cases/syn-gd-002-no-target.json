@@ -1,0 +1,32 @@
+{
+ "id": "syn-gd-002-no-target",
+ "title": "GuardDuty 결과 규칙은 있으나 대상이 없음",
+ "source": "synthetic",
+ "rule_id": "GD-002",
+ "tags": [
+  "guardduty",
+  "unseen-rule",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "GD-002",
+   "resource": "account",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "GuardDuty 결과를 보내는 활성 알림 규칙이 없음",
+   "evidence": {
+    "rules": [
+     {
+      "name": "acme-guardduty-findings",
+      "state": "ENABLED",
+      "targets": []
+     }
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

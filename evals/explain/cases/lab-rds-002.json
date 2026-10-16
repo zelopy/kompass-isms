@@ -1,0 +1,56 @@
+{
+ "id": "lab-rds-002",
+ "title": "실습 결과 RDS-002 (데이터베이스 퍼블릭 접근 허용)",
+ "source": "lab",
+ "rule_id": "RDS-002",
+ "tags": [
+  "rds",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "RDS-002",
+   "resource": "kompass-lab-private",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "high",
+   "message": "퍼블릭 접근 허용 안 함",
+   "evidence": {
+    "kind": "instance",
+    "db_identifier": "kompass-lab-private",
+    "engine": "postgres",
+    "publicly_accessible": false,
+    "endpoint": "kompass-lab-private.f822d6f298eb.ap-northeast-2.rds.amazonaws.com",
+    "subnet_group": "kompass-lab-public",
+    "vpc_id": "vpc-ba161d466546302a9",
+    "security_groups": [
+     "sg-0a7203770ab01c3a4"
+    ]
+   },
+   "collected_at": "2026-10-16T13:19:05.152210Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "RDS-002",
+   "resource": "kompass-lab-public",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "퍼블릭 접근 허용: kompass-lab-public",
+   "evidence": {
+    "kind": "instance",
+    "db_identifier": "kompass-lab-public",
+    "engine": "postgres",
+    "publicly_accessible": true,
+    "endpoint": "kompass-lab-public.f822d6f298eb.ap-northeast-2.rds.amazonaws.com",
+    "subnet_group": "kompass-lab-public",
+    "vpc_id": "vpc-ba161d466546302a9",
+    "security_groups": [
+     "sg-0a7203770ab01c3a4"
+    ]
+   },
+   "collected_at": "2026-10-16T13:19:05.152210Z",
+   "mappings": null
+  }
+ ]
+}

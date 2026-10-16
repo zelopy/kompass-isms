@@ -1,0 +1,88 @@
+{
+ "id": "syn-iam-010-conditional-notaction",
+ "title": "조건부 세션 권한 역할과 NotAction 사용자",
+ "source": "synthetic",
+ "rule_id": "IAM-010",
+ "tags": [
+  "iam",
+  "review"
+ ],
+ "findings": [
+  {
+   "rule_id": "IAM-010",
+   "resource": "arn:aws:iam::123456789012:user/acme-contractor",
+   "region": null,
+   "status": "REVIEW",
+   "severity": "medium",
+   "message": "인스턴스 생성·접근 권한을 가진 사용자: acme-contractor (작업 9개)",
+   "evidence": {
+    "principal_type": "user",
+    "name": "acme-contractor",
+    "actions": [
+     "ec2-instance-connect:SendSSHPublicKey",
+     "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+     "ec2:ModifyInstanceAttribute",
+     "ec2:RunInstances",
+     "ec2:StartInstances",
+     "ec2:StopInstances",
+     "ec2:TerminateInstances",
+     "ssm:SendCommand",
+     "ssm:StartSession"
+    ],
+    "sources": [
+     {
+      "via": "user",
+      "policy": "inline:all-but-iam",
+      "actions": [
+       "ec2-instance-connect:SendSSHPublicKey",
+       "ec2-instance-connect:SendSerialConsoleSSHPublicKey",
+       "ec2:ModifyInstanceAttribute",
+       "ec2:RunInstances",
+       "ec2:StartInstances",
+       "ec2:StopInstances",
+       "ec2:TerminateInstances",
+       "ssm:SendCommand",
+       "ssm:StartSession"
+      ],
+      "conditional": false,
+      "not_action": true
+     }
+    ],
+    "unknown_policies": [],
+    "permissions_boundary": null
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "IAM-010",
+   "resource": "arn:aws:iam::123456789012:role/acme-ops",
+   "region": null,
+   "status": "REVIEW",
+   "severity": "medium",
+   "message": "인스턴스 생성·접근 권한을 가진 역할: acme-ops (작업 1개)",
+   "evidence": {
+    "principal_type": "role",
+    "name": "acme-ops",
+    "actions": [
+     "ssm:StartSession"
+    ],
+    "sources": [
+     {
+      "via": "role",
+      "policy": "arn:aws:iam::123456789012:policy/acme-ops-session",
+      "actions": [
+       "ssm:StartSession"
+      ],
+      "conditional": true,
+      "not_action": false
+     }
+    ],
+    "unknown_policies": [],
+    "permissions_boundary": null
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

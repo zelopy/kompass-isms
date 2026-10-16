@@ -1,0 +1,37 @@
+{
+ "id": "syn-ct-002-org-bucket",
+ "title": "조직 추적 버킷이 다른 계정에 있어 수명주기 조회 거부 (ERROR)",
+ "source": "synthetic",
+ "rule_id": "CT-002",
+ "tags": [
+  "cloudtrail",
+  "error"
+ ],
+ "findings": [
+  {
+   "rule_id": "CT-002",
+   "resource": "acme-org-log-archive",
+   "region": null,
+   "status": "ERROR",
+   "severity": "medium",
+   "message": "추적 버킷의 수명주기 설정을 수집하지 못함: acme-org-log-archive",
+   "evidence": {
+    "log_paths": [
+     "AWSLogs/"
+    ],
+    "min_retention_days": 365,
+    "errors": [
+     {
+      "operation": "s3:GetBucketLocation",
+      "region": "ap-northeast-2",
+      "error_code": "AccessDenied",
+      "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: s3:GetBucketLocation because no identity-based policy allows the s3:GetBucketLocation action",
+      "resource": "acme-org-log-archive"
+     }
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

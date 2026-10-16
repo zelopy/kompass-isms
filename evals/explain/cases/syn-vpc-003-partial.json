@@ -1,0 +1,37 @@
+{
+ "id": "syn-vpc-003-partial",
+ "title": "서브넷 하나만 흐름 로그로 기록되는 VPC",
+ "source": "synthetic",
+ "rule_id": "VPC-003",
+ "tags": [
+  "ec2",
+  "variant",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "VPC-003",
+   "resource": "vpc-39809e0b2e69369b0",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "흐름 로그로 기록되지 않는 네트워크 인터페이스 2개: vpc-39809e0b2e69369b0",
+   "evidence": {
+    "is_default_vpc": false,
+    "interfaces": 3,
+    "uncovered_interfaces": 2,
+    "flow_logs": [
+     {
+      "flow_log_id": "fl-2dd6d1ca45f3c72a5",
+      "resource_id": "subnet-2dd6d1ca45f3c72a5",
+      "traffic_type": "REJECT",
+      "destination_type": "s3",
+      "deliver_logs_status": "SUCCESS"
+     }
+    ]
+   },
+   "collected_at": "2026-10-13T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

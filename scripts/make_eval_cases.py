@@ -33,6 +33,7 @@ sys.path.insert(0, str(ROOT))  # tests/의 스냅샷 헬퍼를 쓴다
 
 from tests.rules.ec2 import data as ec2  # noqa: E402
 from tests.rules.iam import data as iam  # noqa: E402
+from tests.rules.rds import data as rds  # noqa: E402
 from tests.rules.s3 import data as s3  # noqa: E402
 
 CASES_DIR = ROOT / "evals" / "explain" / "cases"
@@ -52,8 +53,14 @@ def rid(kind: str, length: int = 17) -> str:
 
 _SUFFIX = re.compile(r"(?<=kompass-lab-)[a-z-]+?-([0-9a-f]{8})(?![A-Za-z0-9])")
 _RESOURCE_ID = re.compile(
-    r"(?<![A-Za-z0-9_.-])(sg|vpc|subnet|eni|igw|rtb|nat|i|vol|acl|pl)-([0-9a-f]{8,17})(?![A-Za-z0-9_-])"
+    r"(?<![A-Za-z0-9_.-])(sg|vpc|subnet|eni|igw|rtb|nat|i|vol|acl|pl|fl)-([0-9a-f]{8,17})(?![A-Za-z0-9_-])"
 )
+# GuardDuty 탐지기 ID(32자리), KMS 키 등 UUID, RDS 엔드포인트의 계정별 해시
+_DETECTOR_ID = re.compile(r"(?<![0-9a-f])[0-9a-f]{32}(?![0-9a-f])")
+_UUID = re.compile(
+    r"(?<![0-9a-f-])[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![0-9a-f-])"
+)
+_RDS_HASH = re.compile(r"(?<=\.)([a-z0-9]{12})(?=\.[a-z0-9-]+\.rds\.amazonaws\.com)")
 _UNIQUE_ID = re.compile(
     r"(?<![A-Za-z0-9])(AIDA|AROA|AKIA|ASIA|AGPA|ANPA)([A-Z0-9]{12,20})(?![A-Za-z0-9])"
 )
@@ -91,6 +98,12 @@ class Anonymizer:
             ),
             value,
         )
+        value = _UUID.sub(
+            lambda m: self._fake(m.group(0), lambda: "-".join(_hex(n) for n in (8, 4, 4, 4, 12))),
+            value,
+        )
+        value = _DETECTOR_ID.sub(lambda m: self._fake(m.group(0), lambda: _hex(32)), value)
+        value = _RDS_HASH.sub(lambda m: self._fake(m.group(0), lambda: _hex(12)), value)
         value = _IPV4.sub(
             lambda m: m.group(0) if _PRIVATE.match(m.group(1)) else self._ip_for(m), value
         )
@@ -120,7 +133,8 @@ class Anonymizer:
             raise SystemExit("가공 결과에 계정 ID로 보이는 12자리 숫자가 남아 있어 중단합니다")
 
 
-def lab_cases() -> list[EvalCase]:
+def lab_cases(rules: set[str] | None = None) -> list[EvalCase]:
+    """`rules`를 주면 그 룰의 케이스만 만든다 (기존 실습 케이스를 다시 만들지 않기 위해)."""
     store = SnapshotStore()
     path = latest_findings(store)
     if path is None:
@@ -133,6 +147,8 @@ def lab_cases() -> list[EvalCase]:
     cases = []
     for rule_id, findings in sorted(by_rule.items()):
         if not any(f.status in NEEDS_ACTION for f in findings):
+            continue
+        if rules is not None and rule_id not in rules:
             continue
         fake = [
             Finding.model_validate(
@@ -670,10 +686,307 @@ def synthetic_cases() -> list[tuple[str, str, str, tuple[str, ...], list[Finding
             ),
         ),
     )
+    _added_rules(add)  # 5단계에서 더한 룰. 기존 케이스의 무작위 값이 바뀌지 않게 맨 뒤에 둔다
     return out
 
 
+def _snap(service: str, data: dict[str, Any], errors: tuple[CollectError, ...] = ()) -> Snapshot:
+    return Snapshot(service=service, account_id=EVAL_ACCOUNT, regions=("ap-northeast-2",),
+                    collected_at=iam.T0, data=data, errors=errors)  # fmt: skip
+
+
+def _added_rules(add: Callable[..., None]) -> None:
+    """5단계 룰(RDS·VPC-003·GuardDuty·S3-007·CT-002·LOG-001·IAM-010~011)의 보강 케이스."""
+    region = "ap-northeast-2"
+
+    # GuardDuty
+    add(
+        "syn-gd-001-disabled",
+        "GuardDuty 탐지기가 비활성화됨",
+        "GD-001",
+        ("unseen-rule",),
+        evaluate(
+            "GD-001",
+            _snap(
+                "guardduty",
+                {
+                    "regions": {
+                        region: {
+                            "detectors": [
+                                {
+                                    "DetectorId": _hex(32),
+                                    "Status": "DISABLED",
+                                    "FindingPublishingFrequency": "SIX_HOURS",
+                                    "Features": [],
+                                }
+                            ],
+                            "event_rules": [],
+                        }
+                    }
+                },
+            ),
+        ),
+    )
+    add(
+        "syn-gd-002-no-target",
+        "GuardDuty 결과 규칙은 있으나 대상이 없음",
+        "GD-002",
+        ("unseen-rule",),
+        evaluate(
+            "GD-002",
+            _snap(
+                "guardduty",
+                {
+                    "regions": {
+                        region: {
+                            "detectors": [
+                                {
+                                    "DetectorId": _hex(32),
+                                    "Status": "ENABLED",
+                                    "FindingPublishingFrequency": "SIX_HOURS",
+                                    "Features": [],
+                                }
+                            ],
+                            "event_rules": [
+                                {
+                                    "Name": "acme-guardduty-findings",
+                                    "State": "ENABLED",
+                                    "EventPattern": json.dumps({"source": ["aws.guardduty"]}),
+                                    "Targets": [],
+                                }
+                            ],
+                        }
+                    }
+                },
+            ),
+        ),
+    )
+
+    # RDS
+    add(
+        "syn-rds-001-aurora-cluster",
+        "암호화되지 않은 Aurora 클러스터와 암호화된 단일 인스턴스",
+        "RDS-001",
+        ("variant",),
+        evaluate(
+            "RDS-001",
+            rds.snapshot(
+                {
+                    region: rds.region(
+                        [
+                            rds.instance("acme-orders-db"),
+                            rds.instance(
+                                "acme-ledger-1",
+                                engine="aurora-mysql",
+                                DBClusterIdentifier="acme-ledger",
+                            ),
+                        ],
+                        [rds.cluster("acme-ledger", engine="aurora-mysql", StorageEncrypted=False)],
+                    )
+                }
+            ),
+        ),
+    )
+    add(
+        "syn-rds-002-error",
+        "DB 인스턴스 목록 조회 권한 없음 (ERROR)",
+        "RDS-002",
+        ("error",),
+        evaluate(
+            "RDS-002",
+            rds.snapshot(
+                {region: rds.region(missing=("db_instances",))},
+                errors=(denied("rds:DescribeDBInstances"),),
+            ),
+        ),
+    )
+    add(
+        "syn-rds-004-short-retention",
+        "자동 백업 3일 보존과 읽기 전용 복제본",
+        "RDS-004",
+        ("variant",),
+        evaluate(
+            "RDS-004",
+            rds.snapshot(
+                {
+                    region: rds.region(
+                        [
+                            rds.instance(
+                                "acme-billing-db", engine="mysql", BackupRetentionPeriod=3
+                            ),
+                            rds.instance(
+                                "acme-billing-replica",
+                                engine="mysql",
+                                BackupRetentionPeriod=0,
+                                ReadReplicaSourceDBInstanceIdentifier="acme-billing-db",
+                            ),
+                        ]
+                    )
+                }
+            ),
+        ),
+    )
+
+    # VPC-003
+    vpc_id, used, quiet = rid("vpc"), rid("subnet"), rid("subnet")
+    add(
+        "syn-vpc-003-partial",
+        "서브넷 하나만 흐름 로그로 기록되는 VPC",
+        "VPC-003",
+        ("variant",),
+        evaluate(
+            "VPC-003",
+            ec2.snapshot(
+                {
+                    region: ec2.region(
+                        vpcs=[ec2.vpc(vpc_id)],
+                        network_interfaces=[
+                            ec2.eni(rid("eni"), used, vpc_id),
+                            ec2.eni(rid("eni"), quiet, vpc_id),
+                            ec2.eni(rid("eni"), quiet, vpc_id),
+                        ],
+                        flow_logs=[ec2.flow_log(used, traffic="REJECT")],
+                    )
+                }
+            ),
+        ),
+    )
+
+    # S3-007
+    add(
+        "syn-s3-007-mixed",
+        "HTTPS 강제 없는 버킷과 정책 조회 실패 버킷",
+        "S3-007",
+        ("mixed",),
+        evaluate(
+            "S3-007",
+            s3.snapshot(
+                {
+                    "acme-invoices": s3.details(
+                        policy=json.dumps(
+                            {
+                                "Version": "2012-10-17",
+                                "Statement": [
+                                    {
+                                        "Effect": "Allow",
+                                        "Principal": {"AWS": f"arn:aws:iam::{EVAL_ACCOUNT}:root"},
+                                        "Action": "s3:GetObject",
+                                        "Resource": "arn:aws:s3:::acme-invoices/*",
+                                    }
+                                ],
+                            }
+                        )
+                    ),
+                    "acme-exports": s3.details(missing=("policy",)),
+                },
+                errors=(denied("s3:GetBucketPolicy", resource="acme-exports"),),
+            ),
+        ),
+    )
+
+    # CT-002
+    org_trail = {
+        **_trail("acme-org-trail", multi=True),
+        "S3BucketName": "acme-org-log-archive",
+        "IsOrganizationTrail": True,
+    }
+    add(
+        "syn-ct-002-org-bucket",
+        "조직 추적 버킷이 다른 계정에 있어 수명주기 조회 거부 (ERROR)",
+        "CT-002",
+        ("error",),
+        evaluate(
+            "CT-002",
+            _snap(
+                "cloudtrail",
+                {
+                    "trails": [org_trail],
+                    "status": {},
+                    "event_selectors": {},
+                    "bucket_lifecycles": {},
+                },
+                (denied("s3:GetBucketLocation", resource="acme-org-log-archive"),),
+            ),
+        ),
+    )
+
+    # LOG-001
+    add(
+        "syn-log-001-missing-group",
+        "추적이 가리키는 로그 그룹이 없고 흐름 로그 그룹은 14일 보존",
+        "LOG-001",
+        ("variant",),
+        evaluate(
+            "LOG-001",
+            _snap(
+                "logs",
+                {
+                    "trail_log_groups": [
+                        {
+                            "trail": "acme-audit-trail",
+                            "log_group_arn": f"arn:aws:logs:{region}:{EVAL_ACCOUNT}:log-group:"
+                            "acme-cloudtrail:*",
+                        }
+                    ],
+                    "regions": {
+                        region: {
+                            "log_groups": [
+                                {"logGroupName": "acme-vpc-flow", "retentionInDays": 14},
+                                {"logGroupName": "/aws/lambda/acme-api", "retentionInDays": 7},
+                            ],
+                            "flow_log_groups": [
+                                {"flow_log_id": rid("fl"), "log_group": "acme-vpc-flow"}
+                            ],
+                        }
+                    },
+                },
+            ),
+        ),
+    )
+
+    # IAM-010
+    policy_arn = f"arn:aws:iam::{EVAL_ACCOUNT}:policy/acme-ops-session"
+    session = iam.document(
+        {
+            **iam.statement(action="ssm:StartSession"),
+            "Condition": {"Bool": {"aws:MultiFactorAuthPresent": "true"}},
+        }
+    )
+    add(
+        "syn-iam-010-conditional-notaction",
+        "조건부 세션 권한 역할과 NotAction 사용자",
+        "IAM-010",
+        ("review",),
+        evaluate(
+            "IAM-010",
+            iam.snapshot(
+                rows=[iam.root_row()],
+                users=[
+                    iam.iam_user(
+                        "acme-contractor",
+                        inline={"all-but-iam": iam.document(iam.statement(not_action="iam:*"))},
+                    )
+                ],
+                roles=[
+                    {
+                        "RoleName": "acme-ops",
+                        "Path": "/",
+                        "Arn": f"arn:aws:iam::{EVAL_ACCOUNT}:role/acme-ops",
+                        "AttachedManagedPolicies": [
+                            {"PolicyArn": policy_arn, "PolicyName": "acme-ops-session"}
+                        ],
+                        "RolePolicyList": [],
+                    }
+                ],
+                policies=[iam.managed_policy(policy_arn, session)],
+            ),
+        ),
+    )
+
+
 def build_synthetic() -> list[EvalCase]:
+    # 실습 가공이 난수를 얼마나 썼는지와 무관하게 같은 값이 나오도록 다시 시드한다
+    _rng.seed(20261016)
     cases = []
     for case_id, title, rule_id, tags, findings in synthetic_cases():
         statuses = sorted({f.status.value.lower() for f in findings if f.status in NEEDS_ACTION})
@@ -688,10 +1001,29 @@ def build_synthetic() -> list[EvalCase]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--no-lab", action="store_true", help="실습 가공 케이스를 만들지 않는다")
+    parser.add_argument(
+        "--lab-rules",
+        help="이 룰(쉼표 구분)의 실습 케이스만 새로 만들고 다른 실습 케이스는 그대로 둔다",
+    )
+    parser.add_argument(
+        "--rewrite-synthetic",
+        action="store_true",
+        help="이미 있는 보강 케이스도 다시 만든다 (기본: 새 케이스만 추가해 기준선 비교를 유지)",
+    )
     args = parser.parse_args()
-    cases = ([] if args.no_lab else lab_cases()) + build_synthetic()
+    rules = {r.strip().upper() for r in args.lab_rules.split(",")} if args.lab_rules else None
+    synthetic = [
+        c
+        for c in build_synthetic()
+        if args.rewrite_synthetic or not (CASES_DIR / f"{c.id}.json").exists()
+    ]
+    cases = ([] if args.no_lab else lab_cases(rules)) + synthetic
     for old in CASES_DIR.glob("*.json"):
-        if args.no_lab and old.name.startswith("lab-"):
+        if old.name.startswith("lab-"):
+            rule = old.stem.removeprefix("lab-").upper()
+            if args.no_lab or (rules is not None and rule not in rules):
+                continue
+        elif not args.rewrite_synthetic:
             continue
         old.unlink()
     write_cases(cases, CASES_DIR)
