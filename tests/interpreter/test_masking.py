@@ -314,3 +314,19 @@ def test_root_principal_is_kept() -> None:
     assert masked["username"] == "root"
     assert masked["user_arn"] == "arn:aws:iam::MASKED_ACCOUNT_1:root"
     assert "alice" not in masked["other"] and "123456789012" not in json.dumps(masked)
+
+
+def test_rds_identifiers_and_endpoint_are_masked() -> None:
+    finding = {
+        "resource": "cluster:ledger",
+        "evidence": {
+            "db_identifier": "ledger",
+            "db_cluster": "ledger",
+            "endpoint": "orders-db.abc123xyz.ap-northeast-2.rds.amazonaws.com",
+            "subnet_group": "prod-db-subnets",
+        },
+    }
+    masker = Masker.for_values([finding])
+    text = json.dumps(masker.mask(finding))
+    for raw in ("ledger", "orders-db", "abc123xyz", "prod-db-subnets"):
+        assert raw not in text, raw

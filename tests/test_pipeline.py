@@ -78,13 +78,13 @@ def test_collect_all_services_by_default(
     monkeypatch.setitem(COLLECTORS, "iam", lambda: IamCollector(sleep=lambda _: None))
     result = collect(_scan(), store)
     _, report = evaluate_scan(result.scan_path, Settings())
-    assert set(result.errors_by_service) == {"cloudtrail", "ec2", "iam", "s3"}
+    assert set(result.errors_by_service) == {"cloudtrail", "ec2", "iam", "rds", "s3"}
     assert report.skipped_rules == ()
 
 
 def test_unknown_service_rejected(aws: None, store: SnapshotStore) -> None:
-    with pytest.raises(ValueError, match="rds"):
-        collect(_scan(), store, ["rds"])
+    with pytest.raises(ValueError, match="kms"):
+        collect(_scan(), store, ["kms"])
 
 
 def test_report_round_trips(aws: None, store: SnapshotStore) -> None:

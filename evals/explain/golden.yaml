@@ -91,6 +91,33 @@ rules:
   S3-003:
     fail: [s3:PutBucketPolicy, s3:DeleteBucketPolicy, s3:PutPublicAccessBlock, s3control:PutPublicAccessBlock]
     example: aws s3api delete-bucket-policy --bucket {resource}
+  RDS-001:
+    # 기존 인스턴스는 암호화를 켤 수 없어 스냅샷을 암호화 복사한 뒤 복원한다
+    fail:
+      - rds:CreateDBSnapshot
+      - rds:CopyDBSnapshot
+      - rds:RestoreDBInstanceFromDBSnapshot
+      - rds:CreateDBClusterSnapshot
+      - rds:CopyDBClusterSnapshot
+      - rds:RestoreDBClusterFromSnapshot
+    example: >-
+      aws rds create-db-snapshot --db-instance-identifier {resource}
+      --db-snapshot-identifier {resource}-before-encryption
+  RDS-002:
+    fail: [rds:ModifyDBInstance]
+    example: >-
+      aws rds modify-db-instance --db-instance-identifier {resource}
+      --no-publicly-accessible --apply-immediately
+  RDS-003:
+    fail: [rds:ModifyDBInstance, rds:ModifyDBCluster]
+    example: >-
+      aws rds modify-db-instance --db-instance-identifier {resource}
+      --cloudwatch-logs-export-configuration '{"EnableLogTypes":["postgresql"]}'
+  RDS-004:
+    fail: [rds:ModifyDBInstance, rds:ModifyDBCluster]
+    example: >-
+      aws rds modify-db-instance --db-instance-identifier {resource}
+      --backup-retention-period 7 --apply-immediately
   S3-004:
     fail: [s3:PutBucketEncryption]
     example: >-

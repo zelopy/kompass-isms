@@ -254,6 +254,47 @@ finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 
 - ISMS-P(초안): 2.9.4 로그 및 접속기록 관리, 2.10.2 클라우드 보안
 - KISA: CA-13 클라우드 서비스 사용자 계정 로깅 설정 (상, 866쪽) — 근거 수준: 직접
 
+## RDS
+
+5단계에서 추가한 룰이다 (ADR-039). 점검 리전(`ScanContext.regions`)마다 `rds:DescribeDBInstances`와 `rds:DescribeDBClusters`로 수집한다.
+
+- **대상 엔진.** 관계형 데이터베이스만 본다. `docdb`(DocumentDB)·`neptune`(Neptune)은 같은 API로 조회되지만 대상에서 빼고, 리전 finding의 evidence에 제외한 식별자를 남긴다.
+- **클러스터 단위 판정.** `DBClusterIdentifier`가 있는 인스턴스(Aurora, Multi-AZ DB 클러스터)는 암호화·로그·백업이 클러스터 설정이므로 클러스터로 판정한다. 클러스터 finding의 resource는 `cluster:<클러스터 식별자>`로 써서 같은 이름의 인스턴스와 구분한다. 퍼블릭 접근(`PubliclyAccessible`)은 인스턴스 설정이라 RDS-002는 클러스터 소속 인스턴스도 인스턴스 단위로 판정한다.
+- **오류.** 리전의 인스턴스 목록이나 클러스터 목록 중 판정에 필요한 것을 수집하지 못하면 그 리전은 ERROR 하나다. 대상 데이터베이스가 없으면 리전 단위 `NOT_APPLICABLE`. 판정에 쓰는 필드가 응답에 없으면 그 리소스는 ERROR다 (데이터가 없다고 양호로 보지 않는다). 예외: `EnabledCloudwatchLogsExports`는 내보내기가 없으면 키가 생략되므로 RDS-003은 키가 없는 것을 "내보내기 없음"으로 본다 (실습 계정 확인 대상).
+
+### RDS-001 데이터베이스 스토리지 암호화 미적용
+- 심각도: high
+- API: `rds:DescribeDBInstances`, `rds:DescribeDBClusters`
+- 판정: 클러스터에 속하지 않은 인스턴스와 클러스터마다 `StorageEncrypted == true`이면 PASS, `false`이면 FAIL. evidence에 엔진과 `KmsKeyId`를 남긴다.
+- 비고: 클라우드 암호화는 스토리지·백업·스냅샷 암호화이며 테이블·컬럼 단위 암호화가 아니다 (KISA 864쪽 주석). 중요정보 암호화는 증적 요청 목록으로 확인한다.
+- ISMS-P(초안): 2.7.1 암호정책 적용
+- KISA: CA-11 관계형 데이터베이스 암호화 설정 (중, 864쪽) — 근거 수준: 직접 ("데이터 스토리지 암호화 적용 여부 확인")
+
+### RDS-002 데이터베이스 퍼블릭 접근 허용
+- 심각도: high
+- API: `rds:DescribeDBInstances`
+- 판정: 인스턴스마다 `PubliclyAccessible == true`이면 FAIL, `false`이면 PASS. evidence에 엔진, 서브넷 그룹, VPC 보안그룹, 엔드포인트 주소를 남긴다.
+- 비고: `PubliclyAccessible`은 공인 IP를 가진 엔드포인트를 만든다는 뜻이며, 실제 접근 가능 여부는 서브넷 라우팅과 보안그룹에 달려 있다. 공통 원칙("설정이 존재하면 FAIL")에 따라 보안그룹이 막고 있어도 FAIL로 본다.
+- ISMS-P(초안): 2.6.1 네트워크 접근, 2.10.2 클라우드 보안
+- KISA: CA-08 가상 네트워크 리소스 관리 (중, 861쪽) — 근거 수준: 직접 ("각 서비스 리소스에 공인 IP주소가 존재하지 않고")
+
+### RDS-003 데이터베이스 로그 내보내기 미설정
+- 심각도: medium
+- API: `rds:DescribeDBInstances`, `rds:DescribeDBClusters`
+- 판정: 클러스터에 속하지 않은 인스턴스와 클러스터마다 `EnabledCloudwatchLogsExports`가 비어 있으면 FAIL, 하나 이상이면 PASS. evidence에 내보내는 로그 종류를 남긴다.
+- 비고: 필요한 로그 종류(감사·오류·느린 쿼리 등)는 엔진과 기관 정책에 따라 다르므로 종류는 판정하지 않는다. 항목이 `partial`이라 결과는 "검토 필요"가 상한이다.
+- ISMS-P(초안): 2.9.4 로그 및 접속기록 관리
+- KISA: CA-15 관계형 데이터베이스 로깅 설정 (중, 868쪽) — 근거 수준: 직접 ("관계형 데이터베이스 로깅 설정 적용 및 활동 로그 기록 여부 확인")
+
+### RDS-004 자동 백업 보존 기간 부족
+- 심각도: medium
+- API: `rds:DescribeDBInstances`, `rds:DescribeDBClusters`
+- 판정: 클러스터에 속하지 않은 인스턴스와 클러스터마다 `BackupRetentionPeriod`가 `rds.min_backup_retention_days`(기본 7일) 이상이면 PASS, 미만이면 FAIL. 0은 자동 백업 꺼짐이다.
+- 제외: 읽기 전용 복제본(`ReadReplicaSourceDBInstanceIdentifier`가 있는 인스턴스)은 원본의 백업을 따르고 엔진에 따라 자동 백업을 켤 수 없으므로 `NOT_APPLICABLE`.
+- 비고: AWS Backup 계획으로 백업하는 경우는 이 룰에서 인정하지 않는다 (AWS Backup collector 이후). 백업·복구 절차는 증적 요청 목록으로 확인한다.
+- ISMS-P(초안): 2.9.3 백업 및 복구관리
+- KISA: CA-18 백업 사용 여부 (중, 871쪽) — 근거 수준: 직접 ("클라우드 리소스를 기관 정책에 따라 주기적으로 백업이 수행된 경우")
+
 ## 룰 추가 절차
 
 1. 이 문서에 룰 항목을 먼저 추가한다 (ID, 심각도, API, 판정 기준, 매핑).

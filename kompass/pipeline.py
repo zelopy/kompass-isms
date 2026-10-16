@@ -18,6 +18,7 @@ from kompass.collectors.base import Collector
 from kompass.collectors.cloudtrail import CloudTrailCollector
 from kompass.collectors.ec2 import Ec2Collector
 from kompass.collectors.iam import IamCollector
+from kompass.collectors.rds import RdsCollector
 from kompass.collectors.s3 import S3Collector
 from kompass.config import Settings
 from kompass.mappings.data import load_mappings
@@ -41,6 +42,7 @@ COLLECTORS: dict[str, Callable[[], Collector]] = {
     "cloudtrail": CloudTrailCollector,
     "ec2": Ec2Collector,
     "iam": IamCollector,
+    "rds": RdsCollector,
     "s3": S3Collector,
 }
 FINDINGS_DIR = "findings"

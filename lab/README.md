@@ -15,7 +15,7 @@ kompass 룰이 기대한 FAIL/PASS/REVIEW를 내는지 확인하기 위한 **의
 | 공인 IPv4 1개 (`aws_eip.public_only`) | 시간당 과금, 월 약 3.6달러 |
 | CloudTrail 첫 관리 이벤트 추적 | 추적 요금 없음, S3 저장 비용만 발생 |
 | S3 버킷, VPC, 서브넷, 보안그룹, 연결되지 않은 ENI, IAM | 무료 또는 사실상 0 |
-| 공개 RDS (`enable_public_rds = true`일 때만) | db.t4g.micro 시간당 과금 + Secrets Manager 시크릿. 확인 후 바로 끈다 |
+| RDS 2개 (`enable_public_rds = true`일 때만) | db.t4g.micro 2대 시간당 과금 + Secrets Manager 시크릿 2개. 확인 후 바로 끈다 |
 
 EC2 인스턴스, NAT 게이트웨이, 로드 밸런서는 만들지 않는다. 리소스 존재는 연결되지 않은 네트워크 인터페이스로 흉내 낸다.
 
@@ -42,7 +42,7 @@ terraform apply
 | `account_block_public_access` | `false` | 위 변수가 `true`일 때 `true` → S3-001 PASS. 대신 퍼블릭 버킷 3개가 생성되지 않는다 |
 | `cloudtrail_enabled` | `true` | `false` → CT-001 FAIL (로깅 중지) |
 | `cloudtrail_read_write_type` | `All` | `WriteOnly` → CT-001 FAIL (`require_read_events: true`일 때) |
-| `enable_public_rds` | `false` | `true` → VPC-002에 RDS 인터페이스 REVIEW 추가 |
+| `enable_public_rds` | `false` | `true` → RDS 2개 생성 (`public`: RDS-001~004 FAIL·VPC-002 REVIEW, `private`: RDS-001~004 PASS) |
 
 ## 기대 결과표
 
@@ -108,6 +108,17 @@ terraform apply
 | VPC-001 | 리전 기본 VPC | 실습 비교 대상 아님 (기존 리소스가 있으면 결과가 달라진다) |
 | VPC-002 | `public-only` ENI (EIP 연결) | REVIEW |
 | VPC-002 | 공개 RDS ENI (`enable_public_rds = true`일 때) | REVIEW. **RDS ENI 필드값 확인 대상** |
+
+### RDS
+
+`enable_public_rds = false`(기본)이면 RDS 룰은 리전 단위 해당 없음(N/A)이다.
+
+| 룰 | 대상 (`enable_public_rds = true`일 때) | 기대 결과 |
+|---|---|---|
+| RDS-001 | `kompass-lab-public` / `kompass-lab-private` | FAIL / PASS |
+| RDS-002 | `kompass-lab-public` / `kompass-lab-private` | FAIL / PASS |
+| RDS-003 | `kompass-lab-public` / `kompass-lab-private` | FAIL / PASS. **로그 내보내기가 없을 때 `EnabledCloudwatchLogsExports` 키 생략 여부 확인 대상** |
+| RDS-004 | `kompass-lab-public` (백업 0일) / `kompass-lab-private` (7일) | FAIL / PASS |
 
 ### CloudTrail
 

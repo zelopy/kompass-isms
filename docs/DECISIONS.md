@@ -351,3 +351,15 @@
   - 호출마다 원래 입력값·마스킹한 결과를 `reports/mcp/<계정>/<점검 ID>.<시각>.mcp.jsonl`에 남긴다 (커밋 안 함).
   - 표준 출력은 MCP 통신 전용이므로 CLI 안내 메시지는 표준 오류로 낸다.
 - 이유: 사용자가 쓰는 MCP 클라이언트에서 점검 결과를 대화형으로 조사할 수 있게 하되, 원칙 2·5를 서버 쪽에서 강제해야 클라이언트 설정과 무관하게 지켜진다.
+
+## ADR-039 RDS 룰
+- 상태: 채택 (사용자 결정, 2026-10-16). 5단계 첫 단위.
+- 결정:
+  - RDS collector가 점검 리전마다 `rds:DescribeDBInstances`·`rds:DescribeDBClusters`를 수집한다 (읽기 전용, 가드 허용 목록 변경 없음).
+  - 룰 4개: RDS-001 스토리지 암호화(CA-11), RDS-002 퍼블릭 접근(CA-08), RDS-003 로그 내보내기(CA-15), RDS-004 자동 백업 보존 기간(CA-18, 기본 7일, `rds.min_backup_retention_days`). SSL 강제(CA-12)와 공개 스냅샷은 이후로 미룬다.
+  - DocumentDB·Neptune은 관계형 데이터베이스가 아니므로 뺀다. Aurora·Multi-AZ DB 클러스터 소속 인스턴스는 암호화·로그·백업을 클러스터 단위로 판정한다 (resource `cluster:<식별자>`). 퍼블릭 접근은 인스턴스 설정이라 인스턴스 단위다.
+  - 판정 필드가 응답에 없으면 ERROR (원칙 3). 예외는 `EnabledCloudwatchLogsExports`로, 내보내기가 없으면 키가 생략되므로 "내보내기 없음"으로 본다. 실습 계정에서 확인한다.
+  - 읽기 전용 복제본은 RDS-004에서 해당 없음. AWS Backup 계획은 인정하지 않는다 (AWS Backup collector 이후).
+  - KISA 매핑 근거 구절은 원문 색인과 대조했으나 사용자 확인 전이라 `kisa_verified: false`로 둔다 (원칙 7).
+  - 평가셋 정답(`evals/explain/golden.yaml`)에 RDS 룰의 조치 작업을 더했다. 평가 케이스는 아직 없다.
+- 이유: RDS는 KISA 항목 4개(그중 CA-11은 full)를 자동화해 수동 점검 항목을 9개에서 6개로 줄인다. Describe 응답 필드만으로 판정할 수 있어 결정론적 판정 원칙에 맞는다.

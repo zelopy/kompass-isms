@@ -38,21 +38,22 @@ KISA 판단 기준에는 "기관 정책에 따라", "주기적으로 검토", "�
 | CA-05 | 인스턴스 서비스 정책 관리 | 상 | 858 | partial | (후보) | EC2 생성·접근 권한 보유 주체 현황 |
 | CA-06 | 네트워크 서비스 정책 관리 | 상 | 859 | partial | (후보) | VPC·ELB·Route 53 권한 보유 주체 현황 |
 | CA-07 | VPC 네트워크 서브넷 관리 | 상 | 860 | partial | VPC-001 | 라우팅 테이블로 퍼블릭/프라이빗 서브넷 구분 |
-| CA-08 | 가상 네트워크 리소스 관리 | 중 | 861 | partial | VPC-002 | 공인 IP가 붙은 네트워크 인터페이스 현황. RDS `PubliclyAccessible`은 RDS collector 이후 |
+| CA-08 | 가상 네트워크 리소스 관리 | 중 | 861 | partial | VPC-002, RDS-002 | 공인 IP가 붙은 네트워크 인터페이스 현황, 퍼블릭 접근 허용 RDS |
 | CA-09 | 접근 제어 설정 관리 | 상 | 862 | partial | SG-001~003 | 주기적 검토 여부는 사람이 판단 |
 | CA-10 | 스토리지 리소스 퍼블릭 접근 관리 | 중 | 863 | partial | S3-001~003, S3-006 | 주기적 검토 여부는 사람이 판단 |
-| CA-11 | 관계형 데이터베이스 암호화 설정 | 중 | 864 | full | (후보) | RDS·Aurora `StorageEncrypted` |
+| CA-11 | 관계형 데이터베이스 암호화 설정 | 중 | 864 | full | RDS-001 | RDS·Aurora `StorageEncrypted` |
 | CA-12 | 통신구간 암호화 설정 | 중 | 865 | partial | (후보) | ELB 리스너·TLS 정책, S3 `aws:SecureTransport` 등. 범위가 넓음 |
 | CA-13 | 클라우드 서비스 사용자 계정 로깅 설정 | 상 | 866 | full | CT-001 | CloudTrail 멀티 리전 추적, 로깅 활성, 관리 이벤트. 읽기 이벤트 요구는 설정 |
 | CA-14 | 인스턴스 로깅 설정 | 중 | 867 | partial | (후보) | VPC Flow Logs는 자동, OS 수준 로그는 사람이 확인 |
-| CA-15 | 관계형 데이터베이스 로깅 설정 | 중 | 868 | partial | (후보) | `EnabledCloudwatchLogsExports`. 필요한 로그 종류는 기관 정책 |
+| CA-15 | 관계형 데이터베이스 로깅 설정 | 중 | 868 | partial | RDS-003 | `EnabledCloudwatchLogsExports`. 필요한 로그 종류는 기관 정책 |
 | CA-16 | 오브젝트 스토리지 버킷 로깅 설정 | 중 | 869 | full | S3-005 | CloudTrail S3 데이터 이벤트는 룰에서 인정하지 않음 (ADR-015) |
 | CA-17 | 로그 보관 기간 설정 | 중 | 870 | partial | (후보) | CloudWatch Logs 보존 기간, 로그 버킷 수명주기를 설정 기준값과 비교 |
-| CA-18 | 백업 사용 여부 | 중 | 871 | partial | (후보) | AWS Backup 계획, RDS `BackupRetentionPeriod` |
+| CA-18 | 백업 사용 여부 | 중 | 871 | partial | RDS-004 | RDS `BackupRetentionPeriod`. AWS Backup 계획은 후보 |
 | CA-19 | 가상 리소스 이상징후 알림 설정 | 중 | 872 | partial | (후보) | GuardDuty 활성화는 자동, 알림 경로(SNS 등)는 부분 확인 |
 
 - `full` 4개, `partial` 15개, `manual` 0개.
 - 1단계 룰(IAM·S3·EC2·CloudTrail)이 다루는 항목: CA-01, 02, 03, 04, 07, 08, 09, 10, 13, 16 (10개). 그중 "상" 항목은 CA-01, 03, 07, 09, 13.
+- 5단계 RDS 룰(ADR-039)이 더한 항목: CA-11, CA-15, CA-18 (CA-08은 VPC-002와 함께).
 - 1단계 룰 중 KISA 클라우드 항목에 대응하지 않는 룰: IAM-006(액세스 키 교체), S3-004(S3 기본 암호화), SG-004(사용 중인 기본 보안그룹 규칙). ISMS-P 매핑만 둔다.
 
 ## 항목별 세부
@@ -99,7 +100,7 @@ KISA 판단 기준에는 "기관 정책에 따라", "주기적으로 검토", "�
 ### CA-08 가상 네트워크 리소스 관리 (중, 861쪽) — partial
 - 기준: 내부용 리소스에 공인 IP가 없고 적절한 권한이 부여되어 있으면 양호.
 - 자동: 공인 IP가 붙은 네트워크 인터페이스를 현황(`REVIEW`)으로 낸다 (VPC-002).
-- 후보: `PubliclyAccessible=true`인 RDS는 FAIL. RDS collector가 생기면 추가한다.
+- 자동: `PubliclyAccessible=true`인 RDS 인스턴스는 FAIL (RDS-002).
 - 사람: 공인 IP가 붙은 리소스가 내부용인지 판단한다.
 
 ### CA-09 접근 제어 설정 관리 (상, 862쪽) — partial
@@ -116,7 +117,7 @@ KISA 판단 기준에는 "기관 정책에 따라", "주기적으로 검토", "�
 
 ### CA-11 관계형 데이터베이스 암호화 설정 (중, 864쪽) — full
 - 기준: 관계형 데이터베이스 암호화가 적용되어 있으면 양호. 원문 주석: 클라우드 암호화 기능은 스토리지·백업·스냅샷 암호화이고 테이블 단위 암호화가 아니다.
-- 자동(후보): `rds:DescribeDBInstances`, `rds:DescribeDBClusters`의 `StorageEncrypted`.
+- 자동: `rds:DescribeDBInstances`, `rds:DescribeDBClusters`의 `StorageEncrypted` (RDS-001). Aurora·Multi-AZ DB 클러스터는 클러스터 단위로 판정한다.
 
 ### CA-12 통신구간 암호화 설정 (중, 865쪽) — partial
 - 기준: 클라우드 리소스 간 통신 구간에 암호화가 적용되어 있으면 양호. TLS 1.2 이상, TLS 1.3 권장.
@@ -133,7 +134,7 @@ KISA 판단 기준에는 "기관 정책에 따라", "주기적으로 검토", "�
 - 사람: 인스턴스 OS·애플리케이션 로그 수집 여부와 주기적 검토.
 
 ### CA-15 관계형 데이터베이스 로깅 설정 (중, 868쪽) — partial
-- 자동(후보): RDS `EnabledCloudwatchLogsExports`가 비어 있으면 FAIL.
+- 자동: RDS `EnabledCloudwatchLogsExports`가 비어 있으면 FAIL (RDS-003).
 - 사람: 엔진별로 필요한 로그 종류(감사·오류·느린 쿼리 등)가 기관 정책에 맞는지와 주기적 검토.
 
 ### CA-16 오브젝트 스토리지 버킷 로깅 설정 (중, 869쪽) — full
@@ -146,7 +147,8 @@ KISA 판단 기준에는 "기관 정책에 따라", "주기적으로 검토", "�
 - 사람: 보관 정책 자체의 수립 여부, 로그 백업.
 
 ### CA-18 백업 사용 여부 (중, 871쪽) — partial
-- 자동(후보): AWS Backup 계획과 보호 대상 리소스, RDS `BackupRetentionPeriod > 0`.
+- 자동: RDS 자동 백업 보존 기간이 `rds.min_backup_retention_days`(기본 7일) 미만이면 FAIL (RDS-004).
+- 자동(후보): AWS Backup 계획과 보호 대상 리소스.
 - 사람: 백업·복구 절차 수립과 주기적 검토.
 
 ### CA-19 가상 리소스 이상징후 알림 설정 (중, 872쪽) — partial
@@ -184,6 +186,10 @@ KISA 판단 기준에는 "기관 정책에 따라", "주기적으로 검토", "�
 | VPC-001 공개·내부 서브넷 미분리 | CA-07 | 직접 | "Public 서브넷은 인터넷 게이트웨이로, Private 서브넷은 NAT 게이트웨이로 할당" (860쪽) |
 | VPC-002 공인 IP 네트워크 인터페이스 | CA-08 | 직접 | "각 서비스 리소스에 공인 IP주소가 존재하지 않고" (861쪽) |
 | CT-001 CloudTrail 추적 | CA-13 | 직접 | "사용자 계정 로깅 설정" (866쪽) |
+| RDS-001 스토리지 암호화 | CA-11 | 직접 | "데이터 스토리지 암호화 적용 여부 확인" (864쪽) |
+| RDS-002 퍼블릭 접근 허용 | CA-08 | 직접 | "각 서비스 리소스에 공인 IP주소가 존재하지 않고" (861쪽) |
+| RDS-003 로그 내보내기 | CA-15 | 직접 | "관계형 데이터베이스 로깅 설정 적용 및 활동 로그 기록 여부 확인" (868쪽) |
+| RDS-004 자동 백업 보존 기간 | CA-18 | 직접 | "클라우드 리소스를 기관 정책에 따라 주기적으로 백업이 수행된 경우" (871쪽) |
 
 ## ISMS-P 매핑 후보 (초안, 미검증)
 

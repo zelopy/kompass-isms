@@ -189,7 +189,7 @@ def test_bad_config_stops_before_aws(store: Path, tmp_path: Path) -> None:
 
 def test_unknown_service_is_usage_error(aws: None, store: Path) -> None:
     result = runner.invoke(
-        app, ["collect", "--profile", "audit", "--service", "rds", "--store", str(store)]
+        app, ["collect", "--profile", "audit", "--service", "kms", "--store", str(store)]
     )
     assert result.exit_code == EXIT_USAGE
 

@@ -59,7 +59,7 @@ variable "cloudtrail_read_write_type" {
 # --- 비용이 드는 선택 리소스 ---
 
 variable "enable_public_rds" {
-  description = "공개 RDS 인스턴스 생성 (VPC-002 제외 조건 확인용). 시간당 과금되므로 확인 후 바로 끈다."
+  description = "RDS 인스턴스 2개 생성 (RDS-001~004, VPC-002 확인용). 시간당 과금되므로 확인 후 바로 끈다."
   type        = bool
   default     = false
 }

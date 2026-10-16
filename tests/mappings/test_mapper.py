@@ -232,7 +232,8 @@ def test_unsettled_full_items_get_requests() -> None:
     assert [t.finding_key for t in ca03.targets] == ["IAM-009:-:saml-idp"]
     assert "수집 실패" in _group(report, "CA-13").reason
     assert _group(report, "CA-16").outcome == ItemOutcome.NOT_EVALUATED
-    assert "자동 점검 룰 없음" in _group(report, "CA-11").reason  # 룰이 없는 full 항목
+    assert _group(report, "CA-11").outcome == ItemOutcome.NOT_EVALUATED  # RDS 스냅샷 없음
+    assert "자동 점검 룰 없음" in _group(report, "CA-05").reason  # 룰이 없는 항목
 
 
 def test_evidence_targets_are_review_and_error_findings() -> None:

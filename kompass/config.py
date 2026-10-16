@@ -47,6 +47,11 @@ class IamSettings(_Section):
     password_policy: PasswordPolicySettings = PasswordPolicySettings()
 
 
+class RdsSettings(_Section):
+    # RDS-004 (KISA CA-18): 자동 백업 보존 기간 최소 일수. 0이면 자동 백업 꺼짐
+    min_backup_retention_days: int = Field(default=7, ge=1)
+
+
 class LlmSettings(_Section):
     """LLM 해설 설정 (3단계, ADR-029). 판정에는 쓰이지 않으므로 판정 결과 파일에 남기지 않는다."""
 
@@ -63,6 +68,7 @@ class Settings(_Section):
     ec2: Ec2Settings = Ec2Settings()
     s3: S3Settings = S3Settings()
     iam: IamSettings = IamSettings()
+    rds: RdsSettings = RdsSettings()
     llm: LlmSettings = LlmSettings()
 
     def judgment_criteria(self) -> dict[str, Any]:
