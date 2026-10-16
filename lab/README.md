@@ -107,6 +107,8 @@ terraform apply
 | VPC-001 | `public-only` (퍼블릭 서브넷에만 ENI) | FAIL |
 | VPC-001 | 리전 기본 VPC | 실습 비교 대상 아님 (기존 리소스가 있으면 결과가 달라진다) |
 | VPC-002 | `public-only` ENI (EIP 연결) | REVIEW |
+| VPC-003 | `mixed` (VPC 흐름 로그, REJECT만 기록) | PASS |
+| VPC-003 | `public-only` (흐름 로그 없음) | FAIL |
 | VPC-002 | 공개 RDS ENI (`enable_public_rds = true`일 때) | REVIEW (2026-10-16 확인, `RequesterId: amazon-rds`) |
 
 ### RDS

@@ -13,6 +13,7 @@ from kompass.rules.ec2.sg_003_db_port_open import Sg003DbPortOpen
 from kompass.rules.ec2.sg_004_default_group_in_use import Sg004DefaultGroupInUse
 from kompass.rules.ec2.vpc_001_subnet_separation import Vpc001SubnetSeparation
 from kompass.rules.ec2.vpc_002_public_ip_interface import Vpc002PublicIpInterface
+from kompass.rules.ec2.vpc_003_flow_logs import Vpc003FlowLogs
 from kompass.rules.iam.iam_001_root_mfa import Iam001RootMfa
 from kompass.rules.iam.iam_002_root_access_key import Iam002RootAccessKey
 from kompass.rules.iam.iam_003_console_user_mfa import Iam003ConsoleUserMfa
@@ -41,6 +42,7 @@ RULES: tuple[BaseRule, ...] = (
     Sg004DefaultGroupInUse(),
     Vpc001SubnetSeparation(),
     Vpc002PublicIpInterface(),
+    Vpc003FlowLogs(),
     S3001AccountPublicAccessBlock(),
     S3002BucketPublicAccessBlock(),
     S3003PublicBucketPolicy(),

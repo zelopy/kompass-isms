@@ -21,6 +21,7 @@ OPERATIONS = {
     "subnets": "ec2:DescribeSubnets",
     "route_tables": "ec2:DescribeRouteTables",
     "network_interfaces": "ec2:DescribeNetworkInterfaces",
+    "flow_logs": "ec2:DescribeFlowLogs",
 }
 
 

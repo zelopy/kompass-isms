@@ -179,3 +179,14 @@ resource "aws_eip" "public_only" {
 
   depends_on = [aws_internet_gateway.public_only]
 }
+
+# --- VPC 흐름 로그: VPC-003 (ADR-040) ---
+# mixed VPC에만 켠다 → mixed PASS, public-only FAIL. 로그는 logs 버킷의 vpc-flow/ 아래에 쌓인다
+resource "aws_flow_log" "mixed" {
+  vpc_id               = aws_vpc.mixed.id
+  traffic_type         = "REJECT"
+  log_destination_type = "s3"
+  log_destination      = "${aws_s3_bucket.logs.arn}/vpc-flow/"
+
+  depends_on = [aws_s3_bucket_policy.logs]
+}

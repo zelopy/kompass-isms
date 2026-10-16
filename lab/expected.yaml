@@ -38,6 +38,8 @@ expectations:
   - {rule: VPC-001, resource: kompass-lab-public-only, status: FAIL}
   - {rule: VPC-002, resource: "kompass lab: workload in public-only VPC", status: REVIEW}
   - {rule: VPC-002, resource: "kompass lab: workload in private subnet", status: NONE}
+  - {rule: VPC-003, resource: kompass-lab-mixed, status: PASS}
+  - {rule: VPC-003, resource: kompass-lab-public-only, status: FAIL}
 
   # RDS (기본값 enable_public_rds = false: 대상 없음)
   - {rule: RDS-001, resource: account, status: N/A}

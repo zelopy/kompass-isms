@@ -73,6 +73,7 @@ RULE_HINTS: dict[str, str] = {
     "SG-004": "기본 보안그룹 규칙과 연결된 인터페이스·인스턴스",
     "VPC-001": "서브넷 라우팅(인터넷 게이트웨이·NAT), 인터페이스의 공인 IP·보안그룹",
     "VPC-002": "인터페이스의 인스턴스·보안그룹 규칙·서브넷 경로",
+    "VPC-003": "VPC의 인터페이스·서브넷 구성, 흐름 로그 변경 이력(DeleteFlowLogs·CreateFlowLogs)",
     "RDS-001": "데이터베이스 생성·수정 이력(CreateDBInstance·ModifyDBInstance 이벤트)",
     "RDS-002": "연결된 보안그룹 규칙과 서브넷 경로(인터넷 게이트웨이 여부), 공개 설정 변경 이력",
     "RDS-003": "데이터베이스 설정 변경 이력(ModifyDBInstance·ModifyDBCluster 이벤트)",

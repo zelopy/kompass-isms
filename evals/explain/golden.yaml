@@ -163,6 +163,11 @@ rules:
       - ec2:ReplaceRouteTableAssociation
       - ec2:CreateNatGateway
     example: aws ec2 create-subnet --vpc-id {resource} --cidr-block 10.0.128.0/24
+  VPC-003:
+    fail: [ec2:CreateFlowLogs]
+    example: >-
+      aws ec2 create-flow-logs --resource-type VPC --resource-ids {resource}
+      --traffic-type ALL --log-destination-type s3 --log-destination arn:aws:s3:::flow-log-bucket
   VPC-002:
     review:
       - ec2:DisassociateAddress

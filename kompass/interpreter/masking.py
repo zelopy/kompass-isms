@@ -38,7 +38,7 @@ _ARN = re.compile(
 )
 _RESOURCE_ID = re.compile(
     r"(?<![A-Za-z0-9_.-])(?P<kind>sg|vpc|subnet|eni|igw|rtb|nat|i|vol|snap|ami|eipalloc|eipassoc|pl|acl"
-    r"|tgw|vpce|pcx)-[0-9a-f]{8,17}(?![A-Za-z0-9_-])"
+    r"|tgw|vpce|pcx|fl)-[0-9a-f]{8,17}(?![A-Za-z0-9_-])"
 )
 _UNIQUE_ID = re.compile(
     r"(?<![A-Za-z0-9])(?:AIDA|AROA|AKIA|ASIA|AGPA|ANPA|ANVA|AIPA|APKA|ASCA)[A-Z0-9]{12,20}"

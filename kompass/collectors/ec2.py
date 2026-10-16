@@ -1,4 +1,4 @@
-"""EC2 collector: 보안그룹과 VPC 네트워크 (SG-001~004, VPC-001~002).
+"""EC2 collector: 보안그룹과 VPC 네트워크 (SG-001~004, VPC-001~003).
 
 수집 데이터 (`Snapshot.data`):
 - `regions.<리전>.<종류>`: 리전별 Describe 결과 목록. 종류는 `RESOURCE_KINDS`.
@@ -22,6 +22,7 @@ RESOURCE_KINDS: dict[str, tuple[str, str]] = {
     "subnets": ("describe_subnets", "Subnets"),
     "route_tables": ("describe_route_tables", "RouteTables"),
     "network_interfaces": ("describe_network_interfaces", "NetworkInterfaces"),
+    "flow_logs": ("describe_flow_logs", "FlowLogs"),
 }
 
 

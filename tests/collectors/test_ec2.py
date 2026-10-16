@@ -130,6 +130,7 @@ def test_failed_kind_is_missing_and_others_collected(setup: Any) -> None:
             ("describe_subnets", "Subnets"),
             ("describe_route_tables", "RouteTables"),
             ("describe_network_interfaces", "NetworkInterfaces"),
+            ("describe_flow_logs", "FlowLogs"),
         ]:
             response = getattr(real, method)()
             stub.add_response(method, {key: response[key]})
@@ -139,7 +140,7 @@ def test_failed_kind_is_missing_and_others_collected(setup: Any) -> None:
 
     region = snapshot.data["regions"][HOME]
     assert "security_groups" not in region
-    assert {"vpcs", "subnets", "route_tables", "network_interfaces"} <= set(region)
+    assert {"vpcs", "subnets", "route_tables", "network_interfaces", "flow_logs"} <= set(region)
     [error] = snapshot.errors
     assert error.operation == "ec2:DescribeSecurityGroups"
     assert error.region == HOME
@@ -157,6 +158,7 @@ def test_region_wide_failure_keeps_other_regions(setup: Any) -> None:
             "describe_subnets",
             "describe_route_tables",
             "describe_network_interfaces",
+            "describe_flow_logs",
         ):
             stub.add_client_error(method, service_error_code="UnauthorizedOperation")
         snapshot = Ec2Collector().collect(
@@ -165,5 +167,5 @@ def test_region_wide_failure_keeps_other_regions(setup: Any) -> None:
 
     assert snapshot.data["regions"][OTHER] == {}
     assert set(snapshot.data["regions"][HOME]) == set(RESOURCE_KINDS)
-    assert len(snapshot.errors) == 5
+    assert len(snapshot.errors) == 6
     assert {e.region for e in snapshot.errors} == {OTHER}

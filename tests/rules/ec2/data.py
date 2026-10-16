@@ -122,6 +122,18 @@ def eni(
     return item
 
 
+def flow_log(resource_id: str, *, status: str = "ACTIVE", traffic: str = "ALL") -> dict[str, Any]:
+    return {
+        "FlowLogId": f"fl-{resource_id.split('-')[-1]}",
+        "ResourceId": resource_id,
+        "FlowLogStatus": status,
+        "TrafficType": traffic,
+        "LogDestinationType": "s3",
+        "LogDestination": "arn:aws:s3:::flow-log-bucket",
+        "DeliverLogsStatus": "SUCCESS",
+    }
+
+
 def snapshot(regions: dict[str, dict[str, Any]], errors: tuple[CollectError, ...] = ()) -> Snapshot:
     return Snapshot(
         service="ec2",
@@ -140,6 +152,7 @@ def region(
     subnets: list[dict[str, Any]] | None = None,
     route_tables: list[dict[str, Any]] | None = None,
     network_interfaces: list[dict[str, Any]] | None = None,
+    flow_logs: list[dict[str, Any]] | None = None,
     missing: tuple[str, ...] = (),
 ) -> dict[str, Any]:
     data = {
@@ -148,6 +161,7 @@ def region(
         "subnets": subnets or [],
         "route_tables": route_tables or [],
         "network_interfaces": network_interfaces or [],
+        "flow_logs": flow_logs or [],
     }
     for kind in missing:
         del data[kind]
