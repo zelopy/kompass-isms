@@ -8,43 +8,43 @@
 
 rules:
   CT-001: {kisa: [CA-13], isms_p: ["2.9.4", "2.10.2"], kisa_verified: true, isms_p_verified: false}
-  CT-002: {kisa: [CA-17], isms_p: ["2.9.4"], kisa_verified: false, isms_p_verified: false}
-  LOG-001: {kisa: [CA-17], isms_p: ["2.9.4"], kisa_verified: false, isms_p_verified: false}
+  CT-002: {kisa: [CA-17], isms_p: ["2.9.4", "2.10.2"], kisa_verified: false, isms_p_verified: false}
+  LOG-001: {kisa: [CA-17], isms_p: ["2.9.4", "2.10.2"], kisa_verified: false, isms_p_verified: false}
 
-  SG-001: {kisa: [CA-09], isms_p: ["2.6.1", "2.6.6", "2.10.1"], kisa_verified: true, isms_p_verified: false}
-  SG-002: {kisa: [CA-09], isms_p: ["2.6.1", "2.10.1"], kisa_verified: true, isms_p_verified: false}
-  SG-003: {kisa: [CA-09], isms_p: ["2.6.1", "2.6.4", "2.10.1"], kisa_verified: true, isms_p_verified: false}
+  SG-001: {kisa: [CA-09], isms_p: ["2.6.1", "2.6.6", "2.10.1", "2.10.2"], kisa_verified: true, isms_p_verified: false}
+  SG-002: {kisa: [CA-09], isms_p: ["2.6.1", "2.10.1", "2.10.2"], kisa_verified: true, isms_p_verified: false}
+  SG-003: {kisa: [CA-09], isms_p: ["2.6.1", "2.6.4", "2.10.1", "2.10.2"], kisa_verified: true, isms_p_verified: false}
   SG-004: {kisa: [], isms_p: ["2.6.1"], kisa_verified: true, isms_p_verified: false}
   VPC-001: {kisa: [CA-07], isms_p: ["2.6.1", "2.10.2"], kisa_verified: true, isms_p_verified: false}
   VPC-002: {kisa: [CA-08], isms_p: ["2.6.1", "2.10.2"], kisa_verified: true, isms_p_verified: false}
-  VPC-003: {kisa: [CA-14], isms_p: ["2.9.4"], kisa_verified: false, isms_p_verified: false}
+  VPC-003: {kisa: [CA-14], isms_p: ["2.9.4", "2.10.2", "2.11.3"], kisa_verified: false, isms_p_verified: false}
 
   # GuardDuty (ADR-041). 사용자 확인 전이라 kisa_verified도 false
   GD-001: {kisa: [CA-19], isms_p: ["2.11.3", "2.10.2"], kisa_verified: false, isms_p_verified: false}
   GD-002: {kisa: [CA-19], isms_p: ["2.11.3", "2.10.2"], kisa_verified: false, isms_p_verified: false}
 
   # RDS (ADR-039). KISA 근거는 COVERAGE.md. 사용자 확인 전이라 kisa_verified도 false
-  RDS-001: {kisa: [CA-11], isms_p: ["2.7.1"], kisa_verified: false, isms_p_verified: false}
+  RDS-001: {kisa: [CA-11], isms_p: ["2.7.1", "2.10.2"], kisa_verified: false, isms_p_verified: false}
   RDS-002: {kisa: [CA-08], isms_p: ["2.6.1", "2.10.2"], kisa_verified: false, isms_p_verified: false}
-  RDS-003: {kisa: [CA-15], isms_p: ["2.9.4"], kisa_verified: false, isms_p_verified: false}
-  RDS-004: {kisa: [CA-18], isms_p: ["2.9.3"], kisa_verified: false, isms_p_verified: false}
+  RDS-003: {kisa: [CA-15], isms_p: ["2.9.4", "2.10.2"], kisa_verified: false, isms_p_verified: false}
+  RDS-004: {kisa: [CA-18], isms_p: ["2.9.3", "2.10.2"], kisa_verified: false, isms_p_verified: false}
 
   S3-001: {kisa: [CA-10], isms_p: ["2.10.2"], kisa_verified: true, isms_p_verified: false}
   S3-002: {kisa: [CA-10], isms_p: ["2.10.2"], kisa_verified: true, isms_p_verified: false}
   S3-003: {kisa: [CA-10], isms_p: ["2.10.2"], kisa_verified: true, isms_p_verified: false}
   S3-004: {kisa: [], isms_p: ["2.7.1"], kisa_verified: true, isms_p_verified: false}
-  S3-005: {kisa: [CA-16], isms_p: ["2.9.4"], kisa_verified: true, isms_p_verified: false}
+  S3-005: {kisa: [CA-16], isms_p: ["2.9.4", "2.10.2"], kisa_verified: true, isms_p_verified: false}
   S3-006: {kisa: [CA-10], isms_p: ["2.10.2"], kisa_verified: true, isms_p_verified: false}
   S3-007: {kisa: [CA-12], isms_p: ["2.7.1", "2.10.2"], kisa_verified: false, isms_p_verified: false}
 
   IAM-001: {kisa: [CA-03], isms_p: ["2.5.3", "2.5.5", "2.10.2"], kisa_verified: true, isms_p_verified: false}
   IAM-002: {kisa: [CA-02], isms_p: ["2.5.5", "2.10.2"], kisa_verified: true, isms_p_verified: false}
   IAM-003: {kisa: [CA-03], isms_p: ["2.5.3", "2.10.2"], kisa_verified: true, isms_p_verified: false}
-  IAM-004: {kisa: [CA-04], isms_p: ["2.5.4"], kisa_verified: true, isms_p_verified: false}
+  IAM-004: {kisa: [CA-04], isms_p: ["2.5.4", "2.10.2"], kisa_verified: true, isms_p_verified: false}
   IAM-005: {kisa: [CA-01], isms_p: ["2.5.1", "2.5.6", "2.10.2"], kisa_verified: true, isms_p_verified: false}
   IAM-006: {kisa: [], isms_p: ["2.10.2", "2.5.3"], kisa_verified: true, isms_p_verified: false}
   IAM-007: {kisa: [CA-02], isms_p: ["2.5.5", "2.5.6", "2.10.2"], kisa_verified: true, isms_p_verified: false}
   IAM-008: {kisa: [CA-02], isms_p: ["2.5.5", "2.10.2"], kisa_verified: true, isms_p_verified: false}
   IAM-009: {kisa: [CA-03], isms_p: ["2.5.3", "2.10.2"], kisa_verified: true, isms_p_verified: false}
-  IAM-010: {kisa: [CA-05], isms_p: ["2.6.2", "2.10.2"], kisa_verified: false, isms_p_verified: false}
-  IAM-011: {kisa: [CA-06], isms_p: ["2.6.1", "2.10.2"], kisa_verified: false, isms_p_verified: false}
+  IAM-010: {kisa: [CA-05], isms_p: ["2.5.5", "2.6.2", "2.10.2"], kisa_verified: false, isms_p_verified: false}
+  IAM-011: {kisa: [CA-06], isms_p: ["2.5.5", "2.10.2"], kisa_verified: false, isms_p_verified: false}

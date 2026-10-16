@@ -33,21 +33,21 @@ items:
     importance: 중
     page: 857
     automation: partial
-    isms_p: ["2.5.4"]
+    isms_p: ["2.5.4", "2.10.2"]
     isms_p_verified: false
   CA-05:
     title: 인스턴스 서비스 정책 관리
     importance: 상
     page: 858
     automation: partial
-    isms_p: ["2.6.2", "2.10.2"]
+    isms_p: ["2.5.5", "2.6.2", "2.10.2"]
     isms_p_verified: false
   CA-06:
     title: 네트워크 서비스 정책 관리
     importance: 상
     page: 859
     automation: partial
-    isms_p: ["2.6.1", "2.10.2"]
+    isms_p: ["2.5.5", "2.10.2"]
     isms_p_verified: false
   CA-07:
     title: VPC 네트워크 서브넷 관리
@@ -68,7 +68,7 @@ items:
     importance: 상
     page: 862
     automation: partial
-    isms_p: ["2.6.1", "2.6.6", "2.10.1"]
+    isms_p: ["2.6.1", "2.6.6", "2.10.1", "2.10.2"]
     isms_p_verified: false
   CA-10:
     title: 스토리지 리소스 퍼블릭 접근 관리
@@ -82,14 +82,14 @@ items:
     importance: 중
     page: 864
     automation: full
-    isms_p: ["2.7.1"]
+    isms_p: ["2.7.1", "2.10.2"]
     isms_p_verified: false
   CA-12:
     title: 통신구간 암호화 설정
     importance: 중
     page: 865
     automation: partial
-    isms_p: ["2.7.1", "2.6.6"]
+    isms_p: ["2.6.6", "2.7.1", "2.10.2"]
     isms_p_verified: false
   CA-13:
     title: 클라우드 서비스 사용자 계정 로깅 설정
@@ -103,35 +103,35 @@ items:
     importance: 중
     page: 867
     automation: partial
-    isms_p: ["2.9.4"]
+    isms_p: ["2.9.4", "2.10.2"]
     isms_p_verified: false
   CA-15:
     title: 관계형 데이터베이스 로깅 설정
     importance: 중
     page: 868
     automation: partial
-    isms_p: ["2.9.4"]
+    isms_p: ["2.9.4", "2.10.2"]
     isms_p_verified: false
   CA-16:
     title: 오브젝트 스토리지 버킷 로깅 설정
     importance: 중
     page: 869
     automation: full
-    isms_p: ["2.9.4"]
+    isms_p: ["2.9.4", "2.10.2"]
     isms_p_verified: false
   CA-17:
     title: 로그 보관 기간 설정
     importance: 중
     page: 870
     automation: partial
-    isms_p: ["2.9.4"]
+    isms_p: ["2.9.4", "2.10.2"]
     isms_p_verified: false
   CA-18:
     title: 백업 사용 여부
     importance: 중
     page: 871
     automation: partial
-    isms_p: ["2.9.3"]
+    isms_p: ["2.9.3", "2.10.2"]
     isms_p_verified: false
   CA-19:
     title: 가상 리소스 이상징후 알림 설정
