@@ -5,11 +5,12 @@ from collections import Counter
 
 import yaml
 
-from kompass.models import AuditReport, Finding, ItemOutcome, RuleExplanation
+from kompass.models import AuditReport, Finding, Investigation, ItemOutcome, RuleExplanation
 from kompass.reporters._format import (
     ACTION_STATUSES,
     DISCLAIMER,
     EXPLANATION_NOTICE,
+    INVESTIGATION_NOTICE,
     OUTCOME_LABELS,
     PRIORITY_LABELS,
     RULE_TITLES,
@@ -18,6 +19,7 @@ from kompass.reporters._format import (
     STATUS_ORDER,
     compact_json,
     explanation_summary,
+    investigation_summary,
     kst,
 )
 
@@ -202,6 +204,77 @@ def _explanation_section(report: AuditReport) -> list[str]:
     return lines
 
 
+def _investigation_rule(item: Investigation) -> list[str]:
+    draft = item.investigation
+    rule = RULE_TITLES.get(item.rule_id, "")
+    label = "근거 검증됨" if item.verified else "검증되지 않음"
+    lines = [
+        f"### {item.rule_id} {_text(rule)} — {label}",
+        "",
+        f"대상 finding {len(item.finding_keys)}건, 도구 호출 {len(item.tool_calls)}회, "
+        f"모델 {item.model}, 종료 {item.stop}",
+        "",
+        *_labeled("요약", draft.summary),
+        "",
+        "확인된 사실:",
+        "",
+    ]
+    lines += [
+        f"- {_text(fact.statement)} (근거: {', '.join(_text(c) for c in fact.call_ids) or '없음'})"
+        for fact in draft.facts
+    ] or ["- 없음"]
+    if draft.open_questions:
+        lines += ["", "사람이 확인할 질문:", ""]
+        lines += [f"- {_list_item(q)}" for q in draft.open_questions]
+    if draft.finding_notes:
+        lines += ["", "finding별 메모:", ""]
+        lines += [
+            f"- `{n.finding_key.replace('`', '')}`: {_text(n.note)}" for n in draft.finding_notes
+        ]
+    if item.problems:
+        lines += ["", "검증 문제:", ""] + [f"- {_text(p)}" for p in item.problems]
+    if item.tool_calls:
+        lines += ["", "도구 호출:", "", _row("호출", "도구", "입력", "결과"), "|---|---|---|---|"]
+        lines += [
+            _row(
+                c.call_id,
+                c.tool,
+                compact_json(c.input_raw),
+                f"오류: {c.error}" if c.error else "정상",
+            )
+            for c in item.tool_calls
+        ]
+    return [*lines, ""]
+
+
+def _investigation_section(report: AuditReport) -> list[str]:
+    investigated = report.investigations
+    if investigated is None:
+        return []
+    cost = (
+        f", 예상 비용 약 ${investigated.estimated_cost_usd:.2f}"
+        if investigated.estimated_cost_usd is not None
+        else ""
+    )
+    lines = [
+        "",
+        "## 추가 조사 (참고)",
+        "",
+        f"> {INVESTIGATION_NOTICE}",
+        "",
+        f"생성 {kst(investigated.generated_at)}, 모델 {investigated.model} "
+        f"(effort {investigated.effort}), 토큰 입력 {investigated.usage.input_tokens:,} · "
+        f"출력 {investigated.usage.output_tokens:,}{cost}",
+        "",
+    ]
+    for item in investigated.investigations:
+        lines += _investigation_rule(item)
+    if investigated.failures:
+        lines += ["### 조사하지 못한 룰", ""]
+        lines += [f"- {f.rule_id}: {_text(f.error)}" for f in investigated.failures]
+    return lines
+
+
 def render_markdown(report: AuditReport) -> str:
     scan, evaluation = report.scan, report.evaluation
     lines: list[str] = [
@@ -227,6 +300,7 @@ def render_markdown(report: AuditReport) -> str:
         _row("kompass 버전", evaluation.kompass_version),
         _row("매핑 데이터", report.mapping_digest[:12]),
         _row("AI 해설", explanation_summary(report)),
+        _row("추가 조사", investigation_summary(report)),
         "",
         *_excluded_notice(report),
         "판정 기준값 (kompass.yaml 형식):",
@@ -302,6 +376,7 @@ def render_markdown(report: AuditReport) -> str:
         lines.append("결과가 없음.")
 
     lines += _explanation_section(report)
+    lines += _investigation_section(report)
 
     related = [c for c in report.isms_p_controls if c.outcome != ItemOutcome.NOT_IMPLEMENTED]
     out_of_scope = len(report.isms_p_controls) - len(related)

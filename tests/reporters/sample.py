@@ -6,12 +6,19 @@ from kompass.mappings.data import load_mappings
 from kompass.mappings.mapper import build_report
 from kompass.models import (
     ActionStep,
+    AgentToolCall,
     AuditReport,
     Citation,
     EvaluationReport,
     ExplanationFailure,
     ExplanationReport,
     Finding,
+    Investigation,
+    InvestigationDraft,
+    InvestigationFact,
+    InvestigationFailure,
+    InvestigationNote,
+    InvestigationReport,
     Remediation,
     ResourceNote,
     RiskAssessment,
@@ -75,8 +82,14 @@ def sample_report(*findings: Finding, skipped: tuple[str, ...] = ()) -> AuditRep
 
 
 DEFAULT = sample_report(
-    finding("SG-001", Status.FAIL, "sg-1", "ap-northeast-2", "관리 포트가 전체 개방: sg-1",
-            {"group_name": "open|ssh", "open_rules": [{"cidrs": ["0.0.0.0/0"]}]}),
+    finding(
+        "SG-001",
+        Status.FAIL,
+        "sg-1",
+        "ap-northeast-2",
+        "관리 포트가 전체 개방: sg-1",
+        {"group_name": "open|ssh", "open_rules": [{"cidrs": ["0.0.0.0/0"]}]},
+    ),
     finding("SG-001", Status.PASS, "sg-2", "ap-northeast-2"),
     finding("SG-002", Status.PASS, "sg-1", "ap-northeast-2"),
     finding("SG-003", Status.PASS, "sg-1", "ap-northeast-2"),
@@ -84,7 +97,7 @@ DEFAULT = sample_report(
     finding("IAM-008", Status.REVIEW, message="루트 비밀번호 사용 이력을 확인할 수 없다"),
     finding("S3-004", Status.FAIL, "bucket-a", "ap-northeast-2", "기본 암호화가 없다"),
     skipped=("IAM-001", "IAM-002"),
-)  # fmt: skip
+)
 
 
 def _rule_explanation(
@@ -179,3 +192,72 @@ EXPLAINED = DEFAULT.with_explanations(
         ),
     )
 )
+
+
+def _investigation_report() -> InvestigationReport:
+    call = AgentToolCall(
+        call_id="T1",
+        tool="ec2_interfaces_for_security_group",
+        input_masked={"group_id": "MASKED_SG_1"},
+        input_raw={"group_id": "sg-1"},
+        output_masked='{"call_id": "T1", "items": []}',
+        error=None,
+        duration_s=0.4,
+    )
+    denied = AgentToolCall(
+        call_id="T2",
+        tool="cloudtrail_lookup_events",
+        input_masked={"attribute_key": "ResourceName", "attribute_value": "MASKED_SG_1"},
+        input_raw={"attribute_key": "ResourceName", "attribute_value": "sg-1"},
+        output_masked='{"call_id": "T2", "error": "AccessDenied"}',
+        error="AccessDenied",
+        duration_s=0.2,
+    )
+    return InvestigationReport(
+        scan_id=DEFAULT.scan.scan_id,
+        account_id=ACCOUNT,
+        findings_evaluated_at=DEFAULT.evaluation.evaluated_at,
+        generated_at=T0,
+        model="claude-opus-5-5",
+        effort="high",
+        investigations=(
+            Investigation(
+                rule_id="SG-001",
+                finding_keys=("SG-001:ap-northeast-2:sg-1",),
+                investigation=InvestigationDraft(
+                    summary="- 연결된 인터페이스 없음\n- 변경 이력 조회 권한 없음",
+                    facts=[
+                        InvestigationFact(
+                            statement="sg-1에 연결된 인터페이스 <b>0개</b>", call_ids=["T1"]
+                        ),
+                        InvestigationFact(statement="이벤트 조회 권한 없음", call_ids=["T2"]),
+                    ],
+                    finding_notes=[
+                        InvestigationNote(
+                            finding_key="SG-001:ap-northeast-2:sg-1", note="미사용 그룹으로 보임"
+                        )
+                    ],
+                    open_questions=["보안그룹 삭제 가능 여부 담당자 확인 필요"],
+                ),
+                verified=True,
+                problems=(),
+                tool_calls=(call, denied),
+                model="claude-opus-5-5",
+                iterations=3,
+                stop="end_turn",
+                usage=TokenUsage(input_tokens=3000, output_tokens=400),
+            ),
+        ),
+        failures=(
+            InvestigationFailure(
+                rule_id="IAM-008",
+                finding_keys=("IAM-008:-:account",),
+                error="조사 결과 없음 (종료 사유: max_iterations)",
+            ),
+        ),
+        usage=TokenUsage(input_tokens=3000, output_tokens=400),
+        estimated_cost_usd=0.02,
+    )
+
+
+INVESTIGATED = EXPLAINED.with_investigations(_investigation_report())

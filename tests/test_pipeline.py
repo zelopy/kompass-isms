@@ -244,3 +244,16 @@ def test_corrupt_explanations_are_skipped_with_warning(tmp_path: Path) -> None:
     attached, warning = attach_explanations(store, DEFAULT)
     assert attached.explanations is None
     assert warning and "읽을 수 없어" in warning
+
+
+def test_attach_matching_investigations(tmp_path: Path) -> None:
+    from kompass.pipeline import attach_investigations, default_investigations_path
+    from tests.reporters.sample import DEFAULT, INVESTIGATED
+
+    store = SnapshotStore(tmp_path)
+    assert INVESTIGATED.investigations is not None
+    path = default_investigations_path(store, DEFAULT.scan.account_id, DEFAULT.scan.scan_id)
+    write_report(INVESTIGATED.investigations, path)
+    assert path.parent == tmp_path / "investigations" / DEFAULT.scan.account_id
+    attached, warning = attach_investigations(store, DEFAULT)
+    assert attached.investigations is not None and warning is None

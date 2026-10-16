@@ -79,3 +79,24 @@ def assessment_label(report: AuditReport) -> str:
     if explained.assessment is None:
         return "실패"
     return "검증됨" if explained.assessment.verified else "검증되지 않음"
+
+
+# --- 추가 조사 ---
+
+INVESTIGATION_NOTICE = (
+    "에이전트가 읽기 전용 도구로 추가 확인한 사실임. 판정과 심각도는 바꾸지 않음. "
+    '사실마다 근거가 된 도구 호출(T1, T2 …)을 표시함. "근거 검증됨"은 사실이 실제 도구 호출을 '
+    "가리킨다는 뜻이며 해석의 정확성을 보장하지 않음."
+)
+
+
+def investigation_summary(report: AuditReport) -> str:
+    investigated = report.investigations
+    if investigated is None:
+        return "없음"
+    verified = sum(1 for i in investigated.investigations if i.verified)
+    unverified = len(investigated.investigations) - verified
+    return (
+        f"{investigated.model} (effort {investigated.effort}), {kst(investigated.generated_at)}, "
+        f"근거 검증됨 {verified} · 검증되지 않음 {unverified} · 실패 {len(investigated.failures)}"
+    )

@@ -11,7 +11,7 @@ from datetime import UTC, datetime
 from importlib.metadata import version
 from pathlib import Path
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from kompass.aws.session import ScanContext
 from kompass.collectors.base import Collector
@@ -26,6 +26,7 @@ from kompass.models import (
     AuditReport,
     EvaluationReport,
     ExplanationReport,
+    InvestigationReport,
     ScanManifest,
     Snapshot,
     Status,
@@ -44,6 +45,7 @@ COLLECTORS: dict[str, Callable[[], Collector]] = {
 }
 FINDINGS_DIR = "findings"
 EXPLANATIONS_DIR = "explanations"
+INVESTIGATIONS_DIR = "investigations"
 SNAPSHOTS_DIR = "snapshots"
 
 # 보고서 형식 → (파일 확장자, 렌더러)
@@ -113,7 +115,9 @@ def default_findings_path(store: SnapshotStore, report: EvaluationReport) -> Pat
     return store.root / FINDINGS_DIR / report.account_id / f"{report.scan_id}.findings.json"
 
 
-def write_report(report: EvaluationReport | ExplanationReport, path: Path) -> Path:
+def write_report(
+    report: EvaluationReport | ExplanationReport | InvestigationReport, path: Path
+) -> Path:
     """판정·해설 결과를 UTF-8 JSON으로 쓴다. 임시 파일에 쓴 뒤 이름을 바꾼다."""
     path.parent.mkdir(parents=True, exist_ok=True)
     temp = path.with_name(path.name + ".tmp")
@@ -196,6 +200,10 @@ def default_explanations_path(store: SnapshotStore, account_id: str, scan_id: st
     return store.root / EXPLANATIONS_DIR / account_id / f"{scan_id}.explanations.json"
 
 
+def default_investigations_path(store: SnapshotStore, account_id: str, scan_id: str) -> Path:
+    return store.root / INVESTIGATIONS_DIR / account_id / f"{scan_id}.investigation.json"
+
+
 def attach_explanations(
     store: SnapshotStore, report: AuditReport
 ) -> tuple[AuditReport, str | None]:
@@ -204,19 +212,40 @@ def attach_explanations(
     해설 뒤에 다시 판정했으면 finding이 달라졌을 수 있으므로 붙이지 않고 경고한다.
     """
     path = default_explanations_path(store, report.scan.account_id, report.scan.scan_id)
+    return _attach(path, report, ExplanationReport, report.with_explanations, "해설", "explain")
+
+
+def attach_investigations(
+    store: SnapshotStore, report: AuditReport
+) -> tuple[AuditReport, str | None]:
+    """저장된 조사 결과가 이 판정 결과의 것이면 보고서에 붙인다 (해설과 같은 규칙)."""
+    path = default_investigations_path(store, report.scan.account_id, report.scan.scan_id)
+    return _attach(
+        path, report, InvestigationReport, report.with_investigations, "조사 결과", "investigate"
+    )
+
+
+def _attach[M: BaseModel](
+    path: Path,
+    report: AuditReport,
+    model: type[M],
+    attach: Callable[[M], AuditReport],
+    label: str,
+    command: str,
+) -> tuple[AuditReport, str | None]:
     if not path.is_file():
         return report, None
     try:
-        explanations = ExplanationReport.model_validate_json(path.read_bytes())
+        loaded = model.model_validate_json(path.read_bytes())
     except (OSError, ValidationError):
         return report, (
-            f"해설 파일({path.name})을 읽을 수 없어 보고서에 붙이지 않았습니다. "
-            "kompass explain을 다시 실행해 주십시오"
+            f"{label} 파일({path.name})을 읽을 수 없어 보고서에 붙이지 않았습니다. "
+            f"kompass {command}을 다시 실행해 주십시오"
         )
     try:
-        return report.with_explanations(explanations), None
+        return attach(loaded), None
     except ValueError:
         return report, (
-            f"해설({path.name})이 이전 판정 결과를 대상으로 해 보고서에 붙이지 않았습니다. "
-            "kompass explain을 다시 실행해 주십시오"
+            f"{label}({path.name})이 이전 판정 결과를 대상으로 해 보고서에 붙이지 않았습니다. "
+            f"kompass {command}을 다시 실행해 주십시오"
         )

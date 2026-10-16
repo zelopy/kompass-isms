@@ -4,17 +4,28 @@ import json
 from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import boto3
 import pytest
 from moto import mock_aws
 from typer.testing import CliRunner
 
+from kompass.agent.llm import AgentTool
 from kompass.cli import EXIT_FAIL_ON, EXIT_LLM, EXIT_SESSION, EXIT_SNAPSHOT, EXIT_USAGE, app
 from kompass.interpreter.llm import LLMError
 from kompass.interpreter.sources import INDEX_ENV
 from kompass.mappings.data import load_mappings
-from kompass.models import ExplanationReport, SourceEntry, SourceIndex
+from kompass.models import (
+    ExplanationReport,
+    InvestigationDraft,
+    InvestigationFact,
+    InvestigationNote,
+    InvestigationReport,
+    SourceEntry,
+    SourceIndex,
+)
+from tests.agent.fakes import ScriptedAgent
 from tests.conftest import AwsFiles
 from tests.interpreter.fakes import FakeProvider, cite_first_source
 
@@ -425,3 +436,92 @@ def test_assessment_only_conflicts_with_no_assessment(store: Path) -> None:
         app, ["explain", "--store", str(store), "--assessment-only", "--no-assessment"]
     )
     assert result.exit_code == EXIT_USAGE and "함께 쓸 수 없습니다" in result.output
+
+
+# --- 추가 조사 ---
+
+
+def _investigate_sg(
+    payload: dict[str, Any], tools: dict[str, AgentTool]
+) -> InvestigationDraft | None:
+    if payload["rule"]["id"] != "SG-001":
+        return None  # 다른 룰은 결과 없이 끝난 것으로 둔다
+    first = payload["findings"][0]
+    result = json.loads(
+        tools["ec2_interfaces_for_security_group"].call(
+            {"group_id": first["resource"], "region": first["region"]}
+        )
+    )
+    return InvestigationDraft(
+        summary="연결된 인터페이스 확인",
+        facts=[InvestigationFact(statement="인터페이스 조회함", call_ids=[result["call_id"]])],
+        finding_notes=[InvestigationNote(finding_key=first["key"], note="사용 여부 확인 필요")],
+        open_questions=[],
+    )
+
+
+@pytest.fixture
+def fake_agent(monkeypatch: pytest.MonkeyPatch) -> ScriptedAgent:
+    agent = ScriptedAgent(_investigate_sg)
+    monkeypatch.setattr("kompass.cli.make_agent_provider", lambda settings: agent)
+    return agent
+
+
+def test_investigate_dry_run_calls_nothing(
+    aws: None, store: Path, fake_agent: ScriptedAgent
+) -> None:
+    _scanned(store)
+    result = runner.invoke(app, ["investigate", "--store", str(store), "--dry-run"])
+    assert result.exit_code == 0, result.output
+    assert "조사 대상: 룰" in result.output and "SG-001" not in result.output
+    assert fake_agent.tasks == []
+    assert not (store / "investigations").exists()
+
+
+def test_investigate_writes_file_and_reports(
+    aws: None, store: Path, fake_agent: ScriptedAgent
+) -> None:
+    _scanned(store)
+    args = ["investigate", "--store", str(store), "--profile", "audit", "--yes", "--report", "md"]
+    result = runner.invoke(app, args)
+    assert result.exit_code == 0, result.output
+    assert "조사 SG-001" in result.output and "근거 검증됨 1" in result.output
+    [path] = (store / "investigations").rglob("*.investigation.json")
+    report = InvestigationReport.model_validate_json(path.read_text(encoding="utf-8"))
+    [investigation] = report.investigations
+    assert investigation.rule_id == "SG-001" and investigation.verified
+    assert investigation.tool_calls[0].tool == "ec2_interfaces_for_security_group"
+    [md] = store.rglob("*.md")
+    assert "## 추가 조사 (참고)" in md.read_text(encoding="utf-8")
+
+
+def test_investigate_asks_before_spending(
+    aws: None, store: Path, fake_agent: ScriptedAgent
+) -> None:
+    _scanned(store)
+    result = runner.invoke(app, ["investigate", "--store", str(store)], input="n\n")
+    assert result.exit_code == 0
+    assert "취소했습니다" in result.output and fake_agent.tasks == []
+
+
+def test_investigate_all_failed_exit_code(
+    aws: None, store: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _scanned(store)
+    agent = ScriptedAgent(lambda payload, tools: None)
+    monkeypatch.setattr("kompass.cli.make_agent_provider", lambda settings: agent)
+    args = ["investigate", "--store", str(store), "--profile", "audit", "--yes"]
+    result = runner.invoke(app, args)
+    assert result.exit_code == EXIT_LLM
+    assert "조사 실패" in result.output
+
+
+def test_investigate_rejects_other_account(
+    aws: None, store: Path, fake_agent: ScriptedAgent, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _scanned(store)
+    monkeypatch.setenv("MOTO_ACCOUNT_ID", "999999999999")  # 판정 때와 다른 계정의 자격증명
+    args = ["investigate", "--store", str(store), "--profile", "audit", "--yes"]
+    result = runner.invoke(app, args)
+    assert result.exit_code == EXIT_SESSION
+    assert fake_agent.tasks == []

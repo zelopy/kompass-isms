@@ -252,6 +252,18 @@ class AuditReport(_Frozen):
             raise ValueError("해설이 이 판정 결과를 대상으로 한 것이 아니다")
         return self.model_validate({**self.model_dump(), "explanations": explanations})
 
+    # 에이전트 추가 조사 (참고, ADR-035). 같은 판정 결과를 조사한 것만 붙는다
+    investigations: "InvestigationReport | None" = None
+
+    def with_investigations(self, investigations: "InvestigationReport") -> Self:
+        """조사 결과를 붙인 새 보고서. 다른 점검이나 다시 판정하기 전의 조사면 ValueError."""
+        if (
+            investigations.scan_id != self.scan.scan_id
+            or investigations.findings_evaluated_at != self.evaluation.evaluated_at
+        ):
+            raise ValueError("조사 결과가 이 판정 결과를 대상으로 한 것이 아니다")
+        return self.model_validate({**self.model_dump(), "investigations": investigations})
+
 
 class SourceEntry(_Frozen):
     """기준 문서 원문의 항목 하나 (KISA 항목 또는 ISMS-P 통제항목)."""
@@ -418,9 +430,6 @@ def aggregate_status(statuses: Iterable[Status], automation: Automation) -> Stat
     return Status.NOT_APPLICABLE
 
 
-AuditReport.model_rebuild()  # explanations의 전방 참조(ExplanationReport)를 해석한다
-
-
 class EvalCase(_Frozen):
     """해설 평가 케이스 하나 = 룰 묶음 하나 (ADR-033). 가짜 데이터만 담는다 (원칙 4).
 
@@ -524,3 +533,7 @@ class InvestigationReport(_Frozen):
     failures: tuple[InvestigationFailure, ...]
     usage: TokenUsage
     estimated_cost_usd: float | None
+
+
+# 전방 참조(ExplanationReport, InvestigationReport)를 해석한다. 모든 모델 정의 뒤에 둔다
+AuditReport.model_rebuild()

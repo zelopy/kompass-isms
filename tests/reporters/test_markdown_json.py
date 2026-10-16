@@ -215,3 +215,28 @@ def test_multiline_scenario_description_becomes_nested_list() -> None:
         "  - 버킷 노출",
         "  - 관련 finding: `SG-001:ap-northeast-2:sg-1`, `S3-004:ap-northeast-2:bucket-a`",
     ]
+
+
+# --- 추가 조사 ---
+
+
+def test_investigation_section() -> None:
+    from tests.reporters.sample import INVESTIGATED
+
+    md = render_markdown(INVESTIGATED)
+    section = md.split("## 추가 조사 (참고)")[1]
+    assert "판정과 심각도는 바꾸지 않음" in section
+    assert "### SG-001 관리 포트 전체 개방 — 근거 검증됨" in section
+    assert "&lt;b&gt;0개&lt;/b&gt; (근거: T1)" in section and "<b>" not in section
+    assert "- 보안그룹 삭제 가능 여부 담당자 확인 필요" in section
+    assert '| T1 | ec2_interfaces_for_security_group | {"group_id": "sg-1"} | 정상 |' in section
+    assert "| T2 | cloudtrail_lookup_events |" in section and "오류: AccessDenied" in section
+    assert "- IAM-008: 조사 결과 없음 (종료 사유: max_iterations)" in section
+    assert "| 추가 조사 | claude-opus-5-5 (effort high)" in md
+    assert "## 추가 조사" not in MD and "| 추가 조사 | 없음 |" in MD
+
+
+def test_json_includes_investigations() -> None:
+    from tests.reporters.sample import INVESTIGATED
+
+    assert AuditReport.model_validate_json(render_json(INVESTIGATED)) == INVESTIGATED

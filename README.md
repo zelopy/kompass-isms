@@ -40,6 +40,10 @@ uv run kompass explain --dry-run          # 대상과 예상 비용만 확인
 uv run kompass explain --report md --report xlsx
 uv run kompass explain --assessment-only --report md   # 종합 위험 평가만 다시 만들기
 
+# 에이전트 추가 조사 (선택, 비용 발생. 취약·검토 필요 결과를 읽기 전용 도구로 더 조회)
+uv run kompass investigate --dry-run      # 대상과 최대 비용만 확인
+uv run kompass investigate --profile <aws-profile> --report md --report xlsx
+
 # 해설 평가셋 (개발용, docs/DECISIONS.md ADR-033)
 uv run python scripts/run_explain_eval.py --provider oracle --variant v0 --reps 1  # 무료 배선 점검
 uv run python scripts/run_explain_eval.py --dry-run                                # 예상 비용
@@ -59,13 +63,16 @@ uv run python scripts/run_explain_eval.py --variant v1                          
 - 보고서: `reports/<계정>/<점검 ID>.md`, `.xlsx`, `.report.json`
 - 판정 결과: `reports/findings/<계정>/<점검 ID>.findings.json`
 - 해설: `reports/explanations/<계정>/<점검 ID>.explanations.json` (원본 식별정보가 복원된 상태)
+- 추가 조사: `reports/investigations/<계정>/<점검 ID>.investigation.json` (도구 호출 기록 포함)
 - 스냅샷: `reports/snapshots/<계정>/<점검 ID>/` (파일별 SHA-256 기록)
 
-종료 코드: 0 완료(취약 결과가 있어도 0), 1 `--fail-on` 해당, 2 사용법·설정 오류, 3 세션 오류, 4 스냅샷 오류, 5 LLM 해설 전부 실패.
+종료 코드: 0 완료(취약 결과가 있어도 0), 1 `--fail-on` 해당, 2 사용법·설정 오류, 3 세션 오류, 4 스냅샷 오류, 5 LLM 해설·추가 조사 전부 실패.
 
 보고서는 판정 결과에 KISA·ISMS-P 매핑을 붙여 만든다. 매핑을 고쳐도 다시 판정할 필요 없이 `kompass report`만 다시 실행하면 된다. 보고서를 만들 때 스냅샷 해시를 다시 대조하므로, 판정 후 증적이 바뀌었으면 보고서를 만들지 않는다.
 
 `kompass explain`은 판정을 바꾸지 않는 참고 해설이다. LLM에는 계정 ID·IP·ARN·리소스 이름을 자리표시자로 바꾼 값만 보내고, 응답을 받은 뒤 로컬에서 되돌린다. 인용 구절은 원문 색인과 대조해 "검증됨"/"검증되지 않음"을 표시한다. 해설은 같은 판정 결과에만 붙으며, 다시 판정하면 해설을 다시 만들어야 보고서에 들어간다. 모델·effort는 `kompass.yaml`의 `llm:` 섹션에서 바꾼다.
+
+`kompass investigate`는 취약·검토 필요 결과를 룰 단위로 에이전트가 추가 조사하는 참고 기능이다. 판정과 같은 계정·리전 범위의 읽기 전용 세션으로 정해진 조회 도구 12개만 쓰고, 도구 결과도 마스킹한 뒤 LLM에 보낸다. 조사 결과의 사실마다 근거가 된 도구 호출 ID를 달고, 실제 호출과 대조해 "근거 검증됨"을 표시한다. 룰당 도구 호출 수(`--max-calls`)와 토큰(`--max-tokens`)에 상한이 있으며, 판정은 바꾸지 않는다.
 
 ## 출력 예시
 

@@ -26,6 +26,7 @@ from kompass.reporters._format import (
     STATUS_LABELS,
     STATUS_ORDER,
     explanation_summary,
+    investigation_summary,
     kst,
 )
 
@@ -107,6 +108,7 @@ def _summary(sheet: Any, report: AuditReport) -> None:
         ),
         ("건너뛴 룰 (양호 아님)", ", ".join(evaluation.skipped_rules) or "없음"),
         ("AI 해설 (참고)", explanation_summary(report)),
+        ("추가 조사 (참고)", investigation_summary(report)),
         *([("AI 해설 주의", EXPLANATION_NOTICE)] if report.explanations is not None else []),
     ]
     for r, (label, value) in enumerate(rows, start=1):
@@ -145,8 +147,18 @@ def render_xlsx(report: AuditReport) -> bytes:
 
     _table(
         book.create_sheet("점검 결과"),
-        ["룰", "KISA", "ISMS-P (초안)", "결과", "심각도", "리소스", "리전", "내용", "증적",
-         "수집 시각"],
+        [
+            "룰",
+            "KISA",
+            "ISMS-P (초안)",
+            "결과",
+            "심각도",
+            "리소스",
+            "리전",
+            "내용",
+            "증적",
+            "수집 시각",
+        ],
         [
             (
                 f.rule_id,
@@ -164,7 +176,7 @@ def render_xlsx(report: AuditReport) -> bytes:
         ],
         [9, 8, 18, 11, 9, 40, 15, 50, 60, 22],
         outcome_column="결과",
-    )  # fmt: skip
+    )
 
     _table(
         book.create_sheet("ISMS-P (초안)"),
@@ -188,6 +200,9 @@ def render_xlsx(report: AuditReport) -> bytes:
         _explanation_sheet(book.create_sheet("AI 해설 (참고)"), report)
         if report.explanations.assessment is not None:
             _assessment_sheet(book.create_sheet("AI 종합 평가 (참고)"), report)
+
+    if report.investigations is not None:
+        _investigation_sheet(book.create_sheet("추가 조사 (참고)"), report)
 
     buffer = io.BytesIO()
     book.save(buffer)
@@ -241,11 +256,25 @@ def _explanation_sheet(sheet: Any, report: AuditReport) -> None:
     ]
     _table(
         sheet,
-        ["룰", "검증", "우선순위", "대상 finding", "요약", "위험", "우선순위 근거", "근거 인용",
-         "조치 절차", "AWS CLI", "Terraform", "리소스별 메모", "검증 문제", "모델"],
+        [
+            "룰",
+            "검증",
+            "우선순위",
+            "대상 finding",
+            "요약",
+            "위험",
+            "우선순위 근거",
+            "근거 인용",
+            "조치 절차",
+            "AWS CLI",
+            "Terraform",
+            "리소스별 메모",
+            "검증 문제",
+            "모델",
+        ],
         rows,
         [9, 13, 9, 9, 40, 40, 30, 50, 50, 60, 50, 40, 40, 18],
-    )  # fmt: skip
+    )
 
 
 def _assessment_sheet(sheet: Any, report: AuditReport) -> None:
@@ -278,3 +307,34 @@ def _assessment_sheet(sheet: Any, report: AuditReport) -> None:
         rows,
         [14, 6, 30, 8, 80, 60],
     )
+
+
+def _investigation_sheet(sheet: Any, report: AuditReport) -> None:
+    investigated = report.investigations
+    assert investigated is not None
+    rows: list[tuple[Any, ...]] = []
+    for item in investigated.investigations:
+        draft = item.investigation
+        label = "근거 검증됨" if item.verified else "검증되지 않음"
+        rows.append((item.rule_id, "요약", label, draft.summary, ""))
+        rows += [
+            (item.rule_id, "사실", "", fact.statement, ", ".join(fact.call_ids))
+            for fact in draft.facts
+        ]
+        rows += [(item.rule_id, "확인할 질문", "", q, "") for q in draft.open_questions]
+        rows += [
+            (item.rule_id, "finding 메모", n.finding_key, n.note, "") for n in draft.finding_notes
+        ]
+        rows += [(item.rule_id, "검증 문제", "", p, "") for p in item.problems]
+        rows += [
+            (
+                item.rule_id,
+                "도구 호출",
+                c.call_id,
+                f"{c.tool} {json.dumps(c.input_raw, ensure_ascii=False)}",
+                c.error or "정상",
+            )
+            for c in item.tool_calls
+        ]
+    rows += [(f.rule_id, "조사 실패", "", f.error, "") for f in investigated.failures]
+    _table(sheet, ["룰", "구분", "표시", "내용", "근거·결과"], rows, [9, 14, 30, 90, 20])

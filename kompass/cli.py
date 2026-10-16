@@ -19,6 +19,16 @@ from typing import NoReturn
 
 import typer
 
+from kompass.agent.investigator import (
+    DEFAULT_MAX_ITERATIONS,
+    DEFAULT_MAX_TOTAL_TOKENS,
+    investigate_report,
+    investigation_groups,
+)
+from kompass.agent.llm import AgentProvider, ClaudeAgentProvider
+from kompass.agent.toolbox import DEFAULT_MAX_CALLS
+from kompass.agent.tools import ToolContext
+from kompass.aws.guard import ReadOnlyViolation
 from kompass.aws.session import ScanContext, SessionError, open_scan
 from kompass.config import ConfigError, LlmSettings, Settings, load_settings
 from kompass.interpreter.explainer import (
@@ -28,16 +38,18 @@ from kompass.interpreter.explainer import (
     reassess_report,
     select_groups,
 )
-from kompass.interpreter.llm import ClaudeProvider, LLMError, LLMProvider
+from kompass.interpreter.llm import PRICES, ClaudeProvider, LLMError, LLMProvider
 from kompass.interpreter.masking import MaskingError
 from kompass.interpreter.sources import SourceIndexError, SourceLookup, load_index
 from kompass.models import AuditReport, EvaluationReport, Snapshot, Status
 from kompass.pipeline import (
     COLLECTORS,
     attach_explanations,
+    attach_investigations,
     collect,
     default_explanations_path,
     default_findings_path,
+    default_investigations_path,
     default_reports_dir,
     evaluate_scan,
     exceeds,
@@ -227,8 +239,10 @@ def _evaluate(
 
 def _reports(store: SnapshotStore, findings_path: Path, formats: list[ReportFormat]) -> None:
     report, warning = attach_explanations(store, _audit_report(store, findings_path))
-    if warning:
-        typer.echo(f"경고: {warning}", err=True)
+    report, investigation_warning = attach_investigations(store, report)
+    for message in (warning, investigation_warning):
+        if message:
+            typer.echo(f"경고: {message}", err=True)
     paths = write_reports(report, [f.value for f in formats], default_reports_dir(store, report))
     for path in paths:
         typer.echo(f"보고서: {path}")
@@ -257,6 +271,11 @@ def _findings_path(store: SnapshotStore, findings: Path | None, account_id: str 
 def make_provider(settings: LlmSettings) -> LLMProvider:
     """LLM 공급자를 만든다. 테스트는 이 함수를 바꿔 가짜 공급자를 넣는다."""
     return ClaudeProvider(settings)
+
+
+def make_agent_provider(settings: LlmSettings) -> AgentProvider:
+    """에이전트 공급자를 만든다. 테스트는 이 함수를 바꿔 가짜 에이전트를 넣는다."""
+    return ClaudeAgentProvider(settings)
 
 
 def _print_summary(report: EvaluationReport) -> None:
@@ -541,3 +560,101 @@ def run() -> None:
     """콘솔 스크립트 진입점. 최상위 `--help`도 UTF-8로 나가도록 출력 설정을 먼저 한다."""
     _configure_output()
     app()
+
+
+@app.command("investigate")
+def investigate_command(
+    findings: Path | None = typer.Option(
+        None, "--findings", help="조사할 판정 결과 파일. 없으면 가장 최근에 판정한 결과."
+    ),
+    profile: str | None = ProfileOption,
+    region: str | None = RegionOption,
+    account_id: str | None = AccountOption,
+    store: Path | None = StoreOption,
+    config: Path | None = ConfigOption,
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="조사하지 않고 대상과 최대 비용만 보여줍니다."
+    ),
+    yes: bool = typer.Option(False, "--yes", "-y", help="비용 확인 없이 진행합니다."),
+    max_calls: int = typer.Option(
+        DEFAULT_MAX_CALLS, "--max-calls", min=1, help="룰 하나의 도구 호출 상한."
+    ),
+    max_tokens: int = typer.Option(
+        DEFAULT_MAX_TOTAL_TOKENS, "--max-tokens", min=10_000, help="룰 하나의 토큰 상한(입력+출력)."
+    ),
+    report: list[ReportFormat] | None = typer.Option(
+        None, "--report", help="조사 후 이 형식의 보고서도 다시 만듭니다 (md, xlsx, json)."
+    ),
+) -> None:
+    """취약·검토 필요 결과를 에이전트가 읽기 전용 도구로 추가 조사합니다. 판정은 바꾸지 않습니다.
+
+    AWS는 읽기 전용 가드가 걸린 점검 세션으로만 조회하고, LLM에는 식별정보를 가린 값만 보냅니다.
+    """
+    settings = _settings(config)
+    snapshot_store = SnapshotStore(store)
+    findings = _findings_path(snapshot_store, findings, account_id)
+    audit = _audit_report(snapshot_store, findings)
+    groups = investigation_groups(audit)
+    if not groups:
+        typer.echo("취약·검토 필요 결과가 없어 조사할 것이 없습니다.")
+        return
+    typer.echo(
+        f"조사 대상: 룰 {len(groups)}개, finding {sum(len(g.findings) for g in groups)}건 "
+        f"(모델 {settings.llm.model}, effort {settings.llm.effort})"
+    )
+    typer.echo(f"룰당 상한: 도구 호출 {max_calls}회, 토큰 {max_tokens:,}")
+    price = PRICES.get(settings.llm.model)
+    if price is not None:
+        ceiling = len(groups) * max_tokens * price.input_per_mtok / 1_000_000
+        typer.echo(
+            f"최대 비용: 약 ${ceiling:.2f} (토큰 상한을 모두 입력 단가로 계산, 보통 이보다 적음)"
+        )
+    if dry_run:
+        return
+    if not yes and not typer.confirm("추가 조사를 요청하시겠습니까?"):
+        typer.echo("취소했습니다.")
+        return
+
+    # 판정 결과와 같은 계정·리전 범위로 읽기 전용 점검 세션을 연다
+    scan = _open(profile, region, list(audit.scan.regions), audit.scan.account_id)
+    try:
+        provider = make_agent_provider(settings.llm)
+    except LLMError as exc:
+        _abort(str(exc), EXIT_USAGE)
+    try:
+        result = investigate_report(
+            audit,
+            provider,
+            ToolContext(scan),
+            effort=settings.llm.effort,
+            max_calls=max_calls,
+            max_iterations=DEFAULT_MAX_ITERATIONS,
+            max_total_tokens=max_tokens,
+            on_progress=lambda rule_id: typer.echo(f"  조사 {rule_id}"),
+        )
+    except ReadOnlyViolation as exc:
+        _abort(f"읽기 전용 가드가 호출을 차단해 조사를 중단했습니다: {exc}", EXIT_SESSION)
+    path = write_report(
+        result, default_investigations_path(snapshot_store, result.account_id, result.scan_id)
+    )
+    verified = sum(1 for i in result.investigations if i.verified)
+    calls = sum(len(i.tool_calls) for i in result.investigations)
+    typer.echo(
+        f"조사: 근거 검증됨 {verified}, 검증되지 않음 {len(result.investigations) - verified}, "
+        f"실패 {len(result.failures)}, 도구 호출 {calls}회"
+    )
+    for failure in result.failures:
+        typer.echo(f"경고: {failure.rule_id} 조사 실패: {failure.error}", err=True)
+    cost = (
+        f", 비용 약 ${result.estimated_cost_usd:.2f}"
+        if result.estimated_cost_usd is not None
+        else ""
+    )
+    typer.echo(
+        f"토큰: 입력 {result.usage.input_tokens:,}, 출력 {result.usage.output_tokens:,}{cost}"
+    )
+    typer.echo(f"조사 파일: {path}")
+    if report:
+        _reports(snapshot_store, findings, report)
+    if not result.investigations:
+        raise typer.Exit(EXIT_LLM)

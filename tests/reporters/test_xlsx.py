@@ -65,8 +65,10 @@ def test_status_cells_are_colored() -> None:
     sheet = _book()["KISA 항목"]
     header = [c.value for c in sheet[1]]
     col = header.index("결과") + 1
-    fills = {sheet.cell(row=r, column=col).value: sheet.cell(row=r, column=col).fill.fgColor.rgb
-             for r in range(2, sheet.max_row + 1)}  # fmt: skip
+    fills = {
+        sheet.cell(row=r, column=col).value: sheet.cell(row=r, column=col).fill.fgColor.rgb
+        for r in range(2, sheet.max_row + 1)
+    }
     assert fills["취약"] != fills["양호"]
 
 
@@ -128,3 +130,21 @@ def test_assessment_sheet() -> None:
     assert rows[0][:2] == ("구분", "순번")
     kinds = [r[0] for r in rows[1:]]
     assert kinds == ["요약", "위험 시나리오", "조치 순서", "조치 순서", "조치 순서"]
+
+
+def test_investigation_sheet() -> None:
+    from tests.reporters.sample import INVESTIGATED
+
+    book = _book(INVESTIGATED)
+    assert book.sheetnames[-1] == "추가 조사 (참고)"
+    kinds = [r[1] for r in _rows(book["추가 조사 (참고)"])[1:]]
+    assert kinds == [
+        "요약",
+        "사실",
+        "사실",
+        "확인할 질문",
+        "finding 메모",
+        "도구 호출",
+        "도구 호출",
+        "조사 실패",
+    ]
