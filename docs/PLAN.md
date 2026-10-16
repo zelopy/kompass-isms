@@ -1,6 +1,6 @@
 # 구현 계획
 
-> **현재 단계: 5단계 — 확장** (4단계 완료 2026-10-16, 증적 요청 문구 확인만 남음. 2단계는 사용자 검토·공개 결정만 남음)
+> **현재 단계: 5단계 — 확장** (4단계 완료 2026-10-16). 남은 사용자 확인: 2단계 ISMS-P 매핑 검증, 4단계 증적 요청 문구, 5단계 룰 12개 KISA 매핑. 저장소 공개는 마무리 시점에 검토
 > 단계를 마치면 이 줄을 갱신한다.
 
 ## 목표
@@ -55,6 +55,8 @@
 - [x] 리포터: 엑셀 점검표 (항목별 결과, 대상 리소스, 증적 요약, 수식 삽입 방지)
 - [x] CLI: `kompass report --format md|xlsx|json`, `kompass scan --report ...`
 - [x] README에 사용법과 출력 예시 추가
+- [ ] 사용자 확인: ISMS-P 매핑 원문 대조 후 `isms_p_verified: true` (공식 대응표가 없는 초안. `rules.yaml` 룰 34개·`kisa_items.yaml` 항목 19개 모두 false)
+- [ ] 저장소 공개 여부 결정 (현재 GitHub 비공개. 프로젝트 마무리 시점에 검토)
 
 **완료 기준:** LLM 없이도 실무에서 쓸 수 있는 점검표가 나온다. 이 시점에 README와 데모를 정리해서 공개 가능한 상태로 만든다.
 
@@ -63,7 +65,7 @@
 - [x] finding 식별자 정의: `Finding.key` = `룰:리전:리소스` (전역은 리전 `-`), 점검 안에서 유일성 검사. 해설·인용을 finding에 연결하는 데 필요
 - [x] LLM 공급자 인터페이스 (Claude API 구현체 + 로컬 LLM 구현체 자리) — `interpreter/llm.py`, 구조화 출력·대체 모델·비용 계산 (ADR-030)
 - [x] 마스킹 레이어: 계정 ID, IP, ARN, 리소스명 치환 및 복원 + 테스트 (`interpreter/masking.py`, 종류 보존 자리표시자 `MASKED_<종류>_n`)
-- [x] RAG: KISA 가이드·ISMS-P 원문을 항목 코드 단위로 색인 (`scripts/build_source_index.py` → `knowledge/index.json`, KISA 19 · ISMS-P 별표 7 101개) (Chroma 벡터 검색은 4단계로, ADR-029)
+- [x] RAG: KISA 가이드·ISMS-P 원문을 항목 코드 단위로 색인 (`scripts/build_source_index.py` → `knowledge/index.json`, KISA 19 · ISMS-P 별표 7 101개) (Chroma 벡터 검색은 4단계로 미뤘으나 4단계에서 쓰지 않음 → 5단계 증적 문서 검토에서 필요 여부 결정, ADR-029·035)
 - [x] 룰별 해설: 항목 근거 인용, 위험 설명 (조치 필요 finding을 룰 단위로 묶음, ADR-029) — `interpreter/explainer.py`
 - [x] 인용 검증: LLM이 인용한 항목코드가 실제 매핑/원문에 존재하는지 확인 (+ 모르는 finding_key, 지어낸 자리표시자 검사, 1회 재시도 후 "검증되지 않음")
 - [x] 위험 우선순위: 여러 finding을 엮은 종합 평가 — 룰별 우선순위 의견 + 종합 위험 평가(시나리오·조치 순서, `--assessment-only`로 재실행, ADR-034)
@@ -84,7 +86,7 @@
 - [x] 에이전트 루프: 도구 러너 + 공급자 인터페이스, 마스킹 다리, 예산(호출·반복·토큰), 조사 로그 — `agent/llm.py`·`agent/toolbox.py`, 실제 API로 러너+구조화 출력 확인
 - [x] 추가 조사 루프: 예) 퍼블릭 S3 발견 → 버킷 정책·ACL·CloudTrail 데이터 이벤트 추가 조회 — 사실마다 도구 호출 참조 검증(`agent/investigator.py`), `kompass investigate`(최대 비용 확인, `--dry-run`), 보고서 "추가 조사 (참고)" 절·시트
 - [x] 수동 항목 인터뷰: 담당자에게 증적 요청 (업로드 문서 RAG 검토는 5단계로, ADR-035) — 고정 카탈로그 `mappings/evidence_requests.yaml`(근거 구절 원문 대조), 보고서 "증적 요청 목록" 절·시트, `kompass evidence` 요청서(ADR-037)
-  - [ ] 사용자 확인: 요청 문구 원문 대조 후 `verified: true`
+  - [ ] 사용자 확인: 요청 문구 원문 대조 후 `verified: true` (`evidence_requests.yaml` 19개 항목 모두 false)
 - [x] MCP 서버로 도구 노출 — `kompass mcp`(stdio), 판정 결과 조회 + 조사 도구 12개, 세션 단위 마스킹 다리·호출 상한·호출 로그, 가드 위반 시 세션 중단 (ADR-038)
 - [x] 에이전트가 status를 변경할 수 없음을 보장하는 테스트 — 응답 스키마에 status·severity 없음, 조사 전후 finding 불변, Finding 동결 (`tests/agent/test_investigator.py`)
 
@@ -94,22 +96,33 @@
 
 ## 5단계 — 확장 (이후)
 
-- [ ] Prowler OCSF 출력 어댑터 (`rule_id` 형식에 출처 접두사 허용 여부 결정, ADR-019)
-- [ ] 서비스 추가: CloudTrail, KMS, RDS, VPC Flow Logs
+### 서비스 추가·수동 항목 자동화 (완료)
+
+- [x] 서비스 추가: CloudTrail(CT-002), RDS, VPC 흐름 로그, GuardDuty, CloudWatch Logs. KMS는 KISA 대응 항목이 없어 후보로 내림 (2026-10-16 사용자 결정)
   - [x] RDS collector + RDS-001~004 (CA-11·CA-08·CA-15·CA-18, ADR-039). 실습 환경 `enable_public_rds`로 인스턴스 2개
   - [x] RDS 실습 계정 확인: RDS-001~004 기대값 일치, 로그 내보내기가 없으면 `EnabledCloudwatchLogsExports` 키 생략, VPC-002가 공개 RDS 인터페이스를 REVIEW로 냄 (2026-10-16)
-  - [ ] 사용자 확인: RDS 룰 KISA 매핑 원문 근거 (`kisa_verified`)
   - [x] VPC 흐름 로그: VPC-003 (CA-14, ADR-040). 실습 `mixed` VPC에 흐름 로그
-  - [ ] VPC-003 실습 계정 확인 (사용자 Terraform 적용 필요)
-  - [x] GuardDuty: GD-001~002 (CA-19, ADR-041). 기본값 결과는 실습 계정에서 확인
-  - [ ] GuardDuty `enable_guardduty = true` 실습 확인 (선택, 사용자 Terraform 적용 필요)
+  - [x] GuardDuty: GD-001~002 (CA-19, ADR-041). 기본값(`enable_guardduty = false`) 결과도 실습 계정에서 확인
   - [x] S3 HTTPS 강제: S3-007 (CA-12, ADR-042). 실습 `private` 버킷에 HTTP 거부 정책
   - [x] 로그 보관 기간: CT-002·LOG-001 (CA-17, ADR-043). 실습 추적 버킷 30일 삭제 규칙, 로그 그룹 2개
   - [x] 권한 보유 주체 현황: IAM-010~011 (CA-05·CA-06, ADR-044). KISA 19개 항목 모두 자동 점검 룰 보유
   - [x] 실습 계정 확인 (2026-10-16, `enable_public_rds`·`enable_guardduty` 켬): VPC-003·S3-007·CT-002·LOG-001·IAM-010~011·GD-001~002·RDS-001~004 기대값 일치. `expected.yaml`에 선택 변수별 기대값(`when`)
   - [x] 발견한 결함 수정: 자격증명 보고서 재사용으로 새 사용자가 빠지던 문제 → ERROR (ADR-045)
-  - [ ] 보고서 갱신 뒤 실습 통합 테스트 재실행 (실습 정리됨, 다음 재실습 때) (IAM-003·005 `console-no-mfa` 확인)
   - [x] 평가 케이스 추가: 5단계 룰 20개(실습 가공 10, 보강 10). 20×2회 약 $2.55, 채점기 오판 2종 수정 후 모든 지표 100% (ADR-033 기록)
-  - [ ] 사용자 확인: VPC-003·GD-001~002·S3-007·CT-002·LOG-001·IAM-010~011 KISA 매핑 원문 근거 (`kisa_verified`)
+
+### 남은 확인
+
+- [ ] 사용자 확인: 5단계 룰 12개 KISA 매핑 원문 근거 (`kisa_verified`) — RDS-001~004, VPC-003, GD-001~002, S3-007, CT-002, LOG-001, IAM-010~011
+- [ ] 다음 재실습 때 실습 통합 테스트 재실행: 자격증명 보고서가 새로 만들어진 뒤(4시간 안에는 재사용, ADR-045) IAM-003·005의 `console-no-mfa` 사용자 판정 확인 (실습 정리됨)
+
+### 다음 작업 (규모가 커서 진행할 때 범위부터 정함)
+
+- [ ] 제출된 증적 문서 검토(RAG) — 4단계에서 미룸 (ADR-035·037). Chroma 벡터 검색이 필요한지 이때 결정 (ADR-029)
+- [ ] Prowler OCSF 출력 어댑터 (`rule_id` 형식에 출처 접두사 허용 여부 결정, ADR-019). ADR-008의 목적은 커버리지 확장이었는데 지금은 KISA 19개 항목 모두 자체 룰이 있으므로 필요성부터 다시 검토
 - [ ] Azure 지원
 - [ ] 다른 기준 추가 (CSAP 등)
+
+### 후보 (결정 기록에서 미룬 것, 우선순위 미정)
+
+- 룰: RDS SSL 강제·ELB HTTP 리스너와 오래된 TLS 정책·S3 최소 TLS 버전 (CA-12, ADR-039·042), RDS 공개 스냅샷 (ADR-039), AWS Backup 계획 (CA-18), CloudWatch 경보 (CA-19, ADR-041), KMS 고객 관리형 키 자동 교체 (KISA 대응 항목 없음, ISMS-P 2.7.2 후보)
+- LLM: 로컬 LLM 공급자 구현체 (ADR-007·029에서 자리만 둠), 종합 위험 평가의 평가 (ADR-034), 평가셋 난이도 보강과 LLM 판정자 지표 (ADR-033)
