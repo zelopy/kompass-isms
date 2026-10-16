@@ -91,6 +91,8 @@ terraform apply
 | S3-005 | `public-policy`, `restricted-policy`, `public-acl` | FAIL |
 | S3-006 | `public-acl` | FAIL |
 | S3-006 | 나머지 | PASS (`BucketOwnerEnforced`) |
+| S3-007 | `private` (HTTP 요청 거부 문장) | PASS |
+| S3-007 | 나머지 (정책 없음 또는 거부 문장 없음) | FAIL |
 
 ### EC2
 

@@ -139,6 +139,10 @@ rules:
   S3-006:
     fail: [s3:PutBucketAcl, s3:PutBucketOwnershipControls, s3:PutPublicAccessBlock, s3control:PutPublicAccessBlock]
     example: aws s3api put-bucket-acl --bucket {resource} --acl private
+  S3-007:
+    fail: [s3:PutBucketPolicy]
+    example: >-
+      aws s3api put-bucket-policy --bucket {resource} --policy file://deny-insecure-transport.json
   SG-001:
     fail: [ec2:RevokeSecurityGroupIngress, ec2:ModifySecurityGroupRules]
     example: >-

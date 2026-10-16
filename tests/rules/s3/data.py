@@ -53,6 +53,7 @@ def details(
     *,
     public_access_block: Any = ALL_BLOCKED,
     policy_status: Any = None,
+    policy: Any = None,
     encryption_config: Any = _UNSET,
     logging: Any = None,
     ownership_controls: Any = _UNSET,
@@ -63,6 +64,7 @@ def details(
     data: dict[str, Any] = {
         "public_access_block": public_access_block,
         "policy_status": policy_status,
+        "policy": policy,
         "encryption": encryption() if encryption_config is _UNSET else encryption_config,
         "logging": logging,
         "ownership_controls": (

@@ -1,10 +1,11 @@
-"""S3 collector (S3-001~006).
+"""S3 collector (S3-001~007).
 
 수집 데이터 (`Snapshot.data`). 키가 있고 값이 None이면 "설정 없음", 키가 없으면 "수집 실패"다.
 - `account_public_access_block`: 계정 수준 퍼블릭 액세스 차단 설정 (`s3control`)
 - `buckets`: `ListBuckets` 항목에 `Region`(버킷 리전, 조회 실패 시 None)을 더한 목록
 - `bucket_details.<버킷 이름>.<항목>`: 버킷별 설정. 항목은 `BUCKET_DETAILS`.
   `logging`은 로깅이 꺼져 있으면 None이다 (AWS가 빈 응답을 준다).
+  `policy`는 정책 문서(JSON 문자열)다.
 
 버킷은 `--regions`와 관계없이 모두 수집한다 (ADR-021). 버킷 단위 호출은 버킷 리전의 client로
 하고, 리전 조회에 실패하면 기본 리전 client로 시도한다 (botocore가 리전 리다이렉트를 처리).
@@ -34,6 +35,7 @@ BUCKET_DETAILS: dict[str, tuple[str, str | None, frozenset[str]]] = {
         "PolicyStatus",
         frozenset({"NoSuchBucketPolicy"}),
     ),
+    "policy": ("get_bucket_policy", "Policy", frozenset({"NoSuchBucketPolicy"})),
     "encryption": (
         "get_bucket_encryption",
         "ServerSideEncryptionConfiguration",

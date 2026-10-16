@@ -33,6 +33,7 @@ rules:
   S3-004: {kisa: [], isms_p: ["2.7.1"], kisa_verified: true, isms_p_verified: false}
   S3-005: {kisa: [CA-16], isms_p: ["2.9.4"], kisa_verified: true, isms_p_verified: false}
   S3-006: {kisa: [CA-10], isms_p: ["2.10.2"], kisa_verified: true, isms_p_verified: false}
+  S3-007: {kisa: [CA-12], isms_p: ["2.7.1", "2.10.2"], kisa_verified: false, isms_p_verified: false}
 
   IAM-001: {kisa: [CA-03], isms_p: ["2.5.3", "2.5.5", "2.10.2"], kisa_verified: true, isms_p_verified: false}
   IAM-002: {kisa: [CA-02], isms_p: ["2.5.5", "2.10.2"], kisa_verified: true, isms_p_verified: false}

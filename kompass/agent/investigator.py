@@ -74,6 +74,7 @@ RULE_HINTS: dict[str, str] = {
     "VPC-001": "서브넷 라우팅(인터넷 게이트웨이·NAT), 인터페이스의 공인 IP·보안그룹",
     "VPC-002": "인터페이스의 인스턴스·보안그룹 규칙·서브넷 경로",
     "VPC-003": "VPC의 인터페이스·서브넷 구성, 흐름 로그 변경 이력(DeleteFlowLogs·CreateFlowLogs)",
+    "S3-007": "버킷 정책 문서(HTTPS 강제 문장 유무), 정책 변경 이력(PutBucketPolicy 이벤트)",
     "GD-001": "탐지기 생성·삭제·변경 이력(CreateDetector·DeleteDetector·UpdateDetector 이벤트)",
     "GD-002": "EventBridge 규칙 변경 이력(PutRule·DeleteRule·RemoveTargets 이벤트)",
     "RDS-001": "데이터베이스 생성·수정 이력(CreateDBInstance·ModifyDBInstance 이벤트)",

@@ -78,6 +78,11 @@ expectations:
   - {rule: S3-006, resource: kompass-lab-private, status: PASS}
   - {rule: S3-006, resource: kompass-lab-public-policy, status: PASS}
   - {rule: S3-006, resource: kompass-lab-restricted-policy, status: PASS}
+  - {rule: S3-007, resource: kompass-lab-private, status: PASS}
+  - {rule: S3-007, resource: kompass-lab-logs, status: FAIL}
+  - {rule: S3-007, resource: kompass-lab-public-policy, status: FAIL}
+  - {rule: S3-007, resource: kompass-lab-restricted-policy, status: FAIL}
+  - {rule: S3-007, resource: kompass-lab-public-acl, status: FAIL}
 
   # IAM
   - {rule: IAM-001, resource: account, status: PASS}

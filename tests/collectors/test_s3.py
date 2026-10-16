@@ -81,6 +81,7 @@ def test_defaults_are_recorded_as_absent(aws: None) -> None:
     assert set(details) == set(BUCKET_DETAILS)
     assert details["public_access_block"] is None
     assert details["policy_status"] is None
+    assert details["policy"] is None
     assert details["encryption"] is None
     assert details["logging"] is None
     assert details["ownership_controls"] is None
@@ -151,6 +152,7 @@ def test_configured_bucket(aws: None) -> None:
     details = S3Collector().collect(_scan()).data["bucket_details"]["configured"]
     assert details["public_access_block"]["BlockPublicPolicy"] is False
     assert details["policy_status"]["IsPublic"] is True
+    assert '"Principal"' in details["policy"]
     assert (
         details["encryption"]["Rules"][0]["ApplyServerSideEncryptionByDefault"]["SSEAlgorithm"]
         == "AES256"
@@ -211,6 +213,7 @@ def test_bucket_detail_failure_is_missing_key_with_resource(aws: None) -> None:
         stub.add_response("get_bucket_location", {"LocationConstraint": HOME})
         stub.add_client_error("get_public_access_block", service_error_code="AccessDenied")
         stub.add_client_error("get_bucket_policy_status", service_error_code="NoSuchBucketPolicy")
+        stub.add_client_error("get_bucket_policy", service_error_code="NoSuchBucketPolicy")
         stub.add_client_error(
             "get_bucket_encryption",
             service_error_code="ServerSideEncryptionConfigurationNotFoundError",
@@ -242,6 +245,7 @@ def test_location_failure_records_error_and_continues(aws: None) -> None:
         for method, absent in [
             ("get_public_access_block", "NoSuchPublicAccessBlockConfiguration"),
             ("get_bucket_policy_status", "NoSuchBucketPolicy"),
+            ("get_bucket_policy", "NoSuchBucketPolicy"),
             ("get_bucket_encryption", "ServerSideEncryptionConfigurationNotFoundError"),
         ]:
             stub.add_client_error(method, service_error_code=absent)

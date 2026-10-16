@@ -382,3 +382,12 @@
   - KISA CA-19 매핑: GD-002는 직접, GD-001은 해석. 사용자 확인 전이라 `kisa_verified: false`. 탐지기 ID는 마스킹한다.
   - 실습 환경 `enable_guardduty`(기본 false). 기본값에서 GD-001 FAIL·GD-002 N/A를 실습 계정에서 확인했다.
 - 이유: 모두 List/Get 호출이라 가드 허용 목록을 바꾸지 않고 CA-19를 자동화할 수 있다.
+
+## ADR-042 S3 버킷 HTTPS 강제 (S3-007)
+- 상태: 채택 (사용자 결정, 2026-10-16). 5단계 수동 점검 항목 자동화 ③.
+- 결정:
+  - S3 collector에 `s3:GetBucketPolicy`(정책 문서)를 더한다. 기존에는 공개 여부(`GetBucketPolicyStatus`)만 수집했다.
+  - S3-007: 버킷 정책에 모든 주체·`s3:*`·객체(`버킷/*`)에 대해 `aws:SecureTransport = false` 요청을 거부하는 문장이 있으면 PASS. 정책이 없으면 FAIL, 정책 문서를 수집하지 못하거나 해석할 수 없으면 ERROR.
+  - 최소 TLS 버전(`s3:TlsVersion`)과 ELB·RDS의 통신 암호화는 판정하지 않는다 (후보). 서버 원격 접근·데이터 이관 구간은 사람이 확인한다 (CA-12 `partial`).
+  - KISA CA-12 매핑의 근거 수준은 해석(S3 API 통신을 리소스 접근 통신으로 봄). 사용자 확인 전이라 `kisa_verified: false`.
+- 이유: 이미 수집하는 S3에 호출 하나를 더해 CA-12의 일부를 자동화할 수 있다. 정책 문서는 스냅샷(커밋 안 함)에만 남고, LLM에는 S3-007 evidence(문장 Sid)와 마스킹한 도구 결과만 간다.

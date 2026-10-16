@@ -99,7 +99,7 @@ resource "aws_s3_bucket_policy" "logs" {
   depends_on = [aws_s3_bucket_public_access_block.logs]
 }
 
-# --- 비공개 + 로깅 버킷: S3-002, S3-003, S3-005, S3-006 PASS ---
+# --- 비공개 + 로깅 버킷: S3-002, S3-003, S3-005, S3-006, S3-007 PASS ---
 
 resource "aws_s3_bucket" "private_logged" {
   bucket        = "${local.name}-private-${local.suffix}"
@@ -120,6 +120,24 @@ resource "aws_s3_bucket_logging" "private_logged" {
   target_prefix = "s3-access/${aws_s3_bucket.private_logged.id}/"
 
   depends_on = [aws_s3_bucket_policy.logs]
+}
+
+# HTTP 요청 거부: S3-007 PASS (다른 버킷은 정책이 없거나 거부 문장이 없어 FAIL)
+resource "aws_s3_bucket_policy" "private_logged" {
+  bucket = aws_s3_bucket.private_logged.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid       = "DenyInsecureTransport"
+      Effect    = "Deny"
+      Principal = "*"
+      Action    = "s3:*"
+      Resource  = [aws_s3_bucket.private_logged.arn, "${aws_s3_bucket.private_logged.arn}/*"]
+      Condition = { Bool = { "aws:SecureTransport" = "false" } }
+    }]
+  })
+
+  depends_on = [aws_s3_bucket_public_access_block.private_logged]
 }
 
 # --- 버킷 정책 공개: S3-002 FAIL, S3-003 FAIL ---

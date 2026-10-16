@@ -35,6 +35,7 @@ from kompass.rules.s3.s3_003_public_bucket_policy import S3003PublicBucketPolicy
 from kompass.rules.s3.s3_004_default_encryption import S3004DefaultEncryption
 from kompass.rules.s3.s3_005_access_logging import S3005AccessLogging
 from kompass.rules.s3.s3_006_public_bucket_acl import S3006PublicBucketAcl
+from kompass.rules.s3.s3_007_secure_transport import S3007SecureTransport
 
 RULES: tuple[BaseRule, ...] = (
     Ct001MultiRegionTrail(),
@@ -51,6 +52,7 @@ RULES: tuple[BaseRule, ...] = (
     S3004DefaultEncryption(),
     S3005AccessLogging(),
     S3006PublicBucketAcl(),
+    S3007SecureTransport(),
     Iam001RootMfa(),
     Iam002RootAccessKey(),
     Iam003ConsoleUserMfa(),

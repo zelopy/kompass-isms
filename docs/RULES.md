@@ -160,6 +160,21 @@
 - ISMS-P(초안): 2.10.2 클라우드 보안
 - KISA: CA-10 스토리지 리소스 퍼블릭 접근 관리 (중, 863쪽) — 근거 수준: 직접 ("모든 인터넷 사용자 접근권한")
 
+### S3-007 버킷 정책 HTTPS 미강제
+- 심각도: medium
+- API: `s3:GetBucketPolicy`
+- 판정: 버킷 정책에 아래 조건을 모두 만족하는 문장이 있으면 PASS, 정책이 없거나 그런 문장이 없으면 FAIL. 버킷별 finding.
+  - `Effect == "Deny"`
+  - `Principal`이 `"*"` 또는 `{"AWS": "*"}` (목록이면 `"*"` 포함)
+  - `Action`에 `s3:*` 또는 `*` 포함
+  - `Resource`가 객체를 포함: `arn:<파티션>:s3:::<버킷>/*` 또는 `*`
+  - `Condition`의 `Bool` 또는 `BoolIfExists`에서 `aws:SecureTransport`가 `false` (조건 키는 대소문자 구분 없음)
+- 오류: 정책 문서를 수집하지 못했으면 ERROR. 정책 문서를 JSON으로 해석할 수 없으면 ERROR.
+- evidence: 조건을 만족한 문장의 `Sid`. 최소 TLS 버전(`s3:TlsVersion`) 조건은 판정하지 않는다.
+- 비고: S3 API는 HTTP 요청도 받으므로 HTTPS만 허용하려면 정책으로 거부해야 한다. 서버 원격 접근·데이터 이관 등 나머지 통신 구간은 사람이 확인한다 (CA-12 `partial`).
+- ISMS-P(초안): 2.7.1 암호정책 적용, 2.10.2 클라우드 보안
+- KISA: CA-12 통신구간 암호화 설정 (중, 865쪽) — 근거 수준: 해석 ("리소스 관리 접근 시 OpenSSH 및 OpenSSL 기반 웹/API 통신(TLS v1.2 이상, TLS v1.3 권장) 사용". S3 API 통신을 리소스 접근 통신으로 해석)
+
 ## EC2
 
 EC2 룰은 모두 `ec2` 스냅샷(보안그룹, VPC, 서브넷, 라우팅 테이블, 네트워크 인터페이스)을 입력으로 받는다.
