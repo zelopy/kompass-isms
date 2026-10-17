@@ -417,3 +417,13 @@ def test_load_terms_reports_unreadable_file(tmp_path: Path) -> None:
     bad.write_bytes(b"\xff\xfe\x81")
     with pytest.raises(MaskingError, match="UTF-8"):
         load_terms(bad)
+
+
+def test_json_escapes_before_placeholders_are_not_partial_masks() -> None:
+    masker = Masker(["prod-web"])
+    masked = masker.mask({"message": "규칙 목록:\nprod-web\t22/tcp\r\nprod-web"})
+    text = json.dumps(masked, ensure_ascii=False)
+    assert "\\nMASKED_NAME_1" in text and "\\tMASKED_NAME_1" not in text
+    masker.require_clean(text, [])  # 이스케이프는 이름 문자가 아니다
+    assert masker.partially_masked("xMASKED_NAME_1")  # 실제로 붙은 글자는 계속 잡는다
+    assert masker.partially_masked("prod-MASKED_NAME_1")

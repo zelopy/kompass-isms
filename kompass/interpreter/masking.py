@@ -32,7 +32,11 @@ TOKEN_PREFIX = "MASKED_"
 _TOKEN = re.compile(r"MASKED_[A-Z0-9]+_\d+")
 # 자리표시자 앞뒤에 이름 문자가 붙어 있으면 값의 일부만 바뀐 것이다
 # 번호는 끝까지 읽은 뒤 판단한다 (`MASKED_NAME_10`을 `MASKED_NAME_1` + `0`으로 보지 않는다)
-_PARTIAL = re.compile(r"[A-Za-z0-9.-]MASKED_[A-Z0-9]+_\d+|MASKED_[A-Z0-9]+_\d+(?!\d)[A-Za-z-]")
+# JSON 문자열의 이스케이프(`\n`, `\t`)는 글자가 앞에 붙은 것으로 보지 않는다. 검사는 json.dumps
+# 결과에 하므로, 줄바꿈 뒤에 자리표시자가 오면 `\nMASKED_…`의 `n` 때문에 막히던 오판이 있었다
+_PARTIAL = re.compile(
+    r"(?<!\\)[A-Za-z0-9.-]MASKED_[A-Z0-9]+_\d+|MASKED_[A-Z0-9]+_\d+(?!\d)[A-Za-z-]"
+)
 _KEEP = frozenset({"0.0.0.0/0", "::/0"})
 _MIN_NAME_LENGTH = 3
 _MIN_TERM_LENGTH = 2  # 사용자 사전 용어. 두 글자 한글 이름이 있다
