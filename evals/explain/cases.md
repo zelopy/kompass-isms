@@ -1,6 +1,6 @@
 # 해설 평가 케이스
 
-총 68개 (실습 가공 29, 보강 39). 모두 가짜 데이터임. 케이스 하나 = 룰 묶음 하나, 해설 대상은 FAIL·ERROR·REVIEW finding임.
+총 71개 (실습 가공 30, 보강 41). 모두 가짜 데이터임. 케이스 하나 = 룰 묶음 하나, 해설 대상은 FAIL·ERROR·REVIEW finding임.
 
 | ID | 출처 | 룰 | 해설 대상 | 전체 | 태그 | 상황 |
 |---|---|---|---|---|---|---|
@@ -20,6 +20,7 @@
 | lab-rds-003 | lab | RDS-003 | FAIL 1 | 2 | rds, fail | 실습 결과 RDS-003 (데이터베이스 로그 내보내기 미설정) |
 | lab-rds-004 | lab | RDS-004 | FAIL 1 | 2 | rds, fail | 실습 결과 RDS-004 (자동 백업 보존 기간 부족) |
 | lab-rds-005 | lab | RDS-005 | FAIL 1 | 2 | rds, fail | 실습 결과 RDS-005 (데이터베이스 SSL 연결 미강제) |
+| lab-rds-006 | lab | RDS-006 | FAIL 1 | 2 | rds, fail | 실습 결과 RDS-006 (데이터베이스 스냅샷 공개) |
 | lab-s3-001 | lab | S3-001 | FAIL 1 | 1 | s3, fail | 실습 결과 S3-001 (계정 수준 퍼블릭 액세스 차단 미설정) |
 | lab-s3-002 | lab | S3-002 | FAIL 3 | 5 | s3, fail | 실습 결과 S3-002 (버킷 수준 퍼블릭 액세스 차단 미설정) |
 | lab-s3-003 | lab | S3-003 | FAIL 2 | 5 | s3, fail | 실습 결과 S3-003 (버킷 정책에 의한 퍼블릭 노출) |
@@ -59,6 +60,8 @@
 | syn-rds-004-short-retention | synthetic | RDS-004 | FAIL 1 | 2 | rds, variant, fail | 자동 백업 3일 보존과 읽기 전용 복제본 |
 | syn-rds-005-engine-default | synthetic | RDS-005 | FAIL 2 | 3 | rds, unseen-rule, fail | MySQL 엔진 기본값(강제 안 함)과 Aurora PostgreSQL 클러스터 rds.force_ssl=0 |
 | syn-rds-005-error-review | synthetic | RDS-005 | ERROR 1, REVIEW 1 | 2 | rds, mixed, error, review | 클러스터 파라미터 조회 권한 없음(ERROR)과 Oracle 인스턴스(REVIEW) |
+| syn-rds-006-cluster-shared | synthetic | RDS-006 | FAIL 1 | 3 | rds, unseen-rule, fail | 암호화 안 된 Aurora 클러스터 스냅샷 공개(FAIL)와 특정 계정 공유 스냅샷(PASS) |
+| syn-rds-006-error | synthetic | RDS-006 | ERROR 1, FAIL 1 | 2 | rds, mixed, error, fail | 공개된 MySQL 스냅샷(FAIL)과 공유 속성 조회 권한 없음(ERROR) |
 | syn-s3-001-error | synthetic | S3-001 | ERROR 1 | 1 | s3, error | 계정 수준 퍼블릭 액세스 차단 조회 권한 없음 (ERROR) |
 | syn-s3-002-error | synthetic | S3-002 | ERROR 2 | 3 | s3, error | 버킷 퍼블릭 액세스 차단 조회 권한 없음 (ERROR 2) |
 | syn-s3-003-mixed | synthetic | S3-003 | ERROR 1, FAIL 1 | 3 | s3, mixed, error, fail | 퍼블릭 버킷 정책 FAIL과 조회 실패 ERROR 혼합 |
@@ -1011,6 +1014,25 @@
  "parameter_apply_status": "in-sync",
  "value": "0",
  "source": "user"
+}
+```
+
+함께 담긴 다른 finding: PASS 1
+
+## lab-rds-006 — 실습 결과 RDS-006 (데이터베이스 스냅샷 공개)
+
+- **FAIL** `RDS-006:ap-northeast-2:kompass-lab-public-snapshot` — 모든 AWS 계정에 공개된 스냅샷: kompass-lab-public-snapshot
+
+```json
+{
+ "kind": "snapshot",
+ "snapshot": "kompass-lab-public-snapshot",
+ "db_identifier": "kompass-lab-public",
+ "engine": "postgres",
+ "encrypted": false,
+ "created_at": "2026-10-17T14:35:11.170000Z",
+ "public": true,
+ "shared_accounts": []
 }
 ```
 
@@ -2214,6 +2236,65 @@
    "error_code": "AccessDenied",
    "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: rds:DescribeDBClusterParameters because no identity-based policy allows the rds:DescribeDBClusterParameters action",
    "resource": "acme-ledger-cluster-params"
+  }
+ ]
+}
+```
+
+
+## syn-rds-006-cluster-shared — 암호화 안 된 Aurora 클러스터 스냅샷 공개(FAIL)와 특정 계정 공유 스냅샷(PASS)
+
+- **FAIL** `RDS-006:ap-northeast-2:cluster-snapshot:acme-analytics-export` — 모든 AWS 계정에 공개된 스냅샷: acme-analytics-export
+
+```json
+{
+ "kind": "cluster_snapshot",
+ "snapshot": "acme-analytics-export",
+ "db_cluster": "acme-analytics",
+ "engine": "aurora-postgresql",
+ "encrypted": false,
+ "created_at": "2026-10-15T03:00:00+00:00",
+ "public": true,
+ "shared_accounts": []
+}
+```
+
+함께 담긴 다른 finding: PASS 2
+
+## syn-rds-006-error — 공개된 MySQL 스냅샷(FAIL)과 공유 속성 조회 권한 없음(ERROR)
+
+- **FAIL** `RDS-006:ap-northeast-2:acme-shop-db-migration` — 모든 AWS 계정에 공개된 스냅샷: acme-shop-db-migration
+
+```json
+{
+ "kind": "snapshot",
+ "snapshot": "acme-shop-db-migration",
+ "db_identifier": "acme-shop-db",
+ "engine": "mysql",
+ "encrypted": false,
+ "created_at": "2026-10-15T03:00:00+00:00",
+ "public": true,
+ "shared_accounts": []
+}
+```
+
+- **ERROR** `RDS-006:ap-northeast-2:acme-erp-db-final` — 스냅샷 공유 설정을 수집하지 못함: acme-erp-db-final
+
+```json
+{
+ "kind": "snapshot",
+ "snapshot": "acme-erp-db-final",
+ "db_identifier": "acme-erp-db",
+ "engine": "postgres",
+ "encrypted": true,
+ "created_at": "2026-10-15T03:00:00+00:00",
+ "errors": [
+  {
+   "operation": "rds:DescribeDBSnapshotAttributes",
+   "region": "ap-northeast-2",
+   "error_code": "AccessDenied",
+   "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: rds:DescribeDBSnapshotAttributes because no identity-based policy allows the rds:DescribeDBSnapshotAttributes action",
+   "resource": "acme-erp-db-final"
   }
  ]
 }

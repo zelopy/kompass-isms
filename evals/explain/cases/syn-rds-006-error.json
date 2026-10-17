@@ -1,0 +1,61 @@
+{
+ "id": "syn-rds-006-error",
+ "title": "공개된 MySQL 스냅샷(FAIL)과 공유 속성 조회 권한 없음(ERROR)",
+ "source": "synthetic",
+ "rule_id": "RDS-006",
+ "tags": [
+  "rds",
+  "mixed",
+  "error",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "RDS-006",
+   "resource": "acme-shop-db-migration",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "모든 AWS 계정에 공개된 스냅샷: acme-shop-db-migration",
+   "evidence": {
+    "kind": "snapshot",
+    "snapshot": "acme-shop-db-migration",
+    "db_identifier": "acme-shop-db",
+    "engine": "mysql",
+    "encrypted": false,
+    "created_at": "2026-10-15T03:00:00+00:00",
+    "public": true,
+    "shared_accounts": []
+   },
+   "collected_at": "2026-10-16T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "RDS-006",
+   "resource": "acme-erp-db-final",
+   "region": "ap-northeast-2",
+   "status": "ERROR",
+   "severity": "high",
+   "message": "스냅샷 공유 설정을 수집하지 못함: acme-erp-db-final",
+   "evidence": {
+    "kind": "snapshot",
+    "snapshot": "acme-erp-db-final",
+    "db_identifier": "acme-erp-db",
+    "engine": "postgres",
+    "encrypted": true,
+    "created_at": "2026-10-15T03:00:00+00:00",
+    "errors": [
+     {
+      "operation": "rds:DescribeDBSnapshotAttributes",
+      "region": "ap-northeast-2",
+      "error_code": "AccessDenied",
+      "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: rds:DescribeDBSnapshotAttributes because no identity-based policy allows the rds:DescribeDBSnapshotAttributes action",
+      "resource": "acme-erp-db-final"
+     }
+    ]
+   },
+   "collected_at": "2026-10-16T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

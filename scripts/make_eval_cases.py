@@ -986,6 +986,7 @@ def _added_rules(add: Callable[..., None]) -> None:
 
     _rds_005(add, region)  # RDS-005(ADR-051). 앞 케이스의 무작위 값이 바뀌지 않게 맨 뒤에 둔다
     _elb(add)  # ELB-001~002(ADR-052). 같은 이유로 RDS-005 뒤에 둔다
+    _rds_006(add, region)  # RDS-006(ADR-053). 같은 이유로 ELB 뒤에 둔다
 
 
 def _rds_005(add: Callable[..., None], region: str) -> None:
@@ -1082,6 +1083,71 @@ def _rds_005(add: Callable[..., None], region: str) -> None:
                     )
                 },
                 errors=(denied("rds:DescribeDBClusterParameters", resource=ledger_group),),
+            ),
+        ),
+    )
+
+
+def _rds_006(add: Callable[..., None], region: str) -> None:
+    """RDS-006 보강 케이스. 실습(인스턴스 스냅샷 공개·비공유)에 없는 클러스터 스냅샷·계정 공유·
+    공유 속성 조회 거부를 다룬다."""
+    partner = "210987654321"  # 공유 대상 외부 계정 (가짜)
+    add(
+        "syn-rds-006-cluster-shared",
+        "암호화 안 된 Aurora 클러스터 스냅샷 공개(FAIL)와 특정 계정 공유 스냅샷(PASS)",
+        "RDS-006",
+        ("unseen-rule",),
+        evaluate(
+            "RDS-006",
+            rds.snapshot(
+                {
+                    region: rds.region(
+                        snapshots=[
+                            rds.db_snapshot("acme-orders-db-handover", source="acme-orders-db"),
+                            rds.db_snapshot("acme-orders-db-weekly", source="acme-orders-db"),
+                        ],
+                        cluster_snapshots=[
+                            rds.cluster_snapshot(
+                                "acme-analytics-export",
+                                source="acme-analytics",
+                                StorageEncrypted=False,
+                            )
+                        ],
+                        snapshot_attributes={
+                            "acme-orders-db-handover": rds.restore(partner),
+                            "acme-orders-db-weekly": rds.restore(),
+                        },
+                        cluster_snapshot_attributes={
+                            "acme-analytics-export": rds.restore("all"),
+                        },
+                    )
+                }
+            ),
+        ),
+    )
+    add(
+        "syn-rds-006-error",
+        "공개된 MySQL 스냅샷(FAIL)과 공유 속성 조회 권한 없음(ERROR)",
+        "RDS-006",
+        ("mixed", "error"),
+        evaluate(
+            "RDS-006",
+            rds.snapshot(
+                {
+                    region: rds.region(
+                        snapshots=[
+                            rds.db_snapshot(
+                                "acme-shop-db-migration",
+                                source="acme-shop-db",
+                                engine="mysql",
+                                Encrypted=False,
+                            ),
+                            rds.db_snapshot("acme-erp-db-final", source="acme-erp-db"),
+                        ],
+                        snapshot_attributes={"acme-shop-db-migration": rds.restore("all")},
+                    )
+                },
+                errors=(denied("rds:DescribeDBSnapshotAttributes", resource="acme-erp-db-final"),),
             ),
         ),
     )

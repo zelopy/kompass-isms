@@ -1,0 +1,52 @@
+{
+ "id": "lab-rds-006",
+ "title": "실습 결과 RDS-006 (데이터베이스 스냅샷 공개)",
+ "source": "lab",
+ "rule_id": "RDS-006",
+ "tags": [
+  "rds",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "RDS-006",
+   "resource": "kompass-lab-private-snapshot",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "high",
+   "message": "공개 안 함",
+   "evidence": {
+    "kind": "snapshot",
+    "snapshot": "kompass-lab-private-snapshot",
+    "db_identifier": "kompass-lab-private",
+    "engine": "postgres",
+    "encrypted": true,
+    "created_at": "2026-10-17T14:37:45.386000Z",
+    "public": false,
+    "shared_accounts": []
+   },
+   "collected_at": "2026-10-17T14:43:44.644218Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "RDS-006",
+   "resource": "kompass-lab-public-snapshot",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "모든 AWS 계정에 공개된 스냅샷: kompass-lab-public-snapshot",
+   "evidence": {
+    "kind": "snapshot",
+    "snapshot": "kompass-lab-public-snapshot",
+    "db_identifier": "kompass-lab-public",
+    "engine": "postgres",
+    "encrypted": false,
+    "created_at": "2026-10-17T14:35:11.170000Z",
+    "public": true,
+    "shared_accounts": []
+   },
+   "collected_at": "2026-10-17T14:43:44.644218Z",
+   "mappings": null
+  }
+ ]
+}

@@ -1,0 +1,75 @@
+{
+ "id": "syn-rds-006-cluster-shared",
+ "title": "암호화 안 된 Aurora 클러스터 스냅샷 공개(FAIL)와 특정 계정 공유 스냅샷(PASS)",
+ "source": "synthetic",
+ "rule_id": "RDS-006",
+ "tags": [
+  "rds",
+  "unseen-rule",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "RDS-006",
+   "resource": "acme-orders-db-handover",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "high",
+   "message": "공개 안 함 (특정 계정 1개에 공유)",
+   "evidence": {
+    "kind": "snapshot",
+    "snapshot": "acme-orders-db-handover",
+    "db_identifier": "acme-orders-db",
+    "engine": "postgres",
+    "encrypted": true,
+    "created_at": "2026-10-15T03:00:00+00:00",
+    "public": false,
+    "shared_accounts": [
+     "210987654321"
+    ]
+   },
+   "collected_at": "2026-10-16T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "RDS-006",
+   "resource": "acme-orders-db-weekly",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "high",
+   "message": "공개 안 함",
+   "evidence": {
+    "kind": "snapshot",
+    "snapshot": "acme-orders-db-weekly",
+    "db_identifier": "acme-orders-db",
+    "engine": "postgres",
+    "encrypted": true,
+    "created_at": "2026-10-15T03:00:00+00:00",
+    "public": false,
+    "shared_accounts": []
+   },
+   "collected_at": "2026-10-16T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "RDS-006",
+   "resource": "cluster-snapshot:acme-analytics-export",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "high",
+   "message": "모든 AWS 계정에 공개된 스냅샷: acme-analytics-export",
+   "evidence": {
+    "kind": "cluster_snapshot",
+    "snapshot": "acme-analytics-export",
+    "db_cluster": "acme-analytics",
+    "engine": "aurora-postgresql",
+    "encrypted": false,
+    "created_at": "2026-10-15T03:00:00+00:00",
+    "public": true,
+    "shared_accounts": []
+   },
+   "collected_at": "2026-10-16T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}
