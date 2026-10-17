@@ -16,10 +16,16 @@
 4. IAM 고유 ID·액세스 키 ID (`AIDA…`, `AROA…`, `AKIA…`).
 5. 계정 ID(12자리).
 6. IP 주소·CIDR. `0.0.0.0/0`, `::/0`은 판정의 의미 자체이므로 남긴다.
+
+증적 문서(ADR-049)에는 개인정보가 들어가므로 `personal=True`로 1 다음에 메일 주소·전화번호·
+주민등록번호를 먼저 바꾸고(메일 주소 속 사용자 이름이 따로 잘리지 않도록), 사용자 사전의 용어
+(직원 이름 등, `terms`)를 이름과 함께 긴 것부터 바꾼다. 한글 이름은 두 글자도 있어 사전 용어는
+2자부터 받는다. 해설·조사는 평가셋 기준선(ADR-033)에 묶여 있어 개인정보 패턴을 켜지 않는다.
 """
 
 import re
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
+from pathlib import Path
 from typing import Any
 
 TOKEN_PREFIX = "MASKED_"
@@ -29,6 +35,7 @@ _TOKEN = re.compile(r"MASKED_[A-Z0-9]+_\d+")
 _PARTIAL = re.compile(r"[A-Za-z0-9.-]MASKED_[A-Z0-9]+_\d+|MASKED_[A-Z0-9]+_\d+(?!\d)[A-Za-z-]")
 _KEEP = frozenset({"0.0.0.0/0", "::/0"})
 _MIN_NAME_LENGTH = 3
+_MIN_TERM_LENGTH = 2  # 사용자 사전 용어. 두 글자 한글 이름이 있다
 # 계정 단위 리소스 표기, AWS 기본값, 루트 사용자 (AWS가 정한 고정 이름이라 식별정보가 아니다)
 _NOT_NAMES = frozenset({"account", "default", "root"})
 
@@ -47,6 +54,20 @@ _UNIQUE_ID = re.compile(
 _ACCOUNT = re.compile(r"(?<!\d)\d{12}(?!\d)")
 _IPV4 = re.compile(r"(?<![\d.])\d{1,3}(?:\.\d{1,3}){3}(?:/\d{1,2})?(?![\d.])")
 _IPV6 = re.compile(r"(?<![0-9A-Za-z:])(?:[0-9A-Fa-f]{0,4}:){2,7}[0-9A-Fa-f]{0,4}(?:/\d{1,3})?")
+# 개인정보 (personal=True). 앞뒤가 숫자·하이픈이면 더 긴 숫자열의 일부이므로 잡지 않는다
+_EMAIL = re.compile(
+    r"(?<![A-Za-z0-9._%+-])[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}"
+)
+_PHONE = re.compile(
+    r"(?<![\d+-])(?:"
+    r"\+82[- ]?1[016789][- ]?\d{3,4}[- ]?\d{4}"  # 국제 표기 휴대전화
+    r"|01[016789]-?\d{3,4}-?\d{4}"  # 휴대전화
+    r"|0(?:2|[3-6][1-5])-\d{3,4}-\d{4}"  # 지역번호 유선전화 (하이픈 필수)
+    r")(?![\d-])"
+)
+_RRN = re.compile(  # 주민등록번호·외국인등록번호
+    r"(?<![\d-])\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])-?[1-8]\d{6}(?![\d-])"
+)
 _REGION = re.compile(r"[a-z]{2}(?:-gov)?-[a-z]+-\d")
 _AWS_SEGMENTS = frozenset({"aws-reserved", "aws-service-role", "service-role", "root"})
 
@@ -86,18 +107,31 @@ class MaskingError(Exception):
 class Masker:
     """치환표를 가진 마스커. 한 번의 해설 요청(룰 묶음)마다 새로 만든다."""
 
-    def __init__(self, names: Iterable[str] = ()) -> None:
+    def __init__(
+        self, names: Iterable[str] = (), *, terms: Iterable[str] = (), personal: bool = False
+    ) -> None:
         self._forward: dict[str, str] = {}
         self._reverse: dict[str, str] = {}
         self._counters: dict[str, int] = {}
+        self._personal = personal
         self._names = sorted(
             {n for n in names if len(n) >= _MIN_NAME_LENGTH and n not in _NOT_NAMES},
             key=len,
             reverse=True,
         )
-        self._name_patterns = [
-            re.compile(rf"(?<![A-Za-z0-9_.-]){re.escape(name)}(?![A-Za-z0-9_-])")
-            for name in self._names
+        self._terms = frozenset(t for t in terms if len(t) >= _MIN_TERM_LENGTH) - set(self._names)
+        self._compile()
+
+    def _compile(self) -> None:
+        """이름과 사전 용어를 긴 것부터 바꾸는 패턴 목록 (종류, 원래 값, 패턴)."""
+        entries = sorted({*self._names, *self._terms}, key=len, reverse=True)
+        self._patterns = [
+            (
+                "TERM" if value in self._terms else "NAME",
+                value,
+                re.compile(rf"(?<![A-Za-z0-9_.-]){re.escape(value)}(?![A-Za-z0-9_-])"),
+            )
+            for value in entries
         ]
 
     @classmethod
@@ -128,10 +162,8 @@ class Masker:
         if not new:
             return
         self._names = sorted({*self._names, *new}, key=len, reverse=True)
-        self._name_patterns = [
-            re.compile(rf"(?<![A-Za-z0-9_.-]){re.escape(name)}(?![A-Za-z0-9_-])")
-            for name in self._names
-        ]
+        self._terms -= new
+        self._compile()
 
     # --- 마스킹 ---
 
@@ -146,8 +178,12 @@ class Masker:
 
     def mask_text(self, text: str) -> str:
         text = _ARN.sub(self._mask_arn, text)
-        for pattern in self._name_patterns:
-            text = pattern.sub(lambda m: self._token("NAME", m.group(0)), text)
+        if self._personal:
+            text = _EMAIL.sub(lambda m: self._token("EMAIL", m.group(0)), text)
+            text = _PHONE.sub(lambda m: self._token("PHONE", m.group(0)), text)
+            text = _RRN.sub(lambda m: self._token("RRN", m.group(0)), text)
+        for kind, _, pattern in self._patterns:
+            text = pattern.sub(self._replacer(kind), text)
         text = _RESOURCE_ID.sub(lambda m: self._token(m.group("kind").upper(), m.group(0)), text)
         text = _UNIQUE_ID.sub(lambda m: self._token("IAMID", m.group(0)), text)
         text = _ACCOUNT.sub(lambda m: self._token("ACCOUNT", m.group(0)), text)
@@ -195,10 +231,17 @@ class Masker:
             raise MaskingError(f"마스킹 검증 실패로 전송하지 않음 ({', '.join(reasons)})")
 
     def remaining_names(self, text: str) -> list[str]:
-        """마스킹했어야 할 이름 중 텍스트에 남아 있는 것."""
-        return [n for n, p in zip(self._names, self._name_patterns, strict=True) if p.search(text)]
+        """마스킹했어야 할 이름·사전 용어 중 텍스트에 남아 있는 것."""
+        return [value for _, value, pattern in self._patterns if pattern.search(text)]
+
+    def token_counts(self) -> dict[str, int]:
+        """종류별로 바꾼 서로 다른 값의 수 (전송 전 미리보기용, 원래 값은 담지 않는다)."""
+        return dict(sorted(self._counters.items()))
 
     # --- 내부 ---
+
+    def _replacer(self, kind: str) -> Callable[[re.Match[str]], str]:
+        return lambda match: self._token(kind, match.group(0))
 
     def _token(self, kind: str, original: str) -> str:
         if original in _KEEP:
@@ -285,3 +328,15 @@ def _is_custom_segment(segment: str) -> bool:
         or _REGION.fullmatch(segment)
         or segment == "*"
     )
+
+
+def load_terms(path: Path) -> tuple[str, ...]:
+    """마스킹 사전: 한 줄에 용어 하나 (UTF-8). 빈 줄과 `#`로 시작하는 줄은 건너뛴다."""
+    try:
+        text = path.read_bytes().decode("utf-8-sig")
+    except FileNotFoundError as exc:
+        raise MaskingError(f"마스킹 사전 파일이 없습니다: {path}") from exc
+    except UnicodeDecodeError as exc:
+        raise MaskingError(f"마스킹 사전을 UTF-8로 읽지 못했습니다: {path}") from exc
+    lines = (line.strip() for line in text.splitlines())
+    return tuple(dict.fromkeys(line for line in lines if line and not line.startswith("#")))

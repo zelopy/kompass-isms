@@ -1,11 +1,12 @@
 """마스킹: LLM에 보내기 전 식별정보 치환, 응답 복원 (원칙 5, ADR-007)."""
 
 import json
+from pathlib import Path
 from typing import Any
 
 import pytest
 
-from kompass.interpreter.masking import Masker
+from kompass.interpreter.masking import Masker, MaskingError, load_terms
 
 ACCOUNT = "123456789012"
 OTHER_ACCOUNT = "210987654321"
@@ -330,3 +331,80 @@ def test_rds_identifiers_and_endpoint_are_masked() -> None:
     text = json.dumps(masker.mask(finding))
     for raw in ("ledger", "orders-db", "abc123xyz", "prod-db-subnets"):
         assert raw not in text, raw
+
+
+# --- 증적 문서의 개인정보 (ADR-049) ---
+
+
+def test_personal_patterns_are_off_by_default() -> None:
+    # 해설·조사 프롬프트는 평가셋 기준선에 묶여 있어 기존 동작을 바꾸지 않는다 (ADR-033)
+    text = "담당 alice@example.com, 010-1234-5678"
+    assert Masker().mask_text(text) == text
+
+
+def test_emails_phones_and_resident_numbers_are_masked() -> None:
+    masker = Masker(personal=True)
+    text = (
+        "alice.kim+ops@corp.example.co.kr / 010-1234-5678 / 01098765432 / 02-123-4567 / "
+        "+82-10-2222-3333 / 900101-1234567 / 9001012345678"
+    )
+    masked = masker.mask_text(text)
+    assert masked == (
+        "MASKED_EMAIL_1 / MASKED_PHONE_1 / MASKED_PHONE_2 / MASKED_PHONE_3 / "
+        "MASKED_PHONE_4 / MASKED_RRN_1 / MASKED_RRN_2"
+    )
+    assert masker.unmask_text(masked) == text
+
+
+def test_dates_times_and_aws_numbers_are_not_personal() -> None:
+    masker = Masker(personal=True)
+    text = "2026-10-17 08:38:24, 보존 365일, 포트 3306, 계정 123456789012, 규칙 1-65535"
+    assert masker.mask_text(text) == text.replace("123456789012", "MASKED_ACCOUNT_1")
+
+
+def test_email_is_masked_before_names_inside_it() -> None:
+    # IAM 사용자 이름이 메일 주소의 일부여도 주소 전체가 하나의 자리표시자가 된다
+    masker = Masker(["alice"], personal=True)
+    assert masker.mask_text("alice / alice@corp.example") == "MASKED_NAME_1 / MASKED_EMAIL_1"
+
+
+def test_dictionary_terms_include_two_letter_korean_names() -> None:
+    masker = Masker(terms=["홍길동", "이산", "보안운영팀", "x"], personal=True)
+    masked = masker.mask_text("홍길동님(보안운영팀), 이산: 퇴사")
+    # 긴 것부터 바꾸므로 번호는 길이 순이다
+    assert masked == "MASKED_TERM_2님(MASKED_TERM_1), MASKED_TERM_3: 퇴사"
+    assert masker.mask_text("x") == "x"  # 한 글자는 사전에 넣어도 바꾸지 않는다
+
+
+def test_longer_terms_are_replaced_first() -> None:
+    masker = Masker(terms=["김철", "김철수"])
+    assert masker.mask_text("김철수, 김철") == "MASKED_TERM_1, MASKED_TERM_2"
+    assert masker.unmask_text("MASKED_TERM_1") == "김철수"
+
+
+def test_require_clean_rejects_remaining_terms() -> None:
+    masker = Masker(terms=["홍길동"])
+    with pytest.raises(MaskingError, match="가리지 못한 이름"):
+        masker.require_clean("홍길동", ())
+    masker.require_clean(masker.mask_text("홍길동"), ())
+
+
+def test_token_counts_summarise_what_was_masked() -> None:
+    masker = Masker(terms=["홍길동"], personal=True)
+    masker.mask_text("홍길동 a@b.example 010-1111-2222 c@d.example a@b.example")
+    assert masker.token_counts() == {"EMAIL": 2, "PHONE": 1, "TERM": 1}
+
+
+def test_load_terms_reads_one_term_per_line(tmp_path: Path) -> None:
+    path = tmp_path / "terms.txt"
+    path.write_text("﻿# 직원 명단\n홍길동\n\n  이산  \n홍길동\n", encoding="utf-8")
+    assert load_terms(path) == ("홍길동", "이산")
+
+
+def test_load_terms_reports_unreadable_file(tmp_path: Path) -> None:
+    with pytest.raises(MaskingError, match="마스킹 사전"):
+        load_terms(tmp_path / "missing.txt")
+    bad = tmp_path / "bad.txt"
+    bad.write_bytes(b"\xff\xfe\x81")
+    with pytest.raises(MaskingError, match="UTF-8"):
+        load_terms(bad)
