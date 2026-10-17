@@ -1,0 +1,81 @@
+{
+ "id": "syn-elb-002-classic-error",
+ "title": "Classic 구형 SSL 협상 정책(FAIL)과 NLB TLS 보안 정책 조회 권한 없음(ERROR)",
+ "source": "synthetic",
+ "rule_id": "ELB-002",
+ "tags": [
+  "elb",
+  "variant",
+  "error",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "ELB-002",
+   "resource": "acme-api-nlb",
+   "region": "ap-northeast-2",
+   "status": "ERROR",
+   "severity": "medium",
+   "message": "TLS 보안 정책을 확인할 수 없음: TLS:443",
+   "evidence": {
+    "kind": "network",
+    "load_balancer": "acme-api-nlb",
+    "scheme": "internet-facing",
+    "min_tls_version": "TLSv1.2",
+    "listeners": [
+     {
+      "protocol": "TLS",
+      "port": 443,
+      "ssl_policy": "ELBSecurityPolicy-TLS13-1-2-Res-2021-06",
+      "errors": [
+       {
+        "operation": "elbv2:DescribeSSLPolicies",
+        "region": "ap-northeast-2",
+        "error_code": "AccessDenied",
+        "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: elbv2:DescribeSSLPolicies because no identity-based policy allows the elbv2:DescribeSSLPolicies action",
+        "resource": "ELBSecurityPolicy-TLS13-1-2-Res-2021-06"
+       }
+      ],
+      "status": "ERROR"
+     }
+    ]
+   },
+   "collected_at": "2026-10-17T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "ELB-002",
+   "resource": "classic:acme-legacy-web",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "TLSv1.2 미만 프로토콜을 허용하는 보안 정책 사용: HTTPS:443 acme-legacy-tls (TLSv1, TLSv1.1)",
+   "evidence": {
+    "kind": "classic",
+    "load_balancer": "acme-legacy-web",
+    "scheme": "internet-facing",
+    "min_tls_version": "TLSv1.2",
+    "listeners": [
+     {
+      "protocol": "HTTPS",
+      "port": 443,
+      "policy_name": "acme-legacy-tls",
+      "reference_policy": "ELBSecurityPolicy-2016-08",
+      "protocols": [
+       "TLSv1",
+       "TLSv1.1",
+       "TLSv1.2"
+      ],
+      "weak_protocols": [
+       "TLSv1",
+       "TLSv1.1"
+      ],
+      "status": "FAIL"
+     }
+    ]
+   },
+   "collected_at": "2026-10-17T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

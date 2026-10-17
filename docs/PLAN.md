@@ -137,13 +137,15 @@
   - [ ] 평가 케이스 추가 (실습 가공·보강, ADR-033)
     - [x] 보강 2개: 엔진 기본값·`rds.force_ssl=0` 클러스터 FAIL, 클러스터 파라미터 조회 거부 ERROR·Oracle REVIEW. 오라클 모든 지표 100%. 정답에 RDS-005 `review` 작업 추가
     - [x] 실제 모델 실행 (2개 × 2회, $0.33): 대상 일치 외 100%, 채점기 오판 2종 수정 후 대상 일치 91.7%. 남은 1건은 기본 파라미터 그룹 이름 마스킹 영향 (ADR-033 기록)
-    - [x] 실습 가공 1개 생성 (2026-10-17, `lab-rds-005`). 실제 모델 실행 전
+    - [x] 실습 가공 1개 생성 (2026-10-17, `lab-rds-005`)
+    - [ ] 실제 모델 실행 (`lab-rds-005`)
 - [x] 룰: 로드 밸런서 평문 리스너·TLS 정책 ELB-001~002 (CA-12, ADR-052) — ALB·NLB·Classic, TCP 리스너 REVIEW, 기준 `elb.min_tls_version`. 실습 `enable_elb`로 internal ALB 2개
   - [x] 사용자 확인: KISA 매핑 원문 근거 (`kisa_verified`). ELB-001 판단 기준 구절(직접), ELB-002 판단 기준 + 조치 사례의 "TLS v1.2 이상" 예시(해석) (2026-10-17)
   - [x] 실습 계정 확인 (2026-10-17): 기대값 일치
   - [ ] 평가 케이스 추가 (실습 가공·보강, ADR-033)
     - [x] 실습 가공 2개 생성 (`lab-elb-001`·`lab-elb-002`). 실제 모델 실행 전
-    - [ ] 보강 (Classic, NLB TCP REVIEW, 규칙 수집 거부 ERROR 등)
+    - [x] 보강 3개: Classic HTTP FAIL·NLB TCP REVIEW, 규칙·리스너 조회 거부 ERROR, Classic 구형 협상 정책 FAIL·NLB 정책 조회 거부 ERROR. 오라클 68개 모든 지표 100% (ELB ARN 종류 구간 마스킹 수정 후)
+    - [ ] 실제 모델 실행 (실습 가공 2개 + 보강 3개)
 - [x] Prowler OCSF 출력 어댑터 필요성 검토 — 보류, 후보로 내림 (2026-10-17, ADR-050). 대신 Prowler ISMS-P 대응표를 매핑 협의 참고 자료로 비교
   - [x] Prowler `kisa_isms_p_2023_aws` 대응표와 ISMS-P 매핑 초안 비교표 (`docs/ISMS_P_MAPPING_REVIEW.md` 참고 절) — 같음 10·다름 21·대응 없음 4, 협의 쟁점 4건에 참고 의견. RDS-005 추가 후 같음 11 (Prowler `rds_instance_transport_encrypted`도 2.7.1·2.10.2)
 - [ ] Azure 지원

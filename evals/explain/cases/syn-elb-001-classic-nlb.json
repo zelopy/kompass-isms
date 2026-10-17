@@ -1,0 +1,100 @@
+{
+ "id": "syn-elb-001-classic-nlb",
+ "title": "Classic HTTP 리스너(FAIL)와 NLB TCP 리스너(REVIEW), HTTPS 리디렉션만 하는 ALB",
+ "source": "synthetic",
+ "rule_id": "ELB-001",
+ "tags": [
+  "elb",
+  "variant",
+  "fail",
+  "review"
+ ],
+ "findings": [
+  {
+   "rule_id": "ELB-001",
+   "resource": "acme-api-nlb",
+   "region": "ap-northeast-2",
+   "status": "REVIEW",
+   "severity": "medium",
+   "message": "리스너 설정만으로 통신 암호화 여부를 확인할 수 없어 검토 필요: TCP:8080",
+   "evidence": {
+    "kind": "network",
+    "load_balancer": "acme-api-nlb",
+    "scheme": "internet-facing",
+    "listeners": [
+     {
+      "protocol": "TCP",
+      "port": 8080,
+      "status": "REVIEW"
+     },
+     {
+      "protocol": "TLS",
+      "port": 443,
+      "status": "PASS"
+     }
+    ]
+   },
+   "collected_at": "2026-10-17T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "ELB-001",
+   "resource": "acme-shop-alb",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "medium",
+   "message": "평문 리스너 없음 (HTTP 리스너는 HTTPS 리디렉션만 수행)",
+   "evidence": {
+    "kind": "application",
+    "load_balancer": "acme-shop-alb",
+    "scheme": "internet-facing",
+    "listeners": [
+     {
+      "protocol": "HTTP",
+      "port": 80,
+      "default_actions": [
+       "redirect:HTTPS"
+      ],
+      "status": "PASS"
+     },
+     {
+      "protocol": "HTTPS",
+      "port": 443,
+      "status": "PASS"
+     }
+    ]
+   },
+   "collected_at": "2026-10-17T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "ELB-001",
+   "resource": "classic:acme-legacy-web",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "평문 리스너가 HTTPS 리디렉션 없이 요청을 처리함: HTTP:80",
+   "evidence": {
+    "kind": "classic",
+    "load_balancer": "acme-legacy-web",
+    "scheme": "internet-facing",
+    "listeners": [
+     {
+      "protocol": "HTTP",
+      "port": 80,
+      "instance_protocol": "HTTP",
+      "status": "FAIL"
+     },
+     {
+      "protocol": "HTTPS",
+      "port": 443,
+      "instance_protocol": "HTTP",
+      "status": "PASS"
+     }
+    ]
+   },
+   "collected_at": "2026-10-17T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

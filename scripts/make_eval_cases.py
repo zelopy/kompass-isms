@@ -32,6 +32,7 @@ if ROOT is None:
 sys.path.insert(0, str(ROOT))  # tests/의 스냅샷 헬퍼를 쓴다
 
 from tests.rules.ec2 import data as ec2  # noqa: E402
+from tests.rules.elb import data as elb  # noqa: E402
 from tests.rules.iam import data as iam  # noqa: E402
 from tests.rules.rds import data as rds  # noqa: E402
 from tests.rules.s3 import data as s3  # noqa: E402
@@ -984,6 +985,7 @@ def _added_rules(add: Callable[..., None]) -> None:
     )
 
     _rds_005(add, region)  # RDS-005(ADR-051). 앞 케이스의 무작위 값이 바뀌지 않게 맨 뒤에 둔다
+    _elb(add)  # ELB-001~002(ADR-052). 같은 이유로 RDS-005 뒤에 둔다
 
 
 def _rds_005(add: Callable[..., None], region: str) -> None:
@@ -1080,6 +1082,118 @@ def _rds_005(add: Callable[..., None], region: str) -> None:
                     )
                 },
                 errors=(denied("rds:DescribeDBClusterParameters", resource=ledger_group),),
+            ),
+        ),
+    )
+
+
+def _elb(add: Callable[..., None]) -> None:
+    """ELB-001~002 보강 케이스. 실습(internal ALB 2개)에 없는 Classic·NLB와 수집 거부를 다룬다."""
+    legacy = elb.classic(
+        "acme-legacy-web",
+        [
+            elb.classic_listener("HTTP", 80),
+            elb.classic_listener("HTTPS", 443, ["acme-legacy-tls"]),
+        ],
+        [elb.negotiation_policy("acme-legacy-tls", ["TLSv1", "TLSv1.1", "TLSv1.2"])],
+    )
+    add(
+        "syn-elb-001-classic-nlb",
+        "Classic HTTP 리스너(FAIL)와 NLB TCP 리스너(REVIEW), HTTPS 리디렉션만 하는 ALB",
+        "ELB-001",
+        ("variant",),
+        evaluate(
+            "ELB-001",
+            elb.snapshot(
+                {
+                    elb.REGION: elb.region(
+                        [
+                            elb.load_balancer(
+                                "acme-api-nlb",
+                                [
+                                    elb.listener("TCP", 8080),
+                                    elb.listener("TLS", 443, ssl_policy=elb.MODERN_POLICY),
+                                ],
+                                lb_type="network",
+                            ),
+                            elb.load_balancer(
+                                "acme-shop-alb",
+                                [
+                                    elb.listener("HTTP", 80, [elb.redirect()]),
+                                    elb.listener("HTTPS", 443, ssl_policy=elb.MODERN_POLICY),
+                                ],
+                            ),
+                        ],
+                        [legacy],
+                    )
+                }
+            ),
+        ),
+    )
+    admin_http = elb.listener("HTTP", 80, [elb.redirect()])
+    batch = elb.load_balancer("acme-batch-alb", None, scheme="internal")
+    add(
+        "syn-elb-001-error",
+        "HTTP 리스너 규칙 조회 권한 없음(ERROR)과 리스너 목록 조회 권한 없음(ERROR)",
+        "ELB-001",
+        (),
+        evaluate(
+            "ELB-001",
+            elb.snapshot(
+                {
+                    elb.REGION: elb.region(
+                        [
+                            elb.load_balancer(
+                                "acme-admin-alb",
+                                [
+                                    elb.without_rules(admin_http),
+                                    elb.listener("HTTPS", 443, ssl_policy=elb.MODERN_POLICY),
+                                ],
+                            ),
+                            batch,
+                        ]
+                    )
+                },
+                errors=(
+                    denied("elbv2:DescribeRules", resource=admin_http["ListenerArn"]),
+                    denied("elbv2:DescribeListeners", resource=batch["LoadBalancerArn"]),
+                ),
+            ),
+        ),
+    )
+    add(
+        "syn-elb-002-classic-error",
+        "Classic 구형 SSL 협상 정책(FAIL)과 NLB TLS 보안 정책 조회 권한 없음(ERROR)",
+        "ELB-002",
+        ("variant",),
+        evaluate(
+            "ELB-002",
+            elb.snapshot(
+                {
+                    elb.REGION: elb.region(
+                        [
+                            elb.load_balancer(
+                                "acme-api-nlb",
+                                [
+                                    elb.listener(
+                                        "TLS",
+                                        443,
+                                        ssl_policy="ELBSecurityPolicy-TLS13-1-2-Res-2021-06",
+                                    )
+                                ],
+                                lb_type="network",
+                            )
+                        ],
+                        [legacy],
+                        ssl_policies={},
+                    )
+                },
+                errors=(
+                    denied(
+                        "elbv2:DescribeSSLPolicies",
+                        resource="ELBSecurityPolicy-TLS13-1-2-Res-2021-06",
+                    ),
+                ),
             ),
         ),
     )

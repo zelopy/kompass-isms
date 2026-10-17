@@ -1,6 +1,6 @@
 # 해설 평가 케이스
 
-총 65개 (실습 가공 29, 보강 36). 모두 가짜 데이터임. 케이스 하나 = 룰 묶음 하나, 해설 대상은 FAIL·ERROR·REVIEW finding임.
+총 68개 (실습 가공 29, 보강 39). 모두 가짜 데이터임. 케이스 하나 = 룰 묶음 하나, 해설 대상은 FAIL·ERROR·REVIEW finding임.
 
 | ID | 출처 | 룰 | 해설 대상 | 전체 | 태그 | 상황 |
 |---|---|---|---|---|---|---|
@@ -37,6 +37,9 @@
 | syn-ct-001-no-trail | synthetic | CT-001 | FAIL 1 | 1 | cloudtrail, unseen-rule, fail | 추적이 하나도 없음 |
 | syn-ct-001-single-region-stopped | synthetic | CT-001 | FAIL 1 | 1 | cloudtrail, unseen-rule, fail | 단일 리전 추적, 로깅 중지 |
 | syn-ct-002-org-bucket | synthetic | CT-002 | ERROR 1 | 1 | cloudtrail, error | 조직 추적 버킷이 다른 계정에 있어 수명주기 조회 거부 (ERROR) |
+| syn-elb-001-classic-nlb | synthetic | ELB-001 | FAIL 1, REVIEW 1 | 3 | elb, variant, fail, review | Classic HTTP 리스너(FAIL)와 NLB TCP 리스너(REVIEW), HTTPS 리디렉션만 하는 ALB |
+| syn-elb-001-error | synthetic | ELB-001 | ERROR 2 | 2 | elb, error | HTTP 리스너 규칙 조회 권한 없음(ERROR)과 리스너 목록 조회 권한 없음(ERROR) |
+| syn-elb-002-classic-error | synthetic | ELB-002 | ERROR 1, FAIL 1 | 2 | elb, variant, error, fail | Classic 구형 SSL 협상 정책(FAIL)과 NLB TLS 보안 정책 조회 권한 없음(ERROR) |
 | syn-gd-001-disabled | synthetic | GD-001 | FAIL 1 | 1 | guardduty, unseen-rule, fail | GuardDuty 탐지기가 비활성화됨 |
 | syn-gd-002-no-target | synthetic | GD-002 | FAIL 1 | 1 | guardduty, unseen-rule, fail | GuardDuty 결과 규칙은 있으나 대상이 없음 |
 | syn-iam-001-root-no-mfa | synthetic | IAM-001 | FAIL 1 | 1 | iam, unseen-rule, fail | 루트 계정 MFA 미설정 |
@@ -1530,6 +1533,172 @@
    "error_code": "AccessDenied",
    "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: s3:GetBucketLocation because no identity-based policy allows the s3:GetBucketLocation action",
    "resource": "acme-org-log-archive"
+  }
+ ]
+}
+```
+
+
+## syn-elb-001-classic-nlb — Classic HTTP 리스너(FAIL)와 NLB TCP 리스너(REVIEW), HTTPS 리디렉션만 하는 ALB
+
+- **REVIEW** `ELB-001:ap-northeast-2:acme-api-nlb` — 리스너 설정만으로 통신 암호화 여부를 확인할 수 없어 검토 필요: TCP:8080
+
+```json
+{
+ "kind": "network",
+ "load_balancer": "acme-api-nlb",
+ "scheme": "internet-facing",
+ "listeners": [
+  {
+   "protocol": "TCP",
+   "port": 8080,
+   "status": "REVIEW"
+  },
+  {
+   "protocol": "TLS",
+   "port": 443,
+   "status": "PASS"
+  }
+ ]
+}
+```
+
+- **FAIL** `ELB-001:ap-northeast-2:classic:acme-legacy-web` — 평문 리스너가 HTTPS 리디렉션 없이 요청을 처리함: HTTP:80
+
+```json
+{
+ "kind": "classic",
+ "load_balancer": "acme-legacy-web",
+ "scheme": "internet-facing",
+ "listeners": [
+  {
+   "protocol": "HTTP",
+   "port": 80,
+   "instance_protocol": "HTTP",
+   "status": "FAIL"
+  },
+  {
+   "protocol": "HTTPS",
+   "port": 443,
+   "instance_protocol": "HTTP",
+   "status": "PASS"
+  }
+ ]
+}
+```
+
+함께 담긴 다른 finding: PASS 1
+
+## syn-elb-001-error — HTTP 리스너 규칙 조회 권한 없음(ERROR)과 리스너 목록 조회 권한 없음(ERROR)
+
+- **ERROR** `ELB-001:ap-northeast-2:acme-admin-alb` — HTTP 리스너 규칙을 수집하지 못함: HTTP:80
+
+```json
+{
+ "kind": "application",
+ "load_balancer": "acme-admin-alb",
+ "scheme": "internet-facing",
+ "listeners": [
+  {
+   "protocol": "HTTP",
+   "port": 80,
+   "default_actions": [
+    "redirect:HTTPS"
+   ],
+   "errors": [
+    {
+     "operation": "elbv2:DescribeRules",
+     "region": "ap-northeast-2",
+     "error_code": "AccessDenied",
+     "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: elbv2:DescribeRules because no identity-based policy allows the elbv2:DescribeRules action",
+     "resource": "arn:aws:elasticloadbalancing:ap-northeast-2:123456789012:listener/app/web-80/0123456789abcdef"
+    }
+   ],
+   "status": "ERROR"
+  },
+  {
+   "protocol": "HTTPS",
+   "port": 443,
+   "status": "PASS"
+  }
+ ]
+}
+```
+
+- **ERROR** `ELB-001:ap-northeast-2:acme-batch-alb` — 리스너 목록을 수집하지 못함
+
+```json
+{
+ "kind": "application",
+ "load_balancer": "acme-batch-alb",
+ "scheme": "internal",
+ "errors": [
+  {
+   "operation": "elbv2:DescribeListeners",
+   "region": "ap-northeast-2",
+   "error_code": "AccessDenied",
+   "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: elbv2:DescribeListeners because no identity-based policy allows the elbv2:DescribeListeners action",
+   "resource": "arn:aws:elasticloadbalancing:ap-northeast-2:123456789012:loadbalancer/app/acme-batch-alb/0123456789abcdef"
+  }
+ ]
+}
+```
+
+
+## syn-elb-002-classic-error — Classic 구형 SSL 협상 정책(FAIL)과 NLB TLS 보안 정책 조회 권한 없음(ERROR)
+
+- **ERROR** `ELB-002:ap-northeast-2:acme-api-nlb` — TLS 보안 정책을 확인할 수 없음: TLS:443
+
+```json
+{
+ "kind": "network",
+ "load_balancer": "acme-api-nlb",
+ "scheme": "internet-facing",
+ "min_tls_version": "TLSv1.2",
+ "listeners": [
+  {
+   "protocol": "TLS",
+   "port": 443,
+   "ssl_policy": "ELBSecurityPolicy-TLS13-1-2-Res-2021-06",
+   "errors": [
+    {
+     "operation": "elbv2:DescribeSSLPolicies",
+     "region": "ap-northeast-2",
+     "error_code": "AccessDenied",
+     "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: elbv2:DescribeSSLPolicies because no identity-based policy allows the elbv2:DescribeSSLPolicies action",
+     "resource": "ELBSecurityPolicy-TLS13-1-2-Res-2021-06"
+    }
+   ],
+   "status": "ERROR"
+  }
+ ]
+}
+```
+
+- **FAIL** `ELB-002:ap-northeast-2:classic:acme-legacy-web` — TLSv1.2 미만 프로토콜을 허용하는 보안 정책 사용: HTTPS:443 acme-legacy-tls (TLSv1, TLSv1.1)
+
+```json
+{
+ "kind": "classic",
+ "load_balancer": "acme-legacy-web",
+ "scheme": "internet-facing",
+ "min_tls_version": "TLSv1.2",
+ "listeners": [
+  {
+   "protocol": "HTTPS",
+   "port": 443,
+   "policy_name": "acme-legacy-tls",
+   "reference_policy": "ELBSecurityPolicy-2016-08",
+   "protocols": [
+    "TLSv1",
+    "TLSv1.1",
+    "TLSv1.2"
+   ],
+   "weak_protocols": [
+    "TLSv1",
+    "TLSv1.1"
+   ],
+   "status": "FAIL"
   }
  ]
 }

@@ -1,0 +1,75 @@
+{
+ "id": "syn-elb-001-error",
+ "title": "HTTP 리스너 규칙 조회 권한 없음(ERROR)과 리스너 목록 조회 권한 없음(ERROR)",
+ "source": "synthetic",
+ "rule_id": "ELB-001",
+ "tags": [
+  "elb",
+  "error"
+ ],
+ "findings": [
+  {
+   "rule_id": "ELB-001",
+   "resource": "acme-admin-alb",
+   "region": "ap-northeast-2",
+   "status": "ERROR",
+   "severity": "medium",
+   "message": "HTTP 리스너 규칙을 수집하지 못함: HTTP:80",
+   "evidence": {
+    "kind": "application",
+    "load_balancer": "acme-admin-alb",
+    "scheme": "internet-facing",
+    "listeners": [
+     {
+      "protocol": "HTTP",
+      "port": 80,
+      "default_actions": [
+       "redirect:HTTPS"
+      ],
+      "errors": [
+       {
+        "operation": "elbv2:DescribeRules",
+        "region": "ap-northeast-2",
+        "error_code": "AccessDenied",
+        "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: elbv2:DescribeRules because no identity-based policy allows the elbv2:DescribeRules action",
+        "resource": "arn:aws:elasticloadbalancing:ap-northeast-2:123456789012:listener/app/web-80/0123456789abcdef"
+       }
+      ],
+      "status": "ERROR"
+     },
+     {
+      "protocol": "HTTPS",
+      "port": 443,
+      "status": "PASS"
+     }
+    ]
+   },
+   "collected_at": "2026-10-17T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "ELB-001",
+   "resource": "acme-batch-alb",
+   "region": "ap-northeast-2",
+   "status": "ERROR",
+   "severity": "medium",
+   "message": "리스너 목록을 수집하지 못함",
+   "evidence": {
+    "kind": "application",
+    "load_balancer": "acme-batch-alb",
+    "scheme": "internal",
+    "errors": [
+     {
+      "operation": "elbv2:DescribeListeners",
+      "region": "ap-northeast-2",
+      "error_code": "AccessDenied",
+      "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: elbv2:DescribeListeners because no identity-based policy allows the elbv2:DescribeListeners action",
+      "resource": "arn:aws:elasticloadbalancing:ap-northeast-2:123456789012:loadbalancer/app/acme-batch-alb/0123456789abcdef"
+     }
+    ]
+   },
+   "collected_at": "2026-10-17T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}
