@@ -611,5 +611,78 @@ class EvidenceSubmission(_Frozen):
         return tuple(f for f in self.files if f.request_id == request_id)
 
 
+# 증적 검토 응답에도 판정 상태(status)나 충족 여부 필드를 두지 않는다 (원칙 1, ADR-049).
+# 문서에서 확인한 사실과 부족한 점, 추가 요청만 낸다. 판단은 사람이 한다.
+
+
+class EvidenceFact(_Frozen):
+    statement: str  # 문서로 확인한 사실
+    document_id: str  # 근거 문서 ("D1")
+    excerpt: str  # 그 문서에서 그대로 옮긴 구절 (코드로 대조한다)
+
+
+class EvidenceReviewDraft(_Frozen):
+    """요청 하나에 대한 LLM 검토 응답. 마스킹된 상태 그대로다."""
+
+    summary: str
+    facts: list[EvidenceFact]
+    gaps: list[str]  # 확인 목적에 비춰 문서로 확인되지 않은 점
+    follow_up_requests: list[str]  # 담당자에게 추가로 요청할 것
+
+
+class EvidenceDocumentRef(_Frozen):
+    """검토에 쓴 파일. 원문 텍스트는 담지 않는다."""
+
+    document_id: str  # "D1"
+    path: str
+    sha256: str
+    truncated: bool  # 길이 상한으로 앞부분만 보냈다
+
+
+class EvidenceReview(_Frozen):
+    """요청 하나의 검토 결과 (마스킹 복원 후). 항목 결과·요청서 제출 여부는 바꾸지 않는다."""
+
+    request_id: str
+    documents: tuple[EvidenceDocumentRef, ...]
+    review: EvidenceReviewDraft
+    verified: bool  # 모든 사실의 발췌가 해당 문서에 있고 지어낸 식별자가 없다
+    problems: tuple[str, ...]
+    model: str
+    fallback_used: bool
+    attempts: int
+    usage: TokenUsage
+
+
+class EvidenceReviewFailure(_Frozen):
+    request_id: str
+    error: str
+
+
+class EvidenceUnreadable(_Frozen):
+    """텍스트를 뽑지 못해 사람이 검토해야 하는 파일."""
+
+    request_id: str
+    path: str
+    problem: str
+
+
+class EvidenceReviewReport(_Frozen):
+    """증적 검토 결과 파일 (`*.evidence-review.json`). 문서 원문 구절이 담기므로 커밋하지 않는다."""
+
+    format_version: Literal[1] = 1
+    scan_id: str
+    account_id: AccountId
+    findings_evaluated_at: UtcDatetime  # 어떤 판정 결과에 대한 증적인가
+    generated_at: UtcDatetime
+    model: str
+    effort: str
+    reviews: tuple[EvidenceReview, ...]
+    failures: tuple[EvidenceReviewFailure, ...]
+    unreadable: tuple[EvidenceUnreadable, ...]
+    ignored: tuple[str, ...]  # 요청 ID 폴더가 아니라 읽지 않은 경로
+    usage: TokenUsage
+    estimated_cost_usd: float | None
+
+
 # 전방 참조(ExplanationReport, InvestigationReport)를 해석한다. 모든 모델 정의 뒤에 둔다
 AuditReport.model_rebuild()

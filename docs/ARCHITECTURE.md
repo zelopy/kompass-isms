@@ -47,6 +47,7 @@ kompass-isms/
 │   │   ├── assessor.py      # 종합 위험 평가 (assess_system.txt, ADR-034)
 │   │   ├── sources.py       # 원문 색인 조회·인용 검증 (ADR-029)
 │   │   ├── documents.py     # 제출된 증적 문서 읽기·텍스트 추출 (ADR-049)
+│   │   ├── evidence_reviewer.py  # 요청별 증적 검토·발췌 대조 검증 (evidence_review_system.txt)
 │   │   └── masking.py
 │   ├── reporters/
 │   │   ├── json_reporter.py

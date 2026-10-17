@@ -114,22 +114,20 @@ class Masker:
         self._reverse: dict[str, str] = {}
         self._counters: dict[str, int] = {}
         self._personal = personal
-        self._names = sorted(
-            {n for n in names if len(n) >= _MIN_NAME_LENGTH and n not in _NOT_NAMES},
-            key=len,
-            reverse=True,
+        self._names = _longest_first(
+            n for n in names if len(n) >= _MIN_NAME_LENGTH and n not in _NOT_NAMES
         )
         self._terms = frozenset(t for t in terms if len(t) >= _MIN_TERM_LENGTH) - set(self._names)
         self._compile()
 
     def _compile(self) -> None:
         """이름과 사전 용어를 긴 것부터 바꾸는 패턴 목록 (종류, 원래 값, 패턴)."""
-        entries = sorted({*self._names, *self._terms}, key=len, reverse=True)
+        entries = _longest_first({*self._names, *self._terms})
         self._patterns = [
             (
                 "TERM" if value in self._terms else "NAME",
                 value,
-                re.compile(rf"(?<![A-Za-z0-9_.-]){re.escape(value)}(?![A-Za-z0-9_-])"),
+                _value_pattern(value, value in self._terms),
             )
             for value in entries
         ]
@@ -161,7 +159,7 @@ class Masker:
         } - set(self._names)
         if not new:
             return
-        self._names = sorted({*self._names, *new}, key=len, reverse=True)
+        self._names = _longest_first({*self._names, *new})
         self._terms -= new
         self._compile()
 
@@ -285,6 +283,21 @@ class Masker:
         if "::" not in value and value.count(":") < 5:
             return value
         return self._token("CIDR", value)
+
+
+def _longest_first(values: Iterable[str]) -> list[str]:
+    """긴 것부터, 길이가 같으면 문자 순. 집합 순서에 따라 자리표시자 번호가 달라지지 않게 한다."""
+    return sorted(set(values), key=lambda v: (-len(v), v))
+
+
+def _value_pattern(value: str, term: bool) -> re.Pattern[str]:
+    """이름은 더 긴 이름의 일부가 아닐 때만 바꾼다. 한글 등이 섞인 사전 용어는 경계 없이 바꾼다.
+
+    한글 이름은 파일 이름(`홍길동_권한.xlsx`)이나 조사(`홍길동님`)와 붙어 나와 경계를 두면 놓친다.
+    """
+    if term and not value.isascii():
+        return re.compile(re.escape(value))
+    return re.compile(rf"(?<![A-Za-z0-9_.-]){re.escape(value)}(?![A-Za-z0-9_-])")
 
 
 def _is_name(value: str) -> bool:

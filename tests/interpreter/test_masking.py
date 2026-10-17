@@ -376,6 +376,15 @@ def test_dictionary_terms_include_two_letter_korean_names() -> None:
     assert masker.mask_text("x") == "x"  # 한 글자는 사전에 넣어도 바꾸지 않는다
 
 
+def test_korean_terms_are_masked_inside_file_names() -> None:
+    masker = Masker(terms=["홍길동", "ops"])
+    # 길이가 같으면 문자 순으로 바꾼다 ("ops" < "홍길동"). 집합 순서에 따라 번호가 바뀌지 않는다
+    assert (
+        masker.mask_text("홍길동_권한.xlsx, ops_team, ops")
+        == "MASKED_TERM_2_권한.xlsx, ops_team, MASKED_TERM_1"
+    )
+
+
 def test_longer_terms_are_replaced_first() -> None:
     masker = Masker(terms=["김철", "김철수"])
     assert masker.mask_text("김철수, 김철") == "MASKED_TERM_1, MASKED_TERM_2"

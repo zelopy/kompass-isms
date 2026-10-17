@@ -122,7 +122,7 @@
 - [ ] 제출된 증적 문서 검토 — 범위 결정 (2026-10-17, ADR-049). Chroma 벡터 검색은 쓰지 않음
   - [x] 증적 폴더 읽기·텍스트 추출 (요청 ID 폴더, PDF·xlsx·텍스트류, `pypdf` 런타임 의존성) — `interpreter/documents.py`
   - [x] 개인정보 마스킹: 이메일·전화번호·주민등록번호 패턴, 사용자 사전(이름 등, 2자부터) — `Masker(personal=True, terms=…)`, `load_terms`. 해설·조사에는 켜지 않음
-  - [ ] 검토기: 요청별 사실(문서 발췌 대조 검증)·부족한 점·추가 요청. status 없음
+  - [x] 검토기: 요청별 사실(문서 발췌 대조 검증)·부족한 점·추가 요청. status 없음 — `interpreter/evidence_reviewer.py`, 문서 안의 지시는 따르지 않도록 프롬프트에 명시
   - [ ] `kompass review-evidence` (마스킹 결과 미리보기·확인, 비용 확인, `--dry-run`, 검토 로그)
   - [ ] 보고서 "증적 검토 (참고)" 절 (md·xlsx·json)
   - [ ] 평가 케이스와 실제 호출 확인 (가공 증적 문서)
