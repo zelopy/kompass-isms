@@ -116,9 +116,11 @@
 ### 남은 확인
 
 - [x] 사용자 확인: 5단계 룰 12개 KISA 매핑 원문 근거 (`kisa_verified`) — RDS-001~004, VPC-003, GD-001~002, S3-007, CT-002, LOG-001, IAM-010~011. S3-007 근거 구절을 판단 기준으로 교체 (2026-10-17, ADR-048)
-- [ ] 다음 재실습 때 실습 통합 테스트 재실행: 자격증명 보고서가 새로 만들어진 뒤(4시간 안에는 재사용, ADR-045) IAM-003·005의 `console-no-mfa` 사용자 판정 확인 (실습 정리됨)
-  - `enable_public_rds = true`로 RDS-005 기대값 확인: 기본 파라미터 그룹이 `rds.force_ssl` 값 `1`을 돌려주는지 (ADR-051)
-  - 확인 뒤 RDS-005 실습 가공 평가 케이스 생성: `make_eval_cases.py --lab-rules RDS-005`
+- [x] 재실습 통합 테스트 재실행 (2026-10-17, `enable_public_rds`·`enable_elb` 켬): `pytest -m lab` 통과
+  - [x] IAM-003·005: 자격증명 보고서(09:50Z)가 `console-no-mfa` 생성(09:35Z) 뒤에 새로 만들어져 IAM-003 FAIL·IAM-005 PASS로 판정됨 (ERROR 아님, ADR-045)
+  - [x] RDS-005: 기본 그룹 `default.postgres18`이 `rds.force_ssl` 값 `1`(`Source: system`)을 돌려줌 → `private` PASS, `public` FAIL (ADR-051)
+  - [x] ELB-001~002: `weak` FAIL·FAIL, `strict` PASS·PASS (ADR-052)
+  - [x] 실습 가공 평가 케이스 생성: `make_eval_cases.py --lab-rules RDS-005,ELB-001,ELB-002`
 - [x] 사용자 확인: RDS-005 KISA 매핑 원문 근거 (`kisa_verified`, CA-12 판단 기준 구절, 근거 수준 직접) (2026-10-17, ADR-051)
 
 ### 다음 작업 (규모가 커서 진행할 때 범위부터 정함)
@@ -131,15 +133,17 @@
   - [x] 보고서 "증적 검토 (참고)" 절 (md·xlsx·json) — `AuditReport.with_evidence_reviews`, 같은 판정 결과의 검토만 붙음. `review-evidence --report`
   - [x] 평가 케이스와 실제 호출 확인 (가공 증적 문서) — 8개 × 2회 모든 지표 100% (채점기 오판 수정 후), 약 $0.72. `scripts/run_evidence_eval.py`
   - [x] 프롬프트 다듬기: 요청 범위 밖 지적·빈 확인 대상 언급·필드 이름·자리표시자 뒤 조사 — 지표 `gap_budget`·`no_field_names` 추가, v1 8개 × 1회 모든 지표 100% (약 $0.34)
-- [x] 룰: RDS SSL 연결 강제 RDS-005 (CA-12, ADR-051) — 파라미터 그룹 SSL 강제 파라미터 수집, 실습 `public`에 `rds.force_ssl=0` 그룹 (실습 계정 확인 전)
+- [x] 룰: RDS SSL 연결 강제 RDS-005 (CA-12, ADR-051) — 파라미터 그룹 SSL 강제 파라미터 수집, 실습 `public`에 `rds.force_ssl=0` 그룹 (실습 계정 확인 2026-10-17)
   - [ ] 평가 케이스 추가 (실습 가공·보강, ADR-033)
     - [x] 보강 2개: 엔진 기본값·`rds.force_ssl=0` 클러스터 FAIL, 클러스터 파라미터 조회 거부 ERROR·Oracle REVIEW. 오라클 모든 지표 100%. 정답에 RDS-005 `review` 작업 추가
     - [x] 실제 모델 실행 (2개 × 2회, $0.33): 대상 일치 외 100%, 채점기 오판 2종 수정 후 대상 일치 91.7%. 남은 1건은 기본 파라미터 그룹 이름 마스킹 영향 (ADR-033 기록)
-    - [ ] 실습 가공 1개 (다음 재실습 때, 위 "남은 확인")
-- [x] 룰: 로드 밸런서 평문 리스너·TLS 정책 ELB-001~002 (CA-12, ADR-052) — ALB·NLB·Classic, TCP 리스너 REVIEW, 기준 `elb.min_tls_version`. 실습 `enable_elb`로 internal ALB 2개 (실습 계정 확인 전)
+    - [x] 실습 가공 1개 생성 (2026-10-17, `lab-rds-005`). 실제 모델 실행 전
+- [x] 룰: 로드 밸런서 평문 리스너·TLS 정책 ELB-001~002 (CA-12, ADR-052) — ALB·NLB·Classic, TCP 리스너 REVIEW, 기준 `elb.min_tls_version`. 실습 `enable_elb`로 internal ALB 2개
   - [ ] 사용자 확인: KISA 매핑 원문 근거 (`kisa_verified`). ELB-001 판단 기준 구절(직접), ELB-002 판단 기준 + 조치 사례의 "TLS v1.2 이상" 예시(해석)
-  - [ ] 실습 계정 확인 (다음 재실습 때, `enable_elb = true`, `terraform init -upgrade`로 `tls` provider 설치)
+  - [x] 실습 계정 확인 (2026-10-17): 기대값 일치
   - [ ] 평가 케이스 추가 (실습 가공·보강, ADR-033)
+    - [x] 실습 가공 2개 생성 (`lab-elb-001`·`lab-elb-002`). 실제 모델 실행 전
+    - [ ] 보강 (Classic, NLB TCP REVIEW, 규칙 수집 거부 ERROR 등)
 - [x] Prowler OCSF 출력 어댑터 필요성 검토 — 보류, 후보로 내림 (2026-10-17, ADR-050). 대신 Prowler ISMS-P 대응표를 매핑 협의 참고 자료로 비교
   - [x] Prowler `kisa_isms_p_2023_aws` 대응표와 ISMS-P 매핑 초안 비교표 (`docs/ISMS_P_MAPPING_REVIEW.md` 참고 절) — 같음 10·다름 21·대응 없음 4, 협의 쟁점 4건에 참고 의견. RDS-005 추가 후 같음 11 (Prowler `rds_instance_transport_encrypted`도 2.7.1·2.10.2)
 - [ ] Azure 지원

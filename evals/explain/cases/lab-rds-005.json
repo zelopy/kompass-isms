@@ -1,0 +1,52 @@
+{
+ "id": "lab-rds-005",
+ "title": "실습 결과 RDS-005 (데이터베이스 SSL 연결 미강제)",
+ "source": "lab",
+ "rule_id": "RDS-005",
+ "tags": [
+  "rds",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "RDS-005",
+   "resource": "kompass-lab-private",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "medium",
+   "message": "SSL 연결 강제 설정됨: rds.force_ssl=1",
+   "evidence": {
+    "kind": "instance",
+    "db_identifier": "kompass-lab-private",
+    "engine": "postgres",
+    "parameter_group": "default.postgres18",
+    "parameter": "rds.force_ssl",
+    "parameter_apply_status": "in-sync",
+    "value": "1",
+    "source": "system"
+   },
+   "collected_at": "2026-10-17T09:53:06.676086Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "RDS-005",
+   "resource": "kompass-lab-public",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "SSL 연결 강제 꺼짐: rds.force_ssl=0",
+   "evidence": {
+    "kind": "instance",
+    "db_identifier": "kompass-lab-public",
+    "engine": "postgres",
+    "parameter_group": "kompass-lab-no-ssl",
+    "parameter": "rds.force_ssl",
+    "parameter_apply_status": "in-sync",
+    "value": "0",
+    "source": "user"
+   },
+   "collected_at": "2026-10-17T09:53:06.676086Z",
+   "mappings": null
+  }
+ ]
+}

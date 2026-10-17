@@ -381,7 +381,7 @@ finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 
 - 판정: 클러스터에 속하지 않은 인스턴스는 DB 파라미터 그룹, 클러스터는 클러스터 파라미터 그룹에서 엔진별 SSL 강제 파라미터를 본다. 값이 `1`·`ON`·`TRUE`이면 PASS, `0`·`OFF`·`FALSE`이면 FAIL (대소문자 구분 없음).
   - `postgres`·`aurora-postgresql`·`sqlserver-*`: `rds.force_ssl`
   - `mysql`·`mariadb`·`aurora-mysql`: `require_secure_transport`
-- 값 없음: `ParameterValue`가 없는 파라미터는 엔진 기본값이며 강제하지 않는 것으로 보고 FAIL. evidence에 `Source`(예: `engine-default`)를 남긴다. PostgreSQL 15 이상의 기본 그룹은 `rds.force_ssl` 값 `1`을 돌려주는 것으로 예상하며 실습 계정에서 확인한다.
+- 값 없음: `ParameterValue`가 없는 파라미터는 엔진 기본값이며 강제하지 않는 것으로 보고 FAIL. evidence에 `Source`(예: `engine-default`)를 남긴다. PostgreSQL 15 이상의 기본 그룹은 `rds.force_ssl` 값 `1`(`Source: system`)을 돌려준다 (실습 계정 `default.postgres18`에서 확인, 2026-10-17).
 - 오류: 파라미터 그룹 이름이 응답에 없거나, 그룹의 파라미터를 수집하지 못했거나, 그룹에 SSL 강제 파라미터가 없거나, 값을 해석할 수 없으면 ERROR.
 - REVIEW: 파라미터 그룹으로 SSL을 강제하지 않는 엔진(Oracle은 옵션 그룹의 SSL 옵션, Db2, RDS Custom 등)은 사람이 확인한다.
 - evidence: 파라미터 그룹, 파라미터 이름, 값, `Source`, 인스턴스의 `ParameterApplyStatus`.

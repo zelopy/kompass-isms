@@ -1,0 +1,73 @@
+{
+ "id": "lab-elb-002",
+ "title": "실습 결과 ELB-002 (로드 밸런서 TLS 정책 취약)",
+ "source": "lab",
+ "rule_id": "ELB-002",
+ "tags": [
+  "elb",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "ELB-002",
+   "resource": "kompass-lab-weak",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "TLSv1.2 미만 프로토콜을 허용하는 보안 정책 사용: HTTPS:443 ELBSecurityPolicy-2016-08 (TLSv1, TLSv1.1)",
+   "evidence": {
+    "kind": "application",
+    "load_balancer": "kompass-lab-weak",
+    "scheme": "internal",
+    "min_tls_version": "TLSv1.2",
+    "listeners": [
+     {
+      "protocol": "HTTPS",
+      "port": 443,
+      "ssl_policy": "ELBSecurityPolicy-2016-08",
+      "protocols": [
+       "TLSv1",
+       "TLSv1.1",
+       "TLSv1.2"
+      ],
+      "weak_protocols": [
+       "TLSv1",
+       "TLSv1.1"
+      ],
+      "status": "FAIL"
+     }
+    ]
+   },
+   "collected_at": "2026-10-17T09:52:23.335771Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "ELB-002",
+   "resource": "kompass-lab-strict",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "medium",
+   "message": "모든 TLS 리스너가 TLSv1.2 이상만 허용",
+   "evidence": {
+    "kind": "application",
+    "load_balancer": "kompass-lab-strict",
+    "scheme": "internal",
+    "min_tls_version": "TLSv1.2",
+    "listeners": [
+     {
+      "protocol": "HTTPS",
+      "port": 443,
+      "ssl_policy": "ELBSecurityPolicy-TLS13-1-2-2021-06",
+      "protocols": [
+       "TLSv1.2",
+       "TLSv1.3"
+      ],
+      "status": "PASS"
+     }
+    ]
+   },
+   "collected_at": "2026-10-17T09:52:23.335771Z",
+   "mappings": null
+  }
+ ]
+}

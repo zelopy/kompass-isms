@@ -1,10 +1,12 @@
 # 해설 평가 케이스
 
-총 62개 (실습 가공 26, 보강 36). 모두 가짜 데이터임. 케이스 하나 = 룰 묶음 하나, 해설 대상은 FAIL·ERROR·REVIEW finding임.
+총 65개 (실습 가공 29, 보강 36). 모두 가짜 데이터임. 케이스 하나 = 룰 묶음 하나, 해설 대상은 FAIL·ERROR·REVIEW finding임.
 
 | ID | 출처 | 룰 | 해설 대상 | 전체 | 태그 | 상황 |
 |---|---|---|---|---|---|---|
 | lab-ct-002 | lab | CT-002 | FAIL 1 | 1 | cloudtrail, fail | 실습 결과 CT-002 (CloudTrail 로그 버킷 보존 기간 부족) |
+| lab-elb-001 | lab | ELB-001 | FAIL 1 | 2 | elb, fail | 실습 결과 ELB-001 (로드 밸런서 평문 리스너 사용) |
+| lab-elb-002 | lab | ELB-002 | FAIL 1 | 2 | elb, fail | 실습 결과 ELB-002 (로드 밸런서 TLS 정책 취약) |
 | lab-iam-003 | lab | IAM-003 | FAIL 1 | 1 | iam, fail | 실습 결과 IAM-003 (콘솔 사용자 MFA 미설정) |
 | lab-iam-004 | lab | IAM-004 | FAIL 1 | 1 | iam, fail | 실습 결과 IAM-004 (비밀번호 정책 미흡) |
 | lab-iam-007 | lab | IAM-007 | FAIL 2, REVIEW 3 | 5 | iam, fail, review | 실습 결과 IAM-007 (관리자 권한 사용자 현황) |
@@ -17,6 +19,7 @@
 | lab-rds-002 | lab | RDS-002 | FAIL 1 | 2 | rds, fail | 실습 결과 RDS-002 (데이터베이스 퍼블릭 접근 허용) |
 | lab-rds-003 | lab | RDS-003 | FAIL 1 | 2 | rds, fail | 실습 결과 RDS-003 (데이터베이스 로그 내보내기 미설정) |
 | lab-rds-004 | lab | RDS-004 | FAIL 1 | 2 | rds, fail | 실습 결과 RDS-004 (자동 백업 보존 기간 부족) |
+| lab-rds-005 | lab | RDS-005 | FAIL 1 | 2 | rds, fail | 실습 결과 RDS-005 (데이터베이스 SSL 연결 미강제) |
 | lab-s3-001 | lab | S3-001 | FAIL 1 | 1 | s3, fail | 실습 결과 S3-001 (계정 수준 퍼블릭 액세스 차단 미설정) |
 | lab-s3-002 | lab | S3-002 | FAIL 3 | 5 | s3, fail | 실습 결과 S3-002 (버킷 수준 퍼블릭 액세스 차단 미설정) |
 | lab-s3-003 | lab | S3-003 | FAIL 2 | 5 | s3, fail | 실습 결과 S3-003 (버킷 정책에 의한 퍼블릭 노출) |
@@ -89,6 +92,67 @@
 }
 ```
 
+
+## lab-elb-001 — 실습 결과 ELB-001 (로드 밸런서 평문 리스너 사용)
+
+- **FAIL** `ELB-001:ap-northeast-2:kompass-lab-weak` — 평문 리스너가 HTTPS 리디렉션 없이 요청을 처리함: HTTP:80
+
+```json
+{
+ "kind": "application",
+ "load_balancer": "kompass-lab-weak",
+ "scheme": "internal",
+ "listeners": [
+  {
+   "protocol": "HTTPS",
+   "port": 443,
+   "status": "PASS"
+  },
+  {
+   "protocol": "HTTP",
+   "port": 80,
+   "default_actions": [
+    "forward"
+   ],
+   "status": "FAIL"
+  }
+ ]
+}
+```
+
+함께 담긴 다른 finding: PASS 1
+
+## lab-elb-002 — 실습 결과 ELB-002 (로드 밸런서 TLS 정책 취약)
+
+- **FAIL** `ELB-002:ap-northeast-2:kompass-lab-weak` — TLSv1.2 미만 프로토콜을 허용하는 보안 정책 사용: HTTPS:443 ELBSecurityPolicy-2016-08 (TLSv1, TLSv1.1)
+
+```json
+{
+ "kind": "application",
+ "load_balancer": "kompass-lab-weak",
+ "scheme": "internal",
+ "min_tls_version": "TLSv1.2",
+ "listeners": [
+  {
+   "protocol": "HTTPS",
+   "port": 443,
+   "ssl_policy": "ELBSecurityPolicy-2016-08",
+   "protocols": [
+    "TLSv1",
+    "TLSv1.1",
+    "TLSv1.2"
+   ],
+   "weak_protocols": [
+    "TLSv1",
+    "TLSv1.1"
+   ],
+   "status": "FAIL"
+  }
+ ]
+}
+```
+
+함께 담긴 다른 finding: PASS 1
 
 ## lab-iam-003 — 실습 결과 IAM-003 (콘솔 사용자 MFA 미설정)
 
@@ -925,6 +989,25 @@
  "engine": "postgres",
  "backup_retention_days": 0,
  "min_backup_retention_days": 7
+}
+```
+
+함께 담긴 다른 finding: PASS 1
+
+## lab-rds-005 — 실습 결과 RDS-005 (데이터베이스 SSL 연결 미강제)
+
+- **FAIL** `RDS-005:ap-northeast-2:kompass-lab-public` — SSL 연결 강제 꺼짐: rds.force_ssl=0
+
+```json
+{
+ "kind": "instance",
+ "db_identifier": "kompass-lab-public",
+ "engine": "postgres",
+ "parameter_group": "kompass-lab-no-ssl",
+ "parameter": "rds.force_ssl",
+ "parameter_apply_status": "in-sync",
+ "value": "0",
+ "source": "user"
 }
 ```
 

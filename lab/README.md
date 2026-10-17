@@ -138,11 +138,11 @@ terraform apply
 | RDS-002 | `kompass-lab-public` / `kompass-lab-private` | FAIL / PASS |
 | RDS-003 | `kompass-lab-public` / `kompass-lab-private` | FAIL / PASS (로그 내보내기가 없으면 `EnabledCloudwatchLogsExports` 키가 생략됨) |
 | RDS-004 | `kompass-lab-public` (백업 0일) / `kompass-lab-private` (7일) | FAIL / PASS |
-| RDS-005 | `kompass-lab-public` (`rds.force_ssl=0` 그룹) / `kompass-lab-private` (기본 그룹) | FAIL / PASS — 아직 실습 계정에서 확인하지 않음. 기본 그룹이 값 `1`을 돌려주는지 확인 |
+| RDS-005 | `kompass-lab-public` (`rds.force_ssl=0` 그룹) / `kompass-lab-private` (기본 그룹) | FAIL / PASS (2026-10-17 확인, 기본 그룹 `default.postgres18`의 `rds.force_ssl`은 `1`) |
 
 ### ELB
 
-`enable_elb = false`(기본)이면 ELB 룰은 리전 단위 해당 없음(N/A)이다. 실습 리전에 다른 로드 밸런서가 있으면 그 결과도 나온다. 아직 실습 계정에서 확인하지 않음.
+`enable_elb = false`(기본)이면 ELB 룰은 리전 단위 해당 없음(N/A)이다. 실습 리전에 다른 로드 밸런서가 있으면 그 결과도 나온다. 아래 표는 실습 계정에서 확인했다 (2026-10-17).
 
 | 룰 | 대상 (`enable_elb = true`일 때) | 기대 결과 |
 |---|---|---|

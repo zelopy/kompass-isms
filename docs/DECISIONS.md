@@ -501,6 +501,7 @@
   - KISA CA-12 근거 구절은 판단 기준 "클라우드 리소스 통신 구간에 암호화가 적용된 경우", 근거 수준 직접 (데이터베이스 연결은 클라우드 리소스 간 중요 정보 통신 구간). ISMS-P 초안은 S3-007과 같은 2.7.1·2.10.2.
   - 매핑 확정 (사용자 결정, 2026-10-17): 판단 기준 구절과 점검 목적 "클라우드 리소스 간 중요 정보 통신 구간을 암호화"가 CA-12 원문에 있고 형식 문구가 아님을 원문 색인으로 확인했다. S3-007(해석, ADR-048)과 달리 직접으로 둔다. 외부 클라이언트가 있을 수 있으나 주 클라이언트는 같은 클라우드 안의 애플리케이션 서버이고, 데이터베이스 연결은 점검 목적의 "중요 정보" 통신 구간에 바로 해당한다.
   - 실습 환경: `public` 인스턴스에 `rds.force_ssl=0` 그룹, `private`은 기본 그룹. 파라미터 그룹 계열을 맞추려고 두 인스턴스에 기본 엔진 버전을 명시한다.
+  - 실습 계정 확인 (2026-10-17): 기본 그룹 `default.postgres18`이 `rds.force_ssl` 값 `1`(`Source: system`)을 돌려줘 예상과 같다. `public` FAIL, `private` PASS. 엔진 기본값 조회는 필요 없다.
 - 이유: 이미 수집하는 RDS에 Describe 호출만 더해 CA-12 자동화 범위를 넓힌다. S3 최소 TLS 버전(`s3:TlsVersion`)은 AWS가 모든 엔드포인트에 TLS 1.2 이상을 강제하고 있어 정책 검사의 실익이 작아 후보로 남긴다.
 
 ## ADR-052 로드 밸런서 평문 리스너·TLS 정책 (ELB-001~002)
@@ -516,3 +517,4 @@
   - 실습 환경: `enable_elb`(기본 false)로 internal ALB 2개(`weak`: HTTP 전달·`ELBSecurityPolicy-2016-08`, `strict`: HTTPS 리디렉션·TLS 1.3 정책). HTTPS 리스너 인증서는 `tls` provider로 만든 자체 서명 인증서를 ACM으로 가져온다. internal이라 공인 IP가 없어 VPC-002 결과가 바뀌지 않는다.
 - 이유: S3·RDS에 이어 CA-12의 웹·API 통신 구간을 자동으로 본다. S3 최소 TLS 버전은 ADR-051의 이유로 계속 후보로 둔다.
 - moto 차이: HTTP 리스너에도 `SslPolicy`를 돌려주고, Classic HTTPS 리스너에 기본 정책을 붙이지 않는다. 룰은 HTTPS·TLS·SSL 리스너의 정책만 읽고, Classic 정책 판정은 가공 데이터로 테스트한다. 실제 Classic HTTPS 리스너가 기본 정책을 `PolicyNames`에 돌려주는지는 실습 환경에 Classic이 없어 확인하지 못했다 (없으면 ERROR로 드러난다).
+- 실습 계정 확인 (2026-10-17, `enable_elb = true`): `weak` ELB-001 FAIL(HTTP:80 forward)·ELB-002 FAIL(`ELBSecurityPolicy-2016-08`이 TLSv1·TLSv1.1 허용), `strict` 둘 다 PASS(HTTP:80 HTTPS 리디렉션, `ELBSecurityPolicy-TLS13-1-2-2021-06`은 TLSv1.2·TLSv1.3). 실제 AWS는 HTTP 리스너에 `SslPolicy`를 돌려주지 않는다.

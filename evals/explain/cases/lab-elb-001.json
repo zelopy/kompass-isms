@@ -1,0 +1,72 @@
+{
+ "id": "lab-elb-001",
+ "title": "실습 결과 ELB-001 (로드 밸런서 평문 리스너 사용)",
+ "source": "lab",
+ "rule_id": "ELB-001",
+ "tags": [
+  "elb",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "ELB-001",
+   "resource": "kompass-lab-weak",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "평문 리스너가 HTTPS 리디렉션 없이 요청을 처리함: HTTP:80",
+   "evidence": {
+    "kind": "application",
+    "load_balancer": "kompass-lab-weak",
+    "scheme": "internal",
+    "listeners": [
+     {
+      "protocol": "HTTPS",
+      "port": 443,
+      "status": "PASS"
+     },
+     {
+      "protocol": "HTTP",
+      "port": 80,
+      "default_actions": [
+       "forward"
+      ],
+      "status": "FAIL"
+     }
+    ]
+   },
+   "collected_at": "2026-10-17T09:52:23.335771Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "ELB-001",
+   "resource": "kompass-lab-strict",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "medium",
+   "message": "평문 리스너 없음 (HTTP 리스너는 HTTPS 리디렉션만 수행)",
+   "evidence": {
+    "kind": "application",
+    "load_balancer": "kompass-lab-strict",
+    "scheme": "internal",
+    "listeners": [
+     {
+      "protocol": "HTTPS",
+      "port": 443,
+      "status": "PASS"
+     },
+     {
+      "protocol": "HTTP",
+      "port": 80,
+      "default_actions": [
+       "redirect:HTTPS"
+      ],
+      "status": "PASS"
+     }
+    ]
+   },
+   "collected_at": "2026-10-17T09:52:23.335771Z",
+   "mappings": null
+  }
+ ]
+}
