@@ -30,9 +30,9 @@ rules:
   RDS-004: {kisa: [CA-18], isms_p: ["2.9.3", "2.10.2"], kisa_verified: true, isms_p_verified: false}
   RDS-005: {kisa: [CA-12], isms_p: ["2.7.1", "2.10.2"], kisa_verified: true, isms_p_verified: false}
 
-  # ELB (ADR-052). 사용자 확인 전이라 kisa_verified도 false
-  ELB-001: {kisa: [CA-12], isms_p: ["2.7.1", "2.10.2"], kisa_verified: false, isms_p_verified: false}
-  ELB-002: {kisa: [CA-12], isms_p: ["2.7.1", "2.10.2"], kisa_verified: false, isms_p_verified: false}
+  # ELB (ADR-052)
+  ELB-001: {kisa: [CA-12], isms_p: ["2.7.1", "2.10.2"], kisa_verified: true, isms_p_verified: false}
+  ELB-002: {kisa: [CA-12], isms_p: ["2.7.1", "2.10.2"], kisa_verified: true, isms_p_verified: false}
 
   S3-001: {kisa: [CA-10], isms_p: ["2.10.2"], kisa_verified: true, isms_p_verified: false}
   S3-002: {kisa: [CA-10], isms_p: ["2.10.2"], kisa_verified: true, isms_p_verified: false}

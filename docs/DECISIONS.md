@@ -505,7 +505,7 @@
 - 이유: 이미 수집하는 RDS에 Describe 호출만 더해 CA-12 자동화 범위를 넓힌다. S3 최소 TLS 버전(`s3:TlsVersion`)은 AWS가 모든 엔드포인트에 TLS 1.2 이상을 강제하고 있어 정책 검사의 실익이 작아 후보로 남긴다.
 
 ## ADR-052 로드 밸런서 평문 리스너·TLS 정책 (ELB-001~002)
-- 상태: 채택 (사용자 결정, 2026-10-17). CA-12 후보 룰(ADR-042·051)을 이어서 자동화한다. KISA 매핑은 사용자 확인 전이라 `kisa_verified: false`.
+- 상태: 채택 (사용자 결정, 2026-10-17). CA-12 후보 룰(ADR-042·051)을 이어서 자동화한다. KISA 매핑은 사용자 확인으로 확정 (2026-10-17, `kisa_verified: true`).
 - 결정:
   - 새 collector `elb`가 ALB·NLB(`elbv2:DescribeLoadBalancers`·`DescribeListeners`·`DescribeRules`·`DescribeSSLPolicies`)와 Classic Load Balancer(`elb:DescribeLoadBalancers`·`DescribeLoadBalancerPolicies`)를 수집한다. 모두 Describe 호출이라 가드 허용 목록은 바뀌지 않는다. 규칙은 HTTP 리스너만, 보안 정책은 사용 중인 것만, Classic 정책은 HTTPS·SSL 리스너가 있는 로드 밸런서만 조회한다.
   - Classic도 판정한다 (사용자 결정). 빼면 Classic만 쓰는 계정이 "로드 밸런서 없음"으로 보고된다. Gateway Load Balancer는 트래픽을 보안 장비로 그대로 넘기는 용도라 뺀다. 내부용 로드 밸런서도 판정한다.
@@ -518,3 +518,4 @@
 - 이유: S3·RDS에 이어 CA-12의 웹·API 통신 구간을 자동으로 본다. S3 최소 TLS 버전은 ADR-051의 이유로 계속 후보로 둔다.
 - moto 차이: HTTP 리스너에도 `SslPolicy`를 돌려주고, Classic HTTPS 리스너에 기본 정책을 붙이지 않는다. 룰은 HTTPS·TLS·SSL 리스너의 정책만 읽고, Classic 정책 판정은 가공 데이터로 테스트한다. 실제 Classic HTTPS 리스너가 기본 정책을 `PolicyNames`에 돌려주는지는 실습 환경에 Classic이 없어 확인하지 못했다 (없으면 ERROR로 드러난다).
 - 실습 계정 확인 (2026-10-17, `enable_elb = true`): `weak` ELB-001 FAIL(HTTP:80 forward)·ELB-002 FAIL(`ELBSecurityPolicy-2016-08`이 TLSv1·TLSv1.1 허용), `strict` 둘 다 PASS(HTTP:80 HTTPS 리디렉션, `ELBSecurityPolicy-TLS13-1-2-2021-06`은 TLSv1.2·TLSv1.3). 실제 AWS는 HTTP 리스너에 `SslPolicy`를 돌려주지 않는다.
+- 매핑 확정 (사용자 결정, 2026-10-17): ELB-001은 직접. 로드 밸런서 리스너는 클라우드 리소스의 통신 구간 그 자체이며, 점검 내용 "클라우드 시스템 간 암호화 통신 여부"와 판단 기준에 바로 해당한다. 외부 이용자 구간이 섞이는 점은 RDS-005보다 크지만 internal 로드 밸런서를 포함해 같은 판단 기준으로 본다. ELB-002는 해석. TLS 1.2 기준이 판단 기준이 아니라 "리소스 관리 접근 시" 통신 채널 예시에 있으므로, 서비스 통신에 쓰는 것은 해석으로 두고 기준 버전은 `elb.min_tls_version`으로 기관이 조정한다.
