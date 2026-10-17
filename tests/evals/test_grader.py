@@ -244,3 +244,31 @@ def test_rds_targets_include_cluster_identifier_and_custom_parameter_group() -> 
     assert {"acme-shop-db", "acme-analytics", "acme-analytics-cluster-params"} <= targets
     assert "default.mysql8.0" not in targets
     assert "acme-orders-db" not in targets  # PASS finding
+
+
+def test_elb_targets_include_classic_load_balancer_name() -> None:
+    # ELB 실제 실행에서 발견: Classic finding의 리소스는 "classic:<이름>"이고, 명령은
+    # --load-balancer-name <이름>으로 가리킨다
+    from kompass.evals.grader import _targets
+
+    cases = {c.id: c for c in load_cases(EVAL_DIR / "cases")}
+    targets = _targets(cases["syn-elb-001-classic-nlb"].findings)
+    assert {"acme-legacy-web", "acme-api-nlb"} <= targets
+    assert "acme-shop-alb" not in targets  # PASS finding
+
+
+def test_error_actions_include_denied_lookups_nested_in_listeners() -> None:
+    # ELB는 리스너별 수집 오류를 evidence.listeners[].errors에 남긴다.
+    # 거부된 조회의 재실행도 정답이다
+    from kompass.evals.grader import _required_actions, load_golden
+
+    cases = {c.id: c for c in load_cases(EVAL_DIR / "cases")}
+    golden = load_golden(EVAL_DIR / "golden.yaml")
+    case = cases["syn-elb-002-classic-error"]
+    assert (
+        "elbv2:DescribeSSLPolicies"
+        in _required_actions(case.findings, golden, case.rule_id)["ERROR"]
+    )
+    case = cases["syn-elb-001-error"]
+    required = _required_actions(case.findings, golden, case.rule_id)["ERROR"]
+    assert {"elbv2:DescribeRules", "elbv2:DescribeListeners"} <= required

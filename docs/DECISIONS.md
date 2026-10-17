@@ -294,7 +294,9 @@
   - 채점기 오판: RDS 클러스터 finding의 리소스 `cluster:<식별자>`를 명령의 식별자와 맞추지 못함, 증적의 파라미터 그룹(SSL 강제 조치 대상)을 대상 밖으로 봄. 기본 그룹(`default.*`)은 AWS가 수정을 막으므로 대상에 넣지 않는다.
   - 남은 1건: 기본 그룹 `default.mysql8.0`을 직접 수정하는 명령. 그룹 이름이 마스킹되어 모델이 기본 그룹인지 알 수 없었고, 해설에 "기본 파라미터 그룹인지 먼저 확인해야 함"을 함께 적었다. AWS 고정 이름(`default.<계열>`)의 마스킹 제외는 마스킹 변경이라 따로 검토한다.
   - `stage5` 결과의 `--regrade`는 이 변경 전부터 "기록된 응답보다 많은 요청"으로 실패한다 (해설 흐름이 실행 뒤 바뀜).
-- ELB-001~002 보강 케이스 추가 (2026-10-17): 보강 3개로 68개. Classic HTTP FAIL·NLB TCP REVIEW·리디렉션 ALB PASS, HTTP 리스너 규칙·리스너 목록 조회 거부 ERROR 2, Classic 구형 SSL 협상 정책 FAIL·NLB TLS 정책 조회 거부 ERROR. 정답은 기존 ELB-001 `review`와 공통 ERROR 규칙으로 충분했다. 오라클 68개 모든 지표 100%. 실제 모델 실행 전.
+- ELB-001~002 보강 케이스 추가 (2026-10-17): 보강 3개로 68개. Classic HTTP FAIL·NLB TCP REVIEW·리디렉션 ALB PASS, HTTP 리스너 규칙·리스너 목록 조회 거부 ERROR 2, Classic 구형 SSL 협상 정책 FAIL·NLB TLS 정책 조회 거부 ERROR. 정답은 기존 ELB-001 `review`와 공통 ERROR 규칙으로 충분했다. 오라클 68개 모든 지표 100%.
+  - 실제 모델 실행 (2026-10-17): 실습 가공 3개(`lab-rds-005`, `lab-elb-001~002`)와 보강 3개, 6개 × 2회(claude-opus-5-5 effort high, $0.82). 검증 통과 100%, 채점기 오판 2종 수정 후 모든 지표 100% (`.claude/hillclimb/explain/elb-rds005/metrics.md`). 기준선·`rds005`·`elb-oracle`은 수정한 채점기로 다시 채점해도 같다.
+  - 채점기 오판: Classic finding의 리소스 `classic:<이름>`을 명령의 `--load-balancer-name <이름>`과 맞추지 못함, ELB가 `listeners[].errors`에 남긴 거부된 조회(`elbv2:DescribeSSLPolicies`·`DescribeRules`)를 ERROR 정답 작업에 넣지 않음.
   - 오라클이 찾은 결함: 마스킹이 ELB ARN의 둘째 구간(`listener/app/…`의 `app`, `net`, `gwy`)을 이름으로 모아 `MASKED_NAME_`으로 바꿨고, 채점기가 이 이름이 프롬프트의 `"application"`에 부분 일치한다고 보고 노출로 판정했다. 이 구간은 AWS가 정한 로드 밸런서 종류라 식별정보가 아니므로, `elasticloadbalancing` ARN에서만 리소스 종류와 함께 남기도록 마스킹을 고쳤다 (`_type_segments`). 다른 서비스의 `app` 구간(예: IAM 역할 `role/app`)은 그대로 가린다.
 
 ## ADR-034 종합 위험 평가
