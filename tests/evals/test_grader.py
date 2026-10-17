@@ -231,3 +231,16 @@ def test_account_scoped_writes_are_not_target_judged() -> None:
          "--public-access-block-configuration BlockPublicAcls=true"]
     )  # fmt: skip
     assert command.is_write and "--account-id" in command.text
+
+
+def test_rds_targets_include_cluster_identifier_and_custom_parameter_group() -> None:
+    # RDS-005 실제 실행에서 발견: 클러스터 finding의 리소스는 "cluster:<식별자>"이고,
+    # SSL 강제 조치는 증적의 파라미터 그룹을 바꾼다. 기본 그룹(default.*)은 AWS가 수정을 막으므로
+    # 대상이 아니다 (수정 명령은 대상 불일치로 남는다)
+    from kompass.evals.grader import _targets
+
+    cases = {c.id: c for c in load_cases(EVAL_DIR / "cases")}
+    targets = _targets(cases["syn-rds-005-engine-default"].findings)
+    assert {"acme-shop-db", "acme-analytics", "acme-analytics-cluster-params"} <= targets
+    assert "default.mysql8.0" not in targets
+    assert "acme-orders-db" not in targets  # PASS finding

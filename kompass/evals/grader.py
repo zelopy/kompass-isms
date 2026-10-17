@@ -126,6 +126,7 @@ _CUSTOM_OPTIONS: dict[tuple[str, str], frozenset[str]] = {
 }
 # 증적의 권한 출처 "group:<그룹 이름>". 그룹 정책을 바꾸는 조치도 그 사용자를 대상으로 한다
 _VIA_GROUP = re.compile(r'"group:([^"]+)"')
+_RDS_CLUSTER_PREFIX = "cluster:"  # RDS 클러스터 finding의 리소스 "cluster:<식별자>"
 _WRITE_PREFIXES = (
     "Put",
     "Delete",
@@ -495,14 +496,19 @@ def _iam_action_to_botocore(operation: str) -> str | None:
 
 def _targets(findings: Sequence[Any]) -> set[str]:
     """변경 명령이 가리켜도 되는 리소스: finding의 리소스(값, ARN 마지막 구간)와 증적에 나온
-    관련 리소스(ENI의 서브넷·VPC·보안그룹, 권한 출처 그룹 등). 계정 단위 finding만 있으면
-    비어 있다."""
+    관련 리소스(ENI의 서브넷·VPC·보안그룹, 권한 출처 그룹, RDS 파라미터 그룹 등). 계정 단위
+    finding만 있으면 비어 있다."""
     targets: set[str] = set()
     for finding in findings:
         if finding.status in NEEDS_ACTION and finding.resource != ACCOUNT_RESOURCE:
             targets.add(finding.resource)
             targets.add(finding.resource.rsplit("/", 1)[-1].partition("#")[0])
+            targets.add(finding.resource.removeprefix(_RDS_CLUSTER_PREFIX))
             evidence = json.dumps(finding.evidence)
             targets |= set(_SENSITIVE[0].findall(evidence))
             targets |= {f"--group-name {name}" for name in _VIA_GROUP.findall(evidence)}
+            # 기본 파라미터 그룹은 수정할 수 없어 조치 대상이 아니다 (새 그룹을 만들어 연결)
+            group = finding.evidence.get("parameter_group")
+            if isinstance(group, str) and not group.startswith("default."):
+                targets.add(group)
     return {t for t in targets if len(t) >= 3}
