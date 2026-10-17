@@ -81,7 +81,7 @@ items:
     title: 관계형 데이터베이스 암호화 설정
     importance: 중
     page: 864
-    automation: full
+    automation: partial
     isms_p: ["2.7.1", "2.10.2"]
     isms_p_verified: false
   CA-12:

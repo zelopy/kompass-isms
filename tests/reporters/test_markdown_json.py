@@ -247,12 +247,21 @@ def test_json_includes_investigations() -> None:
 
 def test_evidence_section_lists_requests_and_targets() -> None:
     section = MD.split("## 증적 요청 목록", 1)[1].split("\n## ", 1)[0]
-    assert "원문 대조 확인 전 초안임" in section
+    assert "원문 대조 확인 전 초안임" not in section  # 카탈로그 확인됨
     assert "### CA-02 사용자 정책 관리 (중, partial, 결과: 점검하지 않음)" in section
     assert "| CA-02-4 | 루트(최초 가입) 계정 사용 내역과 사용 사유 |" in section
     assert "확인 대상 (1건):" in section and "| IAM-008 | 검토 필요 | account |" in section
     assert "### CA-03" in section and "### CA-13" not in section
     assert "| 증적 요청 | KISA 항목" in MD  # 점검 정보 표
+
+
+def test_evidence_section_marks_unverified_catalog_as_draft() -> None:
+    data = DEFAULT.model_dump(mode="json")
+    for group in data["evidence_requests"]:
+        group["verified"] = False
+    md = render_markdown(AuditReport.model_validate(data))
+    section = md.split("## 증적 요청 목록", 1)[1].split("\n## ", 1)[0]
+    assert "원문 대조 확인 전 초안임" in section
 
 
 def test_evidence_section_precedes_ai_sections() -> None:

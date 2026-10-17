@@ -1,6 +1,6 @@
 # 구현 계획
 
-> **현재 단계: 5단계 — 확장** (4단계 완료 2026-10-16). 남은 사용자 확인: 2단계 ISMS-P 매핑 담당자 협의, 4단계 증적 요청 문구, 5단계 룰 12개 KISA 매핑. 저장소 공개는 마무리 시점에 검토
+> **현재 단계: 5단계 — 확장** (4단계 완료 2026-10-16). 남은 사용자 확인: 2단계 ISMS-P 매핑 담당자 협의, 5단계 룰 12개 KISA 매핑. 저장소 공개는 마무리 시점에 검토
 > 단계를 마치면 이 줄을 갱신한다.
 
 ## 목표
@@ -88,7 +88,7 @@
 - [x] 에이전트 루프: 도구 러너 + 공급자 인터페이스, 마스킹 다리, 예산(호출·반복·토큰), 조사 로그 — `agent/llm.py`·`agent/toolbox.py`, 실제 API로 러너+구조화 출력 확인
 - [x] 추가 조사 루프: 예) 퍼블릭 S3 발견 → 버킷 정책·ACL·CloudTrail 데이터 이벤트 추가 조회 — 사실마다 도구 호출 참조 검증(`agent/investigator.py`), `kompass investigate`(최대 비용 확인, `--dry-run`), 보고서 "추가 조사 (참고)" 절·시트
 - [x] 수동 항목 인터뷰: 담당자에게 증적 요청 (업로드 문서 RAG 검토는 5단계로, ADR-035) — 고정 카탈로그 `mappings/evidence_requests.yaml`(근거 구절 원문 대조), 보고서 "증적 요청 목록" 절·시트, `kompass evidence` 요청서(ADR-037)
-  - [ ] 사용자 확인: 요청 문구 원문 대조 후 `verified: true` (`evidence_requests.yaml` 19개 항목 모두 false)
+  - [x] 사용자 확인: 요청 문구 원문 대조 후 `verified: true` — 19개 항목 확인, CA-12-2·CA-17-2 문구 수정 (2026-10-16). 대조 중 발견한 CA-11 요청 누락으로 CA-11을 `partial`로 재분류 (ADR-047)
 - [x] MCP 서버로 도구 노출 — `kompass mcp`(stdio), 판정 결과 조회 + 조사 도구 12개, 세션 단위 마스킹 다리·호출 상한·호출 로그, 가드 위반 시 세션 중단 (ADR-038)
 - [x] 에이전트가 status를 변경할 수 없음을 보장하는 테스트 — 응답 스키마에 status·severity 없음, 조사 전후 finding 불변, Finding 동결 (`tests/agent/test_investigator.py`)
 

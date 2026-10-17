@@ -112,9 +112,10 @@ def test_every_kisa_item_has_evidence_requests() -> None:
         ]
 
 
-def test_evidence_requests_are_marked_unverified() -> None:
-    # 요청 문구는 원문을 근거로 작성한 것이라 사용자가 확인하기 전까지 초안이다 (원칙 7)
-    assert not any(item.verified for item in DATA.evidence.values())
+def test_evidence_requests_are_verified() -> None:
+    # 요청 문구는 사용자가 원문과 대조해 확인했다 (원칙 7, 2026-10-16).
+    # 문구를 고치거나 항목을 추가하면 다시 대조하기 전까지 verified: false로 둔다
+    assert all(item.verified for item in DATA.evidence.values())
 
 
 def test_evidence_request_sentences_are_terse() -> None:

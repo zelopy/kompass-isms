@@ -5,7 +5,7 @@ from typing import Any
 
 from openpyxl import load_workbook
 
-from kompass.models import Status
+from kompass.models import AuditReport, Status
 from kompass.reporters.xlsx_reporter import render_evidence_xlsx, render_xlsx
 from tests.reporters.sample import DEFAULT, EXPLAINED, finding, sample_report
 
@@ -168,12 +168,21 @@ def test_evidence_workbook_has_blank_columns_and_targets() -> None:
     book = load_workbook(io.BytesIO(render_evidence_xlsx(DEFAULT)))
     assert book.sheetnames == ["안내", "요청 증적", "확인 대상"]
     guide = [v for row in _rows(book["안내"]) for v in row if v is not None]
-    assert any("원문 대조 확인 전 초안" in str(v) for v in guide)
+    assert not any("원문 대조 확인 전 초안" in str(v) for v in guide)  # 카탈로그 확인됨
     requests = _rows(book["요청 증적"])
     assert requests[0][-4:] == ("담당자", "제출일", "제출 여부", "비고")
     assert all(r[-4:] == (None, None, None, None) for r in requests[1:])
     targets = _rows(book["확인 대상"])
     assert targets[1:] == [("CA-02", "IAM-008", "검토 필요", "account", "-", DEFAULT_IAM_008)]
+
+
+def test_evidence_workbook_marks_unverified_catalog_as_draft() -> None:
+    data = DEFAULT.model_dump(mode="json")
+    for group in data["evidence_requests"]:
+        group["verified"] = False
+    book = load_workbook(io.BytesIO(render_evidence_xlsx(AuditReport.model_validate(data))))
+    guide = [v for row in _rows(book["안내"]) for v in row if v is not None]
+    assert any("원문 대조 확인 전 초안" in str(v) for v in guide)
 
 
 def test_evidence_target_cells_are_not_formulas() -> None:

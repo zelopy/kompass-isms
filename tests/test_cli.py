@@ -534,7 +534,7 @@ def test_evidence_writes_request_workbook(aws: None, store: Path) -> None:
     _scanned(store)
     result = runner.invoke(app, ["evidence", "--store", str(store)])
     assert result.exit_code == 0, result.output
-    assert "증적 요청: KISA 항목" in result.output and "초안입니다" in result.output
+    assert "증적 요청: KISA 항목" in result.output and "초안입니다" not in result.output
     [path] = store.rglob("*.evidence.xlsx")
     assert path.parent == store / "123456789012"
     assert f"요청서: {path}" in result.output.replace("\n", "")

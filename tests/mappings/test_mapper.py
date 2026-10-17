@@ -206,6 +206,14 @@ def test_partial_and_manual_items_always_get_requests() -> None:
     assert _group(report, "CA-09").targets == ()  # PASS는 확인 대상이 아니다
 
 
+def test_rds_encryption_pass_still_requests_self_managed_db_evidence() -> None:
+    # RDS-001이 모두 PASS여도 직접 운영 DB·중요정보 암호화는 사람이 확인한다 (ADR-047)
+    report = _report(_finding("RDS-001", Status.PASS, "db-1"))
+    ca11 = _group(report, "CA-11")
+    assert ca11 is not None and ca11.outcome == ItemOutcome.REVIEW  # partial 상한
+    assert [r.id for r in ca11.requests] == ["CA-11-1", "CA-11-2"]
+
+
 def test_settled_full_item_gets_no_requests() -> None:
     report = _report(
         _finding("IAM-001", Status.PASS),
@@ -259,7 +267,7 @@ def test_evidence_targets_are_review_and_error_findings() -> None:
         ("IAM-008", Status.ERROR),
     }
     assert ca02.requests == MAPPINGS.evidence["CA-02"].requests
-    assert ca02.verified is False
+    assert ca02.verified is MAPPINGS.evidence["CA-02"].verified
 
 
 def test_evidence_requests_do_not_change_status() -> None:
