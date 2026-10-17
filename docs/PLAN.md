@@ -56,7 +56,7 @@
 - [x] CLI: `kompass report --format md|xlsx|json`, `kompass scan --report ...`
 - [x] README에 사용법과 출력 예시 추가
 - [x] ISMS-P 매핑 1차 검토: 별표 7·안내서 대조, 2.10.2를 19개 항목 전체로, CA-05·06 권한 항목 수정, 근거 쪽수 기록 (ADR-046, 2026-10-16)
-- [x] 담당자 협의용 검토표 작성: `docs/ISMS_P_MAPPING_REVIEW.md` (원본은 Claude Docs 문서, 의견은 원본에서 받음)
+- [x] 담당자 협의용 검토표 작성: `docs/ISMS_P_MAPPING_REVIEW.md` (문서는 로컬·GitHub에서만 관리)
 - [ ] ISMS-P 매핑 확정: 실제 진단 업무 담당자와 협의 후 `isms_p_verified: true`, 협의 결과를 매핑 YAML·COVERAGE.md·검토표에 반영 (쟁점 5건)
 - [ ] 저장소 공개 여부 결정 (현재 GitHub 비공개. 프로젝트 마무리 시점에 검토)
 

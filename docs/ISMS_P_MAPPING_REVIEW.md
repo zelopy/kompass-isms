@@ -1,6 +1,6 @@
 # KISA 클라우드 점검 항목 ISMS-P 매핑 검토표
 
-기준일: 2026-10-16 · 원본: [Claude Docs](https://claude.ai/code/artifact/75b924ea-f23a-491a-913b-976b2ee20e41) (담당자 의견은 원본 문서에서 받음)
+기준일: 2026-10-16 (Prowler 비교 2026-10-17) · 이 파일이 원본이며 저장소(로컬·GitHub)에서만 관리함
 
 ## 검토 요청
 
