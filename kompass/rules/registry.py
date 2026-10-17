@@ -15,6 +15,8 @@ from kompass.rules.ec2.sg_004_default_group_in_use import Sg004DefaultGroupInUse
 from kompass.rules.ec2.vpc_001_subnet_separation import Vpc001SubnetSeparation
 from kompass.rules.ec2.vpc_002_public_ip_interface import Vpc002PublicIpInterface
 from kompass.rules.ec2.vpc_003_flow_logs import Vpc003FlowLogs
+from kompass.rules.elb.elb_001_plaintext_listener import Elb001PlaintextListener
+from kompass.rules.elb.elb_002_tls_policy import Elb002TlsPolicy
 from kompass.rules.guardduty.gd_001_detector_enabled import Gd001DetectorEnabled
 from kompass.rules.guardduty.gd_002_finding_alerts import Gd002FindingAlerts
 from kompass.rules.iam.iam_001_root_mfa import Iam001RootMfa
@@ -75,6 +77,8 @@ RULES: tuple[BaseRule, ...] = (
     Rds003LogExports(),
     Rds004BackupRetention(),
     Rds005SslEnforcement(),
+    Elb001PlaintextListener(),
+    Elb002TlsPolicy(),
     Gd001DetectorEnabled(),
     Gd002FindingAlerts(),
     Log001SecurityLogRetention(),

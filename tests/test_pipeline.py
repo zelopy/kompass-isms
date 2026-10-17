@@ -81,6 +81,7 @@ def test_collect_all_services_by_default(
     assert set(result.errors_by_service) == {
         "cloudtrail",
         "ec2",
+        "elb",
         "guardduty",
         "iam",
         "logs",

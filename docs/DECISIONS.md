@@ -502,3 +502,17 @@
   - 매핑 확정 (사용자 결정, 2026-10-17): 판단 기준 구절과 점검 목적 "클라우드 리소스 간 중요 정보 통신 구간을 암호화"가 CA-12 원문에 있고 형식 문구가 아님을 원문 색인으로 확인했다. S3-007(해석, ADR-048)과 달리 직접으로 둔다. 외부 클라이언트가 있을 수 있으나 주 클라이언트는 같은 클라우드 안의 애플리케이션 서버이고, 데이터베이스 연결은 점검 목적의 "중요 정보" 통신 구간에 바로 해당한다.
   - 실습 환경: `public` 인스턴스에 `rds.force_ssl=0` 그룹, `private`은 기본 그룹. 파라미터 그룹 계열을 맞추려고 두 인스턴스에 기본 엔진 버전을 명시한다.
 - 이유: 이미 수집하는 RDS에 Describe 호출만 더해 CA-12 자동화 범위를 넓힌다. S3 최소 TLS 버전(`s3:TlsVersion`)은 AWS가 모든 엔드포인트에 TLS 1.2 이상을 강제하고 있어 정책 검사의 실익이 작아 후보로 남긴다.
+
+## ADR-052 로드 밸런서 평문 리스너·TLS 정책 (ELB-001~002)
+- 상태: 채택 (사용자 결정, 2026-10-17). CA-12 후보 룰(ADR-042·051)을 이어서 자동화한다. KISA 매핑은 사용자 확인 전이라 `kisa_verified: false`.
+- 결정:
+  - 새 collector `elb`가 ALB·NLB(`elbv2:DescribeLoadBalancers`·`DescribeListeners`·`DescribeRules`·`DescribeSSLPolicies`)와 Classic Load Balancer(`elb:DescribeLoadBalancers`·`DescribeLoadBalancerPolicies`)를 수집한다. 모두 Describe 호출이라 가드 허용 목록은 바뀌지 않는다. 규칙은 HTTP 리스너만, 보안 정책은 사용 중인 것만, Classic 정책은 HTTPS·SSL 리스너가 있는 로드 밸런서만 조회한다.
+  - Classic도 판정한다 (사용자 결정). 빼면 Classic만 쓰는 계정이 "로드 밸런서 없음"으로 보고된다. Gateway Load Balancer는 트래픽을 보안 장비로 그대로 넘기는 용도라 뺀다. 내부용 로드 밸런서도 판정한다.
+  - ELB-001: HTTPS·TLS·SSL 리스너 PASS. ALB HTTP 리스너는 기본 동작과 모든 규칙이 HTTPS 리디렉션·고정 응답뿐이면 PASS, 요청을 대상으로 넘기면 FAIL. Classic HTTP는 리디렉션 기능이 없어 FAIL. TCP·UDP 리스너는 대상 서버의 TLS 처리를 설정만으로 알 수 없어 REVIEW (사용자 결정).
+  - ELB-002: 정책 이름 목록 대신 AWS가 돌려준 허용 프로토콜(`SslProtocols`, Classic은 `Protocol-…` 속성)을 기준값 `elb.min_tls_version`(기본 `TLSv1.2`)과 비교한다. 새 정책이 나와도 룰을 고칠 필요가 없다.
+  - 로드 밸런서 하나에 finding 하나. 리스너별 결과는 evidence에 두고 FAIL > ERROR > REVIEW > PASS 순으로 정한다. Classic resource는 `classic:<이름>`.
+  - 로드 밸런서와 대상 사이 구간, 암호 스위트, 인증서는 판정하지 않는다 (CA-12 `partial` 유지, 증적 요청으로 확인).
+  - KISA CA-12 근거: ELB-001은 판단 기준 "클라우드 리소스 통신 구간에 암호화가 적용된 경우"(직접). ELB-002는 같은 판단 기준과 점검 및 조치 사례의 예시 "웹/API 통신(TLS v1.2 이상, TLS v1.3 권장)"(해석). 원문 색인에서 확인한 결과 TLS 1.2 기준은 판단 기준이 아니라 "리소스 관리 접근 시"의 통신 채널 예시에 있어, 서비스 통신의 최소 버전 기준으로 쓰는 것은 해석이다. ISMS-P 초안은 S3-007·RDS-005와 같은 2.7.1·2.10.2이며, Prowler 대응표의 `elbv2_ssl_listeners`·`elb_ssl_listeners`·`*_insecure_ssl_ciphers`도 같다.
+  - 실습 환경: `enable_elb`(기본 false)로 internal ALB 2개(`weak`: HTTP 전달·`ELBSecurityPolicy-2016-08`, `strict`: HTTPS 리디렉션·TLS 1.3 정책). HTTPS 리스너 인증서는 `tls` provider로 만든 자체 서명 인증서를 ACM으로 가져온다. internal이라 공인 IP가 없어 VPC-002 결과가 바뀌지 않는다.
+- 이유: S3·RDS에 이어 CA-12의 웹·API 통신 구간을 자동으로 본다. S3 최소 TLS 버전은 ADR-051의 이유로 계속 후보로 둔다.
+- moto 차이: HTTP 리스너에도 `SslPolicy`를 돌려주고, Classic HTTPS 리스너에 기본 정책을 붙이지 않는다. 룰은 HTTPS·TLS·SSL 리스너의 정책만 읽고, Classic 정책 판정은 가공 데이터로 테스트한다. 실제 Classic HTTPS 리스너가 기본 정책을 `PolicyNames`에 돌려주는지는 실습 환경에 Classic이 없어 확인하지 못했다 (없으면 ERROR로 드러난다).

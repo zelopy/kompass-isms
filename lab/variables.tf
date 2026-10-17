@@ -69,3 +69,9 @@ variable "enable_guardduty" {
   type        = bool
   default     = false
 }
+
+variable "enable_elb" {
+  description = "internal ALB 2개와 자체 서명 인증서 생성 (ELB-001~002 확인용). ALB는 시간당 과금."
+  type        = bool
+  default     = false
+}

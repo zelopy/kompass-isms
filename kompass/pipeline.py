@@ -17,6 +17,7 @@ from kompass.aws.session import ScanContext
 from kompass.collectors.base import Collector
 from kompass.collectors.cloudtrail import CloudTrailCollector
 from kompass.collectors.ec2 import Ec2Collector
+from kompass.collectors.elb import ElbCollector
 from kompass.collectors.guardduty import GuardDutyCollector
 from kompass.collectors.iam import IamCollector
 from kompass.collectors.logs import LogsCollector
@@ -44,6 +45,7 @@ from kompass.snapshots import SnapshotStore, load_scan
 COLLECTORS: dict[str, Callable[[], Collector]] = {
     "cloudtrail": CloudTrailCollector,
     "ec2": Ec2Collector,
+    "elb": ElbCollector,
     "guardduty": GuardDutyCollector,
     "iam": IamCollector,
     "logs": LogsCollector,

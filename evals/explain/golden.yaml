@@ -31,6 +31,27 @@ rules:
     example: >-
       aws s3api put-bucket-lifecycle-configuration --bucket {resource}
       --lifecycle-configuration file://keep-trail-logs-365-days.json
+  ELB-001:
+    fail:
+      - elbv2:ModifyListener
+      - elbv2:ModifyRule
+      - elbv2:DeleteRule
+      - elbv2:DeleteListener
+      - elb:DeleteLoadBalancerListeners
+      - elb:CreateLoadBalancerListeners
+    # REVIEW는 TCP·UDP 리스너. TLS 리스너로 바꾸거나 대상 서버의 TLS 처리를 확인한다
+    review: [elbv2:ModifyListener, elbv2:DescribeTargetGroups, elb:CreateLoadBalancerListeners]
+    example: >-
+      aws elbv2 modify-listener --listener-arn {resource}
+      --default-actions 'Type=redirect,RedirectConfig={Protocol=HTTPS,Port=443,StatusCode=HTTP_301}'
+  ELB-002:
+    fail:
+      - elbv2:ModifyListener
+      - elb:CreateLoadBalancerPolicy
+      - elb:SetLoadBalancerPoliciesOfListener
+    example: >-
+      aws elbv2 modify-listener --listener-arn {resource}
+      --ssl-policy ELBSecurityPolicy-TLS13-1-2-2021-06
   GD-001:
     fail: [guardduty:CreateDetector, guardduty:UpdateDetector]
     example: aws guardduty create-detector --enable --finding-publishing-frequency FIFTEEN_MINUTES

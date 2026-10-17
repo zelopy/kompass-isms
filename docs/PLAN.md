@@ -136,6 +136,10 @@
     - [x] 보강 2개: 엔진 기본값·`rds.force_ssl=0` 클러스터 FAIL, 클러스터 파라미터 조회 거부 ERROR·Oracle REVIEW. 오라클 모든 지표 100%. 정답에 RDS-005 `review` 작업 추가
     - [x] 실제 모델 실행 (2개 × 2회, $0.33): 대상 일치 외 100%, 채점기 오판 2종 수정 후 대상 일치 91.7%. 남은 1건은 기본 파라미터 그룹 이름 마스킹 영향 (ADR-033 기록)
     - [ ] 실습 가공 1개 (다음 재실습 때, 위 "남은 확인")
+- [x] 룰: 로드 밸런서 평문 리스너·TLS 정책 ELB-001~002 (CA-12, ADR-052) — ALB·NLB·Classic, TCP 리스너 REVIEW, 기준 `elb.min_tls_version`. 실습 `enable_elb`로 internal ALB 2개 (실습 계정 확인 전)
+  - [ ] 사용자 확인: KISA 매핑 원문 근거 (`kisa_verified`). ELB-001 판단 기준 구절(직접), ELB-002 판단 기준 + 조치 사례의 "TLS v1.2 이상" 예시(해석)
+  - [ ] 실습 계정 확인 (다음 재실습 때, `enable_elb = true`, `terraform init -upgrade`로 `tls` provider 설치)
+  - [ ] 평가 케이스 추가 (실습 가공·보강, ADR-033)
 - [x] Prowler OCSF 출력 어댑터 필요성 검토 — 보류, 후보로 내림 (2026-10-17, ADR-050). 대신 Prowler ISMS-P 대응표를 매핑 협의 참고 자료로 비교
   - [x] Prowler `kisa_isms_p_2023_aws` 대응표와 ISMS-P 매핑 초안 비교표 (`docs/ISMS_P_MAPPING_REVIEW.md` 참고 절) — 같음 10·다름 21·대응 없음 4, 협의 쟁점 4건에 참고 의견. RDS-005 추가 후 같음 11 (Prowler `rds_instance_transport_encrypted`도 2.7.1·2.10.2)
 - [ ] Azure 지원
@@ -143,6 +147,6 @@
 
 ### 후보 (결정 기록에서 미룬 것, 우선순위 미정)
 
-- 룰: ELB HTTP 리스너와 오래된 TLS 정책·S3 최소 TLS 버전 (CA-12, ADR-042·051), RDS 공개 스냅샷 (ADR-039), AWS Backup 계획 (CA-18), CloudWatch 경보 (CA-19, ADR-041), KMS 고객 관리형 키 자동 교체 (KISA 대응 항목 없음, ISMS-P 2.7.2 후보)
+- 룰: S3 최소 TLS 버전 (CA-12, ADR-042·051), RDS 공개 스냅샷 (ADR-039), AWS Backup 계획 (CA-18), CloudWatch 경보 (CA-19, ADR-041), KMS 고객 관리형 키 자동 교체 (KISA 대응 항목 없음, ISMS-P 2.7.2 후보)
 - 연동: Prowler OCSF 출력 어댑터 (ADR-050에서 보류. KISA 축 밖의 점검이 필요해지거나 다른 기준을 더할 때 다시 검토)
 - LLM: 로컬 LLM 공급자 구현체 (ADR-007·029에서 자리만 둠), 종합 위험 평가의 평가 (ADR-034), 평가셋 난이도 보강과 LLM 판정자 지표 (ADR-033)

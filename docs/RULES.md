@@ -389,6 +389,42 @@ finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 
 - ISMS-P(초안): 2.7.1 암호정책 적용, 2.10.2 클라우드 보안
 - KISA: CA-12 통신구간 암호화 설정 (중, 865쪽) — 근거 수준: 직접 ("클라우드 리소스 통신 구간에 암호화가 적용된 경우")
 
+## ELB
+
+5단계에서 추가한 룰이다 (ADR-052). 점검 리전마다 ALB·NLB는 `elbv2:DescribeLoadBalancers`·`DescribeListeners`·`DescribeRules`(HTTP 리스너만)·`DescribeSSLPolicies`(사용 중인 정책만)로, Classic Load Balancer는 `elb:DescribeLoadBalancers`·`DescribeLoadBalancerPolicies`(HTTPS·SSL 리스너가 있는 것만)로 수집한다. IAM 작업 이름은 둘 다 `elasticloadbalancing:` 접두어다.
+
+- **대상.** ALB·NLB·Classic. Gateway Load Balancer는 트래픽을 보안 장비로 그대로 넘기는 용도라 대상에서 빼고, 리전 finding의 evidence에 이름을 남긴다. 내부용(`internal`) 로드 밸런서도 판정한다 (리소스 간 통신 구간). evidence에 `Scheme`을 남긴다.
+- **resource.** 로드 밸런서 이름. Classic은 `classic:<이름>`으로 써서 같은 이름의 ALB·NLB와 구분한다.
+- **로드 밸런서 단위 판정.** 로드 밸런서 하나에 finding 하나. 리스너별 결과는 evidence `listeners`에 남기고, 로드 밸런서의 상태는 FAIL > ERROR > REVIEW > PASS 순으로 가장 앞선 리스너 결과를 따른다. 취약이 확인된 리스너가 있으면 다른 리스너를 판정하지 못했더라도 FAIL이다.
+- **오류.** 리전의 ALB·NLB 목록이나 Classic 목록을 수집하지 못하면 리전 ERROR 하나를 내고, 수집한 쪽은 그대로 판정한다. 로드 밸런서의 리스너 목록을 수집하지 못하면 그 로드 밸런서는 ERROR. 대상이 없으면 리전 단위 `NOT_APPLICABLE`, 리스너가 없는 로드 밸런서는 그 로드 밸런서 `NOT_APPLICABLE`.
+- **판정하지 않는 것.** 로드 밸런서와 대상(인스턴스·컨테이너) 사이 구간의 프로토콜, 인증서 유효기간·키 길이, 암호 스위트. CA-12는 `partial`로 남고 증적 요청(TLS 버전·암호 스위트·인증서 키 길이 설정 자료)으로 확인한다.
+
+### ELB-001 로드 밸런서 평문 리스너 사용
+- 심각도: medium
+- API: `elbv2:DescribeLoadBalancers`, `elbv2:DescribeListeners`, `elbv2:DescribeRules`, `elb:DescribeLoadBalancers`
+- 판정: 리스너마다
+  - HTTPS·TLS·SSL: PASS
+  - ALB HTTP: 기본 동작과 모든 규칙의 동작이 HTTPS 리디렉션(`RedirectConfig.Protocol == "HTTPS"`)이나 고정 응답(`fixed-response`)뿐이면 PASS, 아니면(`forward`, 프로토콜을 지정하지 않은 리디렉션 등) FAIL. 기본 동작만으로 FAIL이 확인되면 규칙을 수집하지 못했어도 FAIL이고, 기본 동작이 안전한데 규칙을 수집하지 못했으면 ERROR.
+  - Classic HTTP: 리디렉션 기능이 없으므로 FAIL
+  - TCP·UDP 등 그 밖의 프로토콜: 대상 서버가 TLS를 처리하는지 설정만으로 알 수 없으므로 REVIEW
+- evidence: 리스너별 프로토콜·포트·상태, HTTP 리스너의 기본 동작 종류, 요청을 대상으로 넘기는 규칙의 우선순위(`forwarding_rules`), Classic 리스너의 `InstanceProtocol`.
+- 비고: 고정 응답은 요청을 대상으로 넘기지 않으므로 허용한다. 리디렉션의 `Protocol`을 지정하지 않으면 원래 프로토콜(`#{protocol}`)을 유지하므로 HTTP다.
+- ISMS-P(초안): 2.7.1 암호정책 적용, 2.10.2 클라우드 보안
+- KISA: CA-12 통신구간 암호화 설정 (중, 865쪽) — 근거 수준: 직접 ("클라우드 리소스 통신 구간에 암호화가 적용된 경우")
+
+### ELB-002 로드 밸런서 TLS 정책 취약
+- 심각도: medium
+- API: `elbv2:DescribeListeners`, `elbv2:DescribeSSLPolicies`, `elb:DescribeLoadBalancers`, `elb:DescribeLoadBalancerPolicies`
+- 판정: HTTPS·TLS·SSL 리스너마다 보안 정책이 허용하는 프로토콜을 기준값 `elb.min_tls_version`(기본 `TLSv1.2`)과 비교한다. 기준보다 낮은 프로토콜(SSLv3·TLSv1·TLSv1.1 등)이 하나라도 있으면 FAIL, 없으면 PASS. TLS 리스너가 없는 로드 밸런서는 `NOT_APPLICABLE`.
+  - ALB·NLB: 리스너의 `SslPolicy` → `DescribeSSLPolicies`의 `SslProtocols`
+  - Classic: 리스너 `PolicyNames` 중 `SSLNegotiationPolicyType` 정책 → 값이 `true`인 `Protocol-…` 속성
+- 정책 이름을 목록으로 두지 않는다. AWS가 돌려준 정책 내용으로 판정하므로 새 정책이 나와도 룰을 고칠 필요가 없다.
+- 오류: 리스너에 정책 이름이 없거나, 정책을 수집하지 못했거나, Classic 리스너에 SSL 협상 정책이 없거나, 허용 프로토콜이 비었거나 알 수 없는 값이 있으면 ERROR.
+- evidence: 기준 버전, 리스너별 프로토콜·포트·정책 이름(`ssl_policy`, Classic은 `policy_name`과 `reference_policy`)·허용 프로토콜·기준 미만 프로토콜(`weak_protocols`)·상태.
+- 비고: 암호 스위트와 인증서는 판정하지 않는다. moto는 HTTP 리스너에도 `SslPolicy`를 돌려주므로 HTTPS·TLS·SSL 리스너의 정책만 읽는다.
+- ISMS-P(초안): 2.7.1 암호정책 적용, 2.10.2 클라우드 보안
+- KISA: CA-12 통신구간 암호화 설정 (중, 865쪽) — 근거 수준: 해석 ("클라우드 리소스 통신 구간에 암호화가 적용된 경우", 점검 및 조치 사례의 예시 "웹/API 통신(TLS v1.2 이상, TLS v1.3 권장)". 예시는 리소스 관리 접근 구간이며 서비스 통신의 최소 버전 기준으로 쓰는 것은 해석)
+
 ## GuardDuty
 
 5단계에서 추가한 룰이다 (ADR-041). 점검 리전마다 `guardduty:ListDetectors`·`guardduty:GetDetector`와, GuardDuty 결과의 알림 경로를 보기 위해 `events:ListRules`·`events:ListTargetsByRule`(기본 이벤트 버스)을 같은 스냅샷에 수집한다 (룰은 스냅샷 하나만 본다, ADR-015).

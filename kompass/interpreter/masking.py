@@ -96,6 +96,8 @@ _NAME_KEYS = frozenset(
         "endpoint",
         "subnet_group",
         "parameter_group",
+        "load_balancer",
+        "policy_name",
         "UserName",
         "GroupName",
         "RoleName",

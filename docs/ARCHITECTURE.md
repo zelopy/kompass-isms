@@ -28,6 +28,7 @@ kompass-isms/
 │   │   ├── s3.py
 │   │   ├── ec2.py           # 보안그룹, VPC·서브넷·라우팅 테이블·ENI
 │   │   ├── rds.py           # DB 인스턴스·클러스터 (ADR-039)
+│   │   ├── elb.py           # ALB·NLB·Classic 리스너·보안 정책 (ADR-052)
 │   │   └── cloudtrail.py
 │   ├── rules/
 │   │   ├── base.py
@@ -36,6 +37,7 @@ kompass-isms/
 │   │   ├── s3/
 │   │   ├── ec2/
 │   │   ├── rds/
+│   │   ├── elb/
 │   │   └── cloudtrail/
 │   ├── mappings/
 │   │   ├── rules.yaml       # 룰 → KISA → ISMS-P

@@ -16,6 +16,7 @@ kompass 룰이 기대한 FAIL/PASS/REVIEW를 내는지 확인하기 위한 **의
 | CloudTrail 첫 관리 이벤트 추적 | 추적 요금 없음, S3 저장 비용만 발생 |
 | S3 버킷, VPC, 서브넷, 보안그룹, 연결되지 않은 ENI, IAM | 무료 또는 사실상 0 |
 | GuardDuty (`enable_guardduty = true`일 때만) | 30일 무료 체험 뒤 분석한 이벤트량에 따라 과금. 확인 후 끈다 |
+| ALB 2개 (`enable_elb = true`일 때만) | ALB 2대 시간당 과금(LCU 포함). 확인 후 바로 끈다 |
 | RDS 2개 (`enable_public_rds = true`일 때만) | db.t4g.micro 2대 시간당 과금 + Secrets Manager 시크릿 2개. 확인 후 바로 끈다 |
 
 EC2 인스턴스, NAT 게이트웨이, 로드 밸런서는 만들지 않는다. 리소스 존재는 연결되지 않은 네트워크 인터페이스로 흉내 낸다.
@@ -44,6 +45,7 @@ terraform apply
 | `cloudtrail_enabled` | `true` | `false` → CT-001 FAIL (로깅 중지) |
 | `cloudtrail_read_write_type` | `All` | `WriteOnly` → CT-001 FAIL (`require_read_events: true`일 때) |
 | `enable_guardduty` | `false` | `true` → GuardDuty 탐지기 + 결과 알림 규칙(EventBridge → SNS) 생성: GD-001·GD-002 PASS |
+| `enable_elb` | `false` | `true` → internal ALB 2개 생성 (`weak`: ELB-001·002 FAIL, `strict`: ELB-001·002 PASS). `tls` provider로 만든 자체 서명 인증서를 ACM으로 가져옴 |
 | `enable_public_rds` | `false` | `true` → RDS 2개 생성 (`public`: RDS-001~005 FAIL·VPC-002 REVIEW, `private`: RDS-001~005 PASS) |
 
 ## 기대 결과표
@@ -137,6 +139,17 @@ terraform apply
 | RDS-003 | `kompass-lab-public` / `kompass-lab-private` | FAIL / PASS (로그 내보내기가 없으면 `EnabledCloudwatchLogsExports` 키가 생략됨) |
 | RDS-004 | `kompass-lab-public` (백업 0일) / `kompass-lab-private` (7일) | FAIL / PASS |
 | RDS-005 | `kompass-lab-public` (`rds.force_ssl=0` 그룹) / `kompass-lab-private` (기본 그룹) | FAIL / PASS — 아직 실습 계정에서 확인하지 않음. 기본 그룹이 값 `1`을 돌려주는지 확인 |
+
+### ELB
+
+`enable_elb = false`(기본)이면 ELB 룰은 리전 단위 해당 없음(N/A)이다. 실습 리전에 다른 로드 밸런서가 있으면 그 결과도 나온다. 아직 실습 계정에서 확인하지 않음.
+
+| 룰 | 대상 (`enable_elb = true`일 때) | 기대 결과 |
+|---|---|---|
+| ELB-001 | `kompass-lab-weak` (HTTP:80 → 대상 그룹 전달) / `kompass-lab-strict` (HTTP:80 → HTTPS 리디렉션) | FAIL / PASS |
+| ELB-002 | `kompass-lab-weak` (`ELBSecurityPolicy-2016-08`) / `kompass-lab-strict` (`ELBSecurityPolicy-TLS13-1-2-2021-06`) | FAIL / PASS |
+
+두 ALB 모두 internal이라 공인 IP가 없고, 보안그룹(`kompass-lab-elb`)에 인바운드 규칙이 없다.
 
 ### CloudTrail
 

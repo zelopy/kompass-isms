@@ -54,6 +54,14 @@ expectations:
   - {rule: GD-002, resource: account, status: PASS, when: {enable_guardduty: true}}
 
   # RDS
+  # ELB (기본값 enable_elb = false: 대상 없음)
+  - {rule: ELB-001, resource: account, status: N/A, when: {enable_elb: false}}
+  - {rule: ELB-002, resource: account, status: N/A, when: {enable_elb: false}}
+  - {rule: ELB-001, resource: kompass-lab-weak, status: FAIL, when: {enable_elb: true}}
+  - {rule: ELB-002, resource: kompass-lab-weak, status: FAIL, when: {enable_elb: true}}
+  - {rule: ELB-001, resource: kompass-lab-strict, status: PASS, when: {enable_elb: true}}
+  - {rule: ELB-002, resource: kompass-lab-strict, status: PASS, when: {enable_elb: true}}
+
   - {rule: RDS-001, resource: account, status: N/A, when: {enable_public_rds: false}}
   - {rule: RDS-002, resource: account, status: N/A, when: {enable_public_rds: false}}
   - {rule: RDS-003, resource: account, status: N/A, when: {enable_public_rds: false}}

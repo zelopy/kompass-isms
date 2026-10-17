@@ -94,6 +94,11 @@ class RdsSettings(_Section):
     min_backup_retention_days: int = Field(default=7, ge=1)
 
 
+class ElbSettings(_Section):
+    # ELB-002 (KISA CA-12): 리스너 보안 정책이 허용해도 되는 최소 TLS 버전
+    min_tls_version: Literal["TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"] = "TLSv1.2"
+
+
 class LogsSettings(_Section):
     # LOG-001·CT-002 (KISA CA-17): 보안 로그 최소 보존 일수
     min_retention_days: int = Field(default=365, ge=1)
@@ -118,6 +123,7 @@ class Settings(_Section):
     s3: S3Settings = S3Settings()
     iam: IamSettings = IamSettings()
     rds: RdsSettings = RdsSettings()
+    elb: ElbSettings = ElbSettings()
     logs: LogsSettings = LogsSettings()
     llm: LlmSettings = LlmSettings()
 
