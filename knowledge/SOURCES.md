@@ -28,7 +28,7 @@ sha256sum knowledge/kisa/*.pdf
 LLM 해설(3단계)은 항목 코드로 원문을 꺼내 인용하고, 인용 구절이 원문에 있는지 검증한다 (ADR-029). 위 파일을 받아 둔 뒤 색인을 만든다.
 
 ```bash
-uv run --with pypdf python scripts/build_source_index.py
+uv run python scripts/build_source_index.py
 ```
 
 - 결과: `knowledge/index.json` (KISA CA-01~19, ISMS-P 별표 7 통제항목 101개). 원문 구절을 담으므로 커밋하지 않는다.

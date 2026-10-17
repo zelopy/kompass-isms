@@ -11,6 +11,8 @@ reports/
 .kompass/
 output/
 *.findings.json
+# 담당자가 제출한 증적 문서 (개인정보가 담길 수 있음, ADR-049)
+evidence/
 
 # 자격증명
 .env

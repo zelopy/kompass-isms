@@ -1,8 +1,8 @@
 """기준 문서 PDF에서 항목 코드 단위 원문 색인(`knowledge/index.json`)을 만든다 (ADR-029).
 
-    uv run --with pypdf python scripts/build_source_index.py
+    uv run python scripts/build_source_index.py
 
-pypdf는 이 스크립트에서만 쓰므로 프로젝트 의존성에 넣지 않는다. 원문 파일은 knowledge/SOURCES.md의
+pypdf는 증적 문서 추출과 함께 쓰는 프로젝트 의존성이다 (ADR-049). 원문 파일은 knowledge/SOURCES.md의
 출처에서 받아 두고, SHA-256이 기록과 다르면(판이 다르면) 색인을 만들지 않는다.
 색인은 원문을 담으므로 커밋하지 않는다 (ADR-012, .gitignore).
 """
@@ -36,7 +36,7 @@ ANNEX_SHA256 = "0f0dc7f3a7789b75f3faaddb84e261b836a8541d9e962caacfc8e326ef69bd58
 
 
 def _read_pages(path: Path, first: int | None = None, last: int | None = None) -> list[Page]:
-    from pypdf import PdfReader  # 스크립트 전용 의존성
+    from pypdf import PdfReader
 
     reader = PdfReader(path)
     first = first or 1

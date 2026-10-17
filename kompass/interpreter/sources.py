@@ -24,7 +24,7 @@ SourceScheme = Literal["kisa", "isms_p"]
 Page = tuple[int, str]  # (PDF 쪽 번호, 그 쪽의 텍스트)
 
 INDEX_ENV = "KOMPASS_SOURCE_INDEX"
-BUILD_COMMAND = "uv run --with pypdf python scripts/build_source_index.py"
+BUILD_COMMAND = "uv run python scripts/build_source_index.py"
 MIN_QUOTE_LENGTH = 6  # 공백을 뺀 글자 수. 이보다 짧은 구절은 근거로 보지 않는다
 BOILERPLATE_SHARE = 0.5  # 이 비율보다 많은 항목에 나오는 구절은 형식 문구로 본다
 

@@ -579,5 +579,37 @@ class InvestigationReport(_Frozen):
     estimated_cost_usd: float | None
 
 
+# --- 제출된 증적 문서 (5단계, ADR-049) ---
+# 담당자가 낸 파일의 원문이 담기므로 저장·커밋하지 않는다. LLM에는 마스킹한 뒤에만 보낸다.
+
+
+class EvidenceFileKind(StrEnum):
+    PDF = "pdf"
+    XLSX = "xlsx"
+    TEXT = "text"  # txt·md·csv·json
+
+
+class EvidenceFile(_Frozen):
+    """요청 ID 폴더에 제출된 파일 하나와 로컬에서 추출한 텍스트."""
+
+    request_id: str  # "CA-02-1"
+    path: str  # 증적 폴더 기준 상대 경로 (POSIX 구분자)
+    sha256: str
+    size: int
+    kind: EvidenceFileKind | None  # 지원하지 않는 형식이면 None
+    text: str | None  # 추출하지 못했으면 None
+    problem: str | None  # 추출하지 못한 이유 (사람이 검토해야 함)
+
+
+class EvidenceSubmission(_Frozen):
+    """증적 폴더 하나를 읽은 결과."""
+
+    files: tuple[EvidenceFile, ...]
+    ignored: tuple[str, ...]  # 카탈로그에 없는 폴더·폴더 밖 파일·링크 (상대 경로)
+
+    def for_request(self, request_id: str) -> tuple[EvidenceFile, ...]:
+        return tuple(f for f in self.files if f.request_id == request_id)
+
+
 # 전방 참조(ExplanationReport, InvestigationReport)를 해석한다. 모든 모델 정의 뒤에 둔다
 AuditReport.model_rebuild()

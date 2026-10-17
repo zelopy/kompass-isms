@@ -46,6 +46,7 @@ kompass-isms/
 │   │   ├── explainer.py     # 룰별 해설·인용 검증 (explain_system.txt: 시스템 프롬프트)
 │   │   ├── assessor.py      # 종합 위험 평가 (assess_system.txt, ADR-034)
 │   │   ├── sources.py       # 원문 색인 조회·인용 검증 (ADR-029)
+│   │   ├── documents.py     # 제출된 증적 문서 읽기·텍스트 추출 (ADR-049)
 │   │   └── masking.py
 │   ├── reporters/
 │   │   ├── json_reporter.py
@@ -293,7 +294,7 @@ cloudtrail:
 1. finding을 마스킹한다 (`masking.py`, 치환 테이블은 `Masker` 인스턴스 안에만 있고 저장·전송하지 않는다). 이름은 보고서 전체 finding에서 모으고, dict 키도 마스킹한다. 보내기 직전에 원본 리소스 값·일부만 가려진 값·남은 이름이 있으면 그 룰은 보내지 않는다 (ADR-032).
    - ARN은 서비스·리소스 종류(첫 구간)만 남기고 계정과 경로 구간을 모두 바꾼다 (`arn:aws:iam::MASKED_ACCOUNT_1:user/MASKED_NAME_1`). S3 ARN은 전부 바꾼다. 리소스 ID는 종류를 남긴다 (`MASKED_SG_1`). IAM 고유 ID·액세스 키 ID도 바꾼다.
    - AWS 관리형 ARN(계정 `aws`)과 `0.0.0.0/0`, `::/0`은 판정의 의미이므로 남긴다.
-2. 매핑된 항목코드로 원문 색인(`sources.py`, `knowledge/index.json`)에서 원문을 꺼낸다 (ADR-029). 색인은 `uv run --with pypdf python scripts/build_source_index.py`로 만들며, 원문 PDF의 SHA-256이 `knowledge/SOURCES.md` 기록과 다르면 만들지 않는다.
+2. 매핑된 항목코드로 원문 색인(`sources.py`, `knowledge/index.json`)에서 원문을 꺼낸다 (ADR-029). 색인은 `uv run python scripts/build_source_index.py`로 만들며, 원문 PDF의 SHA-256이 `knowledge/SOURCES.md` 기록과 다르면 만들지 않는다.
 3. LLM은 구조화된 출력(pydantic 스키마)으로 해설, 인용, 위험도 의견, 조치안을 낸다. 해설은 `Finding.key`(`룰:리전:리소스`)로 finding에 붙인다.
 4. 인용 검증: 인용된 항목코드가 그 finding의 매핑에 있고, 인용 구절이 그 항목 원문에 있어야 한다 (공백·가운뎃점 변형 무시, 공백 제외 6자 이상). 아니면 한 번 재시도하고, 그래도 아니면 "검증되지 않음"으로 표시한다.
 5. 마스킹을 복원해서 보고서에 넣는다.
