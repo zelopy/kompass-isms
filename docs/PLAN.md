@@ -128,7 +128,7 @@
   - [x] 평가 케이스와 실제 호출 확인 (가공 증적 문서) — 8개 × 2회 모든 지표 100% (채점기 오판 수정 후), 약 $0.72. `scripts/run_evidence_eval.py`
   - [x] 프롬프트 다듬기: 요청 범위 밖 지적·빈 확인 대상 언급·필드 이름·자리표시자 뒤 조사 — 지표 `gap_budget`·`no_field_names` 추가, v1 8개 × 1회 모든 지표 100% (약 $0.34)
 - [x] Prowler OCSF 출력 어댑터 필요성 검토 — 보류, 후보로 내림 (2026-10-17, ADR-050). 대신 Prowler ISMS-P 대응표를 매핑 협의 참고 자료로 비교
-  - [ ] Prowler `kisa_isms_p_2023_aws` 대응표와 ISMS-P 매핑 초안 비교표 (`docs/ISMS_P_MAPPING_REVIEW.md` 참고 절)
+  - [x] Prowler `kisa_isms_p_2023_aws` 대응표와 ISMS-P 매핑 초안 비교표 (`docs/ISMS_P_MAPPING_REVIEW.md` 참고 절) — 같음 10·다름 21·대응 없음 4, 협의 쟁점 4건에 참고 의견
 - [ ] Azure 지원
 - [ ] 다른 기준 추가 (CSAP 등)
 
