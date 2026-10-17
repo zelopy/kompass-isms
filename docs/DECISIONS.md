@@ -365,7 +365,7 @@
   - DocumentDB·Neptune은 관계형 데이터베이스가 아니므로 뺀다. Aurora·Multi-AZ DB 클러스터 소속 인스턴스는 암호화·로그·백업을 클러스터 단위로 판정한다 (resource `cluster:<식별자>`). 퍼블릭 접근은 인스턴스 설정이라 인스턴스 단위다.
   - 판정 필드가 응답에 없으면 ERROR (원칙 3). 예외는 `EnabledCloudwatchLogsExports`로, 내보내기가 없으면 키가 생략되므로 "내보내기 없음"으로 본다 (실습 계정에서 확인, 2026-10-16).
   - 읽기 전용 복제본은 RDS-004에서 해당 없음. AWS Backup 계획은 인정하지 않는다 (AWS Backup collector 이후).
-  - KISA 매핑 근거 구절은 원문 색인과 대조했으나 사용자 확인 전이라 `kisa_verified: false`로 둔다 (원칙 7).
+  - KISA 매핑 근거 구절은 원문 색인과 대조했으나 사용자 확인 전이라 `kisa_verified: false`로 두었음 (원칙 7, ADR-048에서 확정).
   - 평가셋 정답(`evals/explain/golden.yaml`)에 RDS 룰의 조치 작업을 더했다. 평가 케이스는 아직 없다.
 - 이유: RDS는 KISA 항목 4개(그중 CA-11은 full, ADR-047에서 partial로 바꿈)를 자동화해 수동 점검 항목을 9개에서 6개로 줄인다. Describe 응답 필드만으로 판정할 수 있어 결정론적 판정 원칙에 맞는다.
 
@@ -374,7 +374,7 @@
 - 결정:
   - EC2 collector에 `ec2:DescribeFlowLogs`를 더하고, VPC-003이 VPC별로 네트워크 인터페이스가 모두 활성 흐름 로그로 기록되는지 판정한다. VPC·서브넷·인터페이스 단위 흐름 로그를 모두 인정한다.
   - 트래픽 유형(ACCEPT·REJECT·ALL)과 전달 상태는 기관 정책이라 판정하지 않고 evidence에 남긴다.
-  - KISA CA-14(인스턴스 로깅)에 매핑하되 근거 수준은 해석이다. 흐름 로그는 인스턴스의 네트워크 활동 기록이고, OS·애플리케이션 로그는 API로 확인할 수 없어 사람이 판단한다. 사용자 확인 전이라 `kisa_verified: false`.
+  - KISA CA-14(인스턴스 로깅)에 매핑하되 근거 수준은 해석이다. 흐름 로그는 인스턴스의 네트워크 활동 기록이고, OS·애플리케이션 로그는 API로 확인할 수 없어 사람이 판단한다. 사용자 확인 전이라 `kisa_verified: false`였음 (ADR-048에서 확정).
   - 흐름 로그 ID(`fl-`)를 마스킹 대상 리소스 ID에 더한다.
 - 이유: 기존 collector에 호출 하나만 더해 수동 점검 항목을 줄일 수 있다.
 
@@ -384,7 +384,7 @@
   - 새 collector `guardduty`가 리전마다 GuardDuty 탐지기(`ListDetectors`·`GetDetector`)와 기본 이벤트 버스의 GuardDuty 규칙(`events:ListRules`·`ListTargetsByRule`)을 수집한다. 알림 경로는 EventBridge에 있지만 룰은 스냅샷 하나만 보므로(ADR-015) 같은 스냅샷에 담는다. 이벤트 패턴의 `source`에 `aws.guardduty`가 없는 규칙은 저장하지 않는다.
   - GD-001: 리전에 활성 탐지기가 없으면 FAIL. GD-002: GuardDuty가 켜진 리전에서 GuardDuty 결과를 대상으로 보내는 활성 규칙이 없으면 FAIL, GuardDuty가 꺼진 리전은 N/A.
   - 알림의 실제 전달(SNS 구독 등), Security Hub·위임 관리자 경유 알림, CloudWatch 경보는 판정하지 않는다 (CA-19 `partial`).
-  - KISA CA-19 매핑: GD-002는 직접, GD-001은 해석. 사용자 확인 전이라 `kisa_verified: false`. 탐지기 ID는 마스킹한다.
+  - KISA CA-19 매핑: GD-002는 직접, GD-001은 해석. 사용자 확인 전이라 `kisa_verified: false`였음 (ADR-048에서 확정). 탐지기 ID는 마스킹한다.
   - 실습 환경 `enable_guardduty`(기본 false). 기본값에서 GD-001 FAIL·GD-002 N/A를 실습 계정에서 확인했다.
 - 이유: 모두 List/Get 호출이라 가드 허용 목록을 바꾸지 않고 CA-19를 자동화할 수 있다.
 
@@ -394,7 +394,7 @@
   - S3 collector에 `s3:GetBucketPolicy`(정책 문서)를 더한다. 기존에는 공개 여부(`GetBucketPolicyStatus`)만 수집했다.
   - S3-007: 버킷 정책에 모든 주체·`s3:*`·객체(`버킷/*`)에 대해 `aws:SecureTransport = false` 요청을 거부하는 문장이 있으면 PASS. 정책이 없으면 FAIL, 정책 문서를 수집하지 못하거나 해석할 수 없으면 ERROR.
   - 최소 TLS 버전(`s3:TlsVersion`)과 ELB·RDS의 통신 암호화는 판정하지 않는다 (후보). 서버 원격 접근·데이터 이관 구간은 사람이 확인한다 (CA-12 `partial`).
-  - KISA CA-12 매핑의 근거 수준은 해석(S3 API 통신을 리소스 접근 통신으로 봄). 사용자 확인 전이라 `kisa_verified: false`.
+  - KISA CA-12 매핑의 근거 수준은 해석(S3 API 통신을 리소스 접근 통신으로 봄). 사용자 확인 전이라 `kisa_verified: false`였음 (ADR-048에서 확정).
 - 이유: 이미 수집하는 S3에 호출 하나를 더해 CA-12의 일부를 자동화할 수 있다. 정책 문서는 스냅샷(커밋 안 함)에만 남고, LLM에는 S3-007 evidence(문장 Sid)와 마스킹한 도구 결과만 간다.
 
 ## ADR-043 로그 보관 기간 (CT-002, LOG-001)
@@ -403,7 +403,7 @@
   - 기준값 `logs.min_retention_days` 기본 365일 (국내 접속기록 최소 1년 보관 요구에 맞춤, 기관이 조정).
   - CT-002: CloudTrail collector가 추적 버킷의 `GetBucketLocation`·`GetBucketLifecycleConfiguration`도 수집한다 (S3 호출이지만 룰이 스냅샷 하나만 보므로 같은 스냅샷에 담는다, ADR-015). 추적 로그 경로와 겹치는 활성 삭제 규칙이 기준보다 짧거나 날짜 지정이면 FAIL. 다른 계정 버킷(조직 추적)은 조회 거부로 ERROR.
   - LOG-001: 새 collector `logs`가 로그 그룹과, 보안 로그 대상을 알기 위한 추적(`DescribeTrails`)·흐름 로그(`DescribeFlowLogs`)를 함께 수집한다. 보안 로그 그룹(추적·흐름 로그 대상, `logs.security_log_group_prefixes` 기본 `/aws/rds/`)만 판정하고 나머지(Lambda 실행 로그 등)는 판정하지 않는다. 보존 기간 미설정(영구 보관)은 PASS, 대상 그룹이 없으면 FAIL.
-  - 로그 백업·주기적 검토는 사람이 확인한다 (CA-17 `partial`). KISA 매핑은 직접 근거이나 사용자 확인 전이라 `kisa_verified: false`. 로그 그룹 이름은 마스킹한다.
+  - 로그 백업·주기적 검토는 사람이 확인한다 (CA-17 `partial`). KISA 매핑은 직접 근거이나 사용자 확인 전이라 `kisa_verified: false`였음 (ADR-048에서 확정). 로그 그룹 이름은 마스킹한다.
 - 이유: 전체 로그 그룹을 판정하면 보안과 무관한 FAIL이 많아 결과가 의미를 잃는다. 출처가 확인되는 보안 로그만 보고, 기관별 추가 대상은 설정으로 받는다.
 
 ## ADR-044 인스턴스·네트워크 권한 보유 주체 현황 (IAM-010~011)
@@ -413,7 +413,7 @@
   - 대상 작업은 설정으로 받는다: `iam.instance_actions`(CA-05: 인스턴스 생성·삭제·시작·중지·속성 변경, SSM 세션·명령, EC2 Instance Connect), `iam.network_actions`(CA-06: 보안그룹·NACL·VPC·서브넷·라우팅·게이트웨이·피어링·EIP 연결, ELB, Route 53).
   - 주체: 사용자(직접·그룹 경유)와 역할. 서비스 연결 역할(`/aws-service-role/`)은 뺀다.
   - 근사: Action 와일드카드·NotAction은 해석하고, Resource·Condition·Deny·권한 경계는 판정에 쓰지 않는다 (보수적으로 권한 보유로 봄). 조건부·NotAction 경유 여부와 경계 ARN은 evidence에 남긴다. 본문을 모르는 관리형 정책은 `unknown_policies`.
-  - 판정: 권한 보유 주체마다 REVIEW, 없으면 계정 PASS. 적절성 판단은 사람이 한다. KISA 매핑은 직접 근거이나 사용자 확인 전이라 `kisa_verified: false`.
+  - 판정: 권한 보유 주체마다 REVIEW, 없으면 계정 PASS. 적절성 판단은 사람이 한다. KISA 매핑은 직접 근거이나 사용자 확인 전이라 `kisa_verified: false`였음 (ADR-048에서 확정).
 - 이유: "적절하게 부여"는 결정론적으로 판정할 수 없으므로 현황 증적이 목적이다. 정적 분석은 과대 추정 쪽으로 틀리므로(놓치지 않음) 현황 보고에 맞다. 정확한 유효 권한이 필요하면 에이전트 조사가 시뮬레이션으로 확인한다.
 - 실습 계정 확인 (2026-10-16): 그룹 경유 관리자 `kompass-lab-admin`이 두 룰 모두 REVIEW, SecurityAudit만 가진 `security_manager`와 서비스 연결 역할은 finding 없음.
 
@@ -441,3 +441,11 @@
 - 이유: 증적 요청 원문 대조(ADR-037) 중 발견. `full`이면 RDS-001이 모두 PASS일 때 CA-11 증적 요청이 나가지 않아 두 가지가 확인 경로 없이 빠졌다. (1) 판단 기준의 대상인 "관계형 데이터베이스"에는 EC2 등에 직접 설치한 DB도 들어가는데 읽기 전용 API로 찾을 수 없다. (2) 원문 주석이 클라우드 암호화와 구별한 중요정보 DB 암호화(CA-11-2)는 RULES.md가 증적 요청으로 확인한다고 적었으나 실제로는 요청되지 않았다. 볼 수 없는 DB가 있을 수 있는데 항목을 양호로 내는 것은 과대 판정이다 (원칙 3과 같은 취지).
 - 대안: `full`을 유지하고 요청마다 항상 내보내는 플래그를 두는 안은 카탈로그 스키마와 ADR-037 대상 규칙을 바꾸면서도 직접 운영 DB를 보지 않고 양호를 내는 문제가 남아 채택하지 않았다.
 - 같은 유형 검토: CA-16-2(버킷 로그 주기적 검토 기록)도 `full`(S3-005)이라 평소에는 요청되지 않으나, 주기적 검토는 판단 기준이 아니라 점검 및 조치 사례에만 있고 판정 대상인 버킷은 API로 모두 볼 수 있어 `full`을 유지한다.
+
+## ADR-048 5단계 룰 KISA 매핑 확정
+- 상태: 채택 (사용자 결정, 2026-10-17).
+- 결정:
+  - 5단계 룰 12개(RDS-001~004, VPC-003, GD-001~002, S3-007, CT-002, LOG-001, IAM-010~011)의 KISA 매핑을 원문과 대조해 `kisa_verified: true`로 확정한다. 근거 구절은 모두 해당 항목 원문에 있고 형식 문구가 아님을 원문 색인으로 확인했다.
+  - S3-007의 근거 구절을 "리소스 관리 접근 시 … 웹/API 통신(TLS v1.2 이상, TLS v1.3 권장) 사용"에서 판단 기준 "클라우드 리소스 통신 구간에 암호화가 적용된 경우"로 바꾼다. 근거 수준은 해석으로 둔다 (점검 내용은 "클라우드 시스템 간" 통신인데 S3 클라이언트는 외부일 수 있음).
+  - VPC-003 → CA-14와 GD-001 → CA-19는 해석 수준으로 유지한다.
+- 이유: S3-007은 `aws:SecureTransport`로 HTTPS 강제만 보고 TLS 버전은 판정하지 않는다(`s3:TlsVersion`은 후보, ADR-042). 이전 구절은 TLS 1.2 이상을 판정하는 것처럼 읽혔다. VPC-003은 네트워크 수준 기록이라 인스턴스 로깅과 완전히 같지는 않으나, CA-14가 `partial`이고 OS·애플리케이션 로그는 증적 요청 CA-14-1로 확인하므로 매핑을 유지한다. 빼면 CA-14는 자동 점검 룰이 없는 항목이 된다.
