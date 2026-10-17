@@ -12,6 +12,8 @@
 - style_ok: 개조식 명사형 문체 (`~다`, `~습니다`로 끝나는 문장 없음)
 - no_verdict: 양호·취약·충족 같은 판정어를 쓰지 않음 (원칙 1. 발췌는 문서 원문이라 제외)
 - expected_gaps: 케이스가 정한 부족한 점(키워드 묶음) 중 gaps·follow_up_requests에서 찾은 비율
+- gap_budget: 부족한 점 수가 케이스 상한(`max_gaps`) 이하 (충분한 문서에 과한 지적을 하지 않음)
+- no_field_names: 프롬프트의 필드 이름(targets, documents 등)을 결과 문장에 쓰지 않음
 """
 
 import json
@@ -53,10 +55,15 @@ METRICS = (
     "style_ok",
     "no_verdict",
     "expected_gaps",
+    "gap_budget",
+    "no_field_names",
 )
 _ENDING = re.compile(r"(다|니다|어요|에요)[.!]?$")
 _VERDICT = re.compile(r"양호|취약(?!점)|미충족|충족(?:함|됨|되어|한다|하고)|부적합|적합(?:함|하다)")
 _TOKEN = re.compile(r"MASKED_[A-Z0-9]+_\d+")
+_FIELD_NAMES = re.compile(
+    r"\b(?:targets|documents|unreadable_documents|kisa_item|document_id|purpose)\b"
+)
 # 판정어를 쓴 것이 아니라 언급한 것: 따옴표 안, "양호 판정을 요구하는 문구"처럼 요구·지시의 대상
 _QUOTED = re.compile(r"'[^']*'|\"[^\"]*\"|‘[^’]*’|“[^”]*”|「[^」]*」")
 _REQUESTED = re.compile(
@@ -83,6 +90,7 @@ class EvidenceCase(BaseModel):
     files: list[EvidenceCaseFile]
     sensitive: list[str]  # LLM에 가면 안 되는 원본 값
     expected_gaps: list[list[str]] = Field(default_factory=list)  # 묶음마다 키워드 중 하나
+    max_gaps: int | None = None  # 요청 하나의 부족한 점 수 상한 (없으면 검사하지 않음)
 
 
 def load_cases(directory: Path) -> list[EvidenceCase]:
@@ -205,6 +213,14 @@ def grade(case: EvidenceCase, result: EvidenceReviewReport, prompts: Sequence[st
     missing = [group for group in case.expected_gaps if group not in found]
     notes += [f"찾지 못한 부족한 점: {'/'.join(group)}" for group in missing]
     expected = len(found) / len(case.expected_gaps) if case.expected_gaps else 1.0
+    over = [
+        r.request_id
+        for r in reviews
+        if case.max_gaps is not None and len(r.review.gaps) > case.max_gaps
+    ]
+    notes += [f"부족한 점이 상한({case.max_gaps}개)보다 많음: {rid}" for rid in over]
+    fields = [t for r in reviews for t in _texts(r.review) if _FIELD_NAMES.search(t)]
+    notes += [f"필드 이름: {t}" for t in fields]
     return Grade(
         case_id=case.id,
         metrics={
@@ -215,6 +231,8 @@ def grade(case: EvidenceCase, result: EvidenceReviewReport, prompts: Sequence[st
             "style_ok": float(ok and not style),
             "no_verdict": float(ok and not verdict),
             "expected_gaps": expected if ok else 0.0,
+            "gap_budget": float(ok and not over),
+            "no_field_names": float(ok and not fields),
         },
         notes=notes,
     )
