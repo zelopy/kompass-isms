@@ -74,6 +74,8 @@ _RRN = re.compile(  # 주민등록번호·외국인등록번호
 )
 _REGION = re.compile(r"[a-z]{2}(?:-gov)?-[a-z]+-\d")
 _AWS_SEGMENTS = frozenset({"aws-reserved", "aws-service-role", "service-role", "root"})
+# ELB ARN의 둘째 구간은 로드 밸런서 종류다 (`loadbalancer/app/<이름>/<ID>`, `listener/net/...`)
+_ELB_TYPES = frozenset({"app", "net", "gwy"})
 
 # 이름이 들어 있는 증적·데이터 키 (실제 증적에서 확인한 키)
 _NAME_KEYS = frozenset(
@@ -266,8 +268,8 @@ class Masker:
         service = match.group("service")
         resource, _, suffix = match.group("resource").partition("#")
         segments = resource.split("/")
-        # 리소스 종류(첫 구간)만 남긴다. S3는 버킷·객체 이름뿐이라 모두 바꾼다
-        keep = 0 if service == "s3" or len(segments) == 1 else 1
+        # 리소스 종류 구간만 남긴다 (`_type_segments`)
+        keep = _type_segments(service, segments)
         kept, masked = segments[:keep], segments[keep:]
         masked_account = self._token("ACCOUNT", account) if account else ""
         head = f"arn:{match.group('partition')}:{service}:{match.group('region')}"
@@ -336,9 +338,17 @@ def _collect_names(value: Any, names: set[str], key: str | None = None) -> None:
             if arn.group("account") == "aws":
                 continue
             segments = arn.group("resource").partition("#")[0].split("/")
-            if arn.group("service") != "s3" and len(segments) > 1:
-                segments = segments[1:]
+            segments = segments[_type_segments(arn.group("service"), segments) :]
             names.update(s for s in segments if _is_name(s) and _is_custom_segment(s))
+
+
+def _type_segments(service: str, segments: list[str]) -> int:
+    """ARN 리소스 경로 앞쪽에서 리소스 종류라 남길 구간 수. S3는 버킷·객체 이름뿐이라 0이다."""
+    if service == "s3" or len(segments) == 1:
+        return 0
+    if service == "elasticloadbalancing" and len(segments) > 2 and segments[1] in _ELB_TYPES:
+        return 2
+    return 1
 
 
 def _is_custom_segment(segment: str) -> bool:

@@ -225,6 +225,26 @@ def test_aws_defined_path_segments_are_kept() -> None:
     assert "AWSReservedSSO_Admin" not in masked
 
 
+def test_elb_arn_keeps_load_balancer_type() -> None:
+    # ELB ARN의 둘째 구간(app·net·gwy)은 로드 밸런서 종류다. 이름으로 모으면 "application" 같은
+    # 단어와 겹치는 이름이 생긴다
+    arn = (
+        f"arn:aws:elasticloadbalancing:ap-northeast-2:{ACCOUNT}:"
+        "listener/app/acme-admin-alb/0123456789abcdef/fedcba9876543210"
+    )
+    masker = Masker.for_values([{"evidence": {"errors": [{"resource": arn}]}}])
+    assert "app" not in masker.names
+    masked = masker.mask_text(arn)
+    assert ":listener/app/MASKED_NAME_" in masked
+    assert "acme-admin-alb" not in masked
+
+
+def test_app_segment_of_other_services_is_masked() -> None:
+    masker = Masker.for_values([{"resource": f"arn:aws:iam::{ACCOUNT}:role/app"}])
+    assert "app" in masker.names
+    assert ":role/MASKED_NAME_" in masker.mask_text(f"arn:aws:iam::{ACCOUNT}:role/app")
+
+
 def test_s3_object_arn_masks_bucket() -> None:
     masker = Masker.for_values([])
     masked = masker.mask_text("arn:aws:s3:::my-secret-bucket/path/key.txt")
