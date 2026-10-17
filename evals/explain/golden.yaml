@@ -190,6 +190,16 @@ rules:
     example: >-
       aws rds modify-db-parameter-group --db-parameter-group-name {resource}-params
       --parameters "ParameterName=rds.force_ssl,ParameterValue=1,ApplyMethod=immediate"
+  RDS-006:
+    # 공개를 거두거나, 필요 없는 스냅샷이면 삭제한다
+    fail:
+      - rds:ModifyDBSnapshotAttribute
+      - rds:ModifyDBClusterSnapshotAttribute
+      - rds:DeleteDBSnapshot
+      - rds:DeleteDBClusterSnapshot
+    example: >-
+      aws rds modify-db-snapshot-attribute --db-snapshot-identifier {resource}
+      --attribute-name restore --values-to-remove all
   S3-004:
     fail: [s3:PutBucketEncryption]
     example: >-

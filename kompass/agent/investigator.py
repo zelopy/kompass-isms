@@ -87,6 +87,8 @@ RULE_HINTS: dict[str, str] = {
     "RDS-004": "백업 설정 변경 이력(ModifyDBInstance·ModifyDBCluster 이벤트)",
     "RDS-005": "파라미터 그룹 변경 이력(ModifyDBParameterGroup·ModifyDBClusterParameterGroup "
     "이벤트), 데이터베이스에 연결된 파라미터 그룹 변경(ModifyDBInstance·ModifyDBCluster)",
+    "RDS-006": "스냅샷 공유 설정 변경 이력(ModifyDBSnapshotAttribute·"
+    "ModifyDBClusterSnapshotAttribute 이벤트), 원본 데이터베이스의 암호화 여부",
     "ELB-001": "리스너·규칙 변경 이력(CreateListener·ModifyListener·CreateRule·ModifyRule 이벤트), "
     "TCP 리스너의 대상 그룹 프로토콜·포트",
     "ELB-002": "리스너 보안 정책 변경 이력(ModifyListener·"

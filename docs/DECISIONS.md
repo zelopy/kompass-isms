@@ -523,3 +523,15 @@
 - moto 차이: HTTP 리스너에도 `SslPolicy`를 돌려주고, Classic HTTPS 리스너에 기본 정책을 붙이지 않는다. 룰은 HTTPS·TLS·SSL 리스너의 정책만 읽고, Classic 정책 판정은 가공 데이터로 테스트한다. 실제 Classic HTTPS 리스너가 기본 정책을 `PolicyNames`에 돌려주는지는 실습 환경에 Classic이 없어 확인하지 못했다 (없으면 ERROR로 드러난다).
 - 실습 계정 확인 (2026-10-17, `enable_elb = true`): `weak` ELB-001 FAIL(HTTP:80 forward)·ELB-002 FAIL(`ELBSecurityPolicy-2016-08`이 TLSv1·TLSv1.1 허용), `strict` 둘 다 PASS(HTTP:80 HTTPS 리디렉션, `ELBSecurityPolicy-TLS13-1-2-2021-06`은 TLSv1.2·TLSv1.3). 실제 AWS는 HTTP 리스너에 `SslPolicy`를 돌려주지 않는다.
 - 매핑 확정 (사용자 결정, 2026-10-17): ELB-001은 직접. 로드 밸런서 리스너는 클라우드 리소스의 통신 구간 그 자체이며, 점검 내용 "클라우드 시스템 간 암호화 통신 여부"와 판단 기준에 바로 해당한다. 외부 이용자 구간이 섞이는 점은 RDS-005보다 크지만 internal 로드 밸런서를 포함해 같은 판단 기준으로 본다. ELB-002는 해석. TLS 1.2 기준이 판단 기준이 아니라 "리소스 관리 접근 시" 통신 채널 예시에 있으므로, 서비스 통신에 쓰는 것은 해석으로 두고 기준 버전은 `elb.min_tls_version`으로 기관이 조정한다.
+
+## ADR-053 RDS 공개 스냅샷 (RDS-006)
+- 상태: 채택 (사용자 결정, 2026-10-17). ADR-039에서 미룬 후보를 다음 작업으로 선정. KISA 매핑은 확인 전 (`kisa_verified: false`).
+- 결정:
+  - RDS collector가 점검 리전마다 계정이 소유한 수동 스냅샷을 `rds:DescribeDBSnapshots`·`rds:DescribeDBClusterSnapshots`(`SnapshotType=manual`)로, 스냅샷마다 공유 속성을 `rds:DescribeDBSnapshotAttributes`·`rds:DescribeDBClusterSnapshotAttributes`로 조회한다. 모두 Describe 호출이라 가드 허용 목록은 바뀌지 않고, `SecurityAudit`의 `rds:Describe*`에 포함된다. 자동 스냅샷은 공유할 수 없어 수집하지 않는다.
+  - RDS-006은 스냅샷마다 finding 하나. `restore` 값에 `all`이 있으면 FAIL, 없으면 PASS. 클러스터 스냅샷 resource는 `cluster-snapshot:<식별자>`.
+  - 특정 계정에만 공유한 스냅샷은 PASS로 두고 공유 계정을 evidence에 남긴다 (사용자 결정). 조직 안의 계정인지 룰이 알 수 없고, 공개와 달리 공유 대상이 정해져 있다.
+  - 스냅샷 목록 수집 실패는 리전 ERROR, 공유 속성 수집 실패나 `restore` 속성 없음은 그 스냅샷 ERROR (원칙 3). 원본 데이터베이스를 지운 뒤 남은 스냅샷도 판정하므로 인스턴스·클러스터 목록에 의존하지 않는다. DocumentDB·Neptune 스냅샷은 다른 RDS 룰과 같이 뺀다.
+  - KISA CA-10 (사용자 결정, CA-08 대신). 근거 구절은 점검 내용 "스토리지 리소스에 모든 인터넷 사용자 접근권한의 차단 여부 점검", 근거 수준 해석. 공개 스냅샷은 모든 AWS 계정이 복원할 수 있어 "모든 인터넷 사용자 접근권한"에 해당하지만, DB 스냅샷을 원문의 "스토리지 리소스"로 보는 것은 해석이다. CA-08은 공인 IP·네트워크 접근 항목이라 맞지 않는다. ISMS-P 초안은 CA-10과 같은 2.10.2. Prowler 대응표의 `rds_snapshots_public_access`는 2.6.2·2.10.2 (S3 퍼블릭 접근과 같은 차이).
+  - 실습 환경: `enable_public_rds = true`일 때 `public` 인스턴스(암호화 없음) 스냅샷을 `shared_accounts = ["all"]`로 공개, `private` 인스턴스(암호화) 스냅샷은 공유하지 않음. 스냅샷에는 빈 데이터베이스뿐이다.
+- 이유: 이미 수집하는 RDS에 Describe 호출만 더해 CA-10 자동화 범위를 S3 밖으로 넓힌다. 공개 스냅샷은 데이터 전체가 유출되는 설정이라 심각도 high.
+- moto 차이: 없음. 수동·자동 스냅샷 구분과 `restore` 속성(공유하지 않으면 빈 목록)을 실제 API와 같이 돌려준다. 실제 AWS가 공유하지 않은 스냅샷에도 `restore` 속성을 돌려주는지는 실습 계정에서 확인한다 (없으면 ERROR로 드러난다).

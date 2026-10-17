@@ -1,6 +1,8 @@
 """RDS 룰 테스트용 가짜 데이터. `DescribeDBInstances`·`DescribeDBClusters` 응답 형태를 따른다.
 
 파라미터 그룹은 collector가 저장하는 형태(그룹 이름 → SSL 파라미터 이름 → 파라미터)를 따른다.
+스냅샷은 `DescribeDBSnapshots`·`DescribeDBClusterSnapshots` 응답 형태, 공유 속성은 collector가
+저장하는 형태(스냅샷 식별자 → `DBSnapshotAttributes`·`DBClusterSnapshotAttributes` 목록)를 따른다.
 
 - 로그 내보내기가 없으면 `EnabledCloudwatchLogsExports` 키가 생략된다
   (실습 계정에서 확인, 2026-10-16)
@@ -72,14 +74,62 @@ def ssl_group(name: str, value: str | None, source: str = "system") -> dict[str,
     return {name: parameter(name, value, source)}
 
 
+def db_snapshot(
+    identifier: str, source: str = "orders", engine: str = "postgres", **fields: Any
+) -> dict[str, Any]:
+    """수동 인스턴스 스냅샷. 값을 None으로 주면 그 키를 뺀다."""
+    item: dict[str, Any] = {
+        "DBSnapshotIdentifier": identifier,
+        "DBInstanceIdentifier": source,
+        "Engine": engine,
+        "SnapshotType": "manual",
+        "Status": "available",
+        "Encrypted": True,
+        "SnapshotCreateTime": "2026-10-15T03:00:00+00:00",
+    }
+    item.update(fields)
+    return {k: v for k, v in item.items() if v is not None}
+
+
+def cluster_snapshot(
+    identifier: str, source: str = "ledger", engine: str = "aurora-postgresql", **fields: Any
+) -> dict[str, Any]:
+    """수동 클러스터 스냅샷. 값을 None으로 주면 그 키를 뺀다."""
+    item: dict[str, Any] = {
+        "DBClusterSnapshotIdentifier": identifier,
+        "DBClusterIdentifier": source,
+        "Engine": engine,
+        "SnapshotType": "manual",
+        "Status": "available",
+        "StorageEncrypted": True,
+        "SnapshotCreateTime": "2026-10-15T03:00:00+00:00",
+    }
+    item.update(fields)
+    return {k: v for k, v in item.items() if v is not None}
+
+
+def restore(*values: str) -> list[dict[str, Any]]:
+    """스냅샷 공유 속성. 값이 없으면 공유하지 않음, `all`이면 공개."""
+    return [{"AttributeName": "restore", "AttributeValues": list(values)}]
+
+
 def region(
     instances: list[dict[str, Any]] | None = None,
     clusters: list[dict[str, Any]] | None = None,
     missing: tuple[str, ...] = (),
     parameter_groups: dict[str, dict[str, Any]] | None = None,
     cluster_parameter_groups: dict[str, dict[str, Any]] | None = None,
+    snapshots: list[dict[str, Any]] | None = None,
+    cluster_snapshots: list[dict[str, Any]] | None = None,
+    snapshot_attributes: dict[str, list[dict[str, Any]]] | None = None,
+    cluster_snapshot_attributes: dict[str, list[dict[str, Any]]] | None = None,
 ) -> dict[str, Any]:
-    """파라미터 그룹을 주지 않으면 기본 그룹(SSL 강제 켬)을 넣는다."""
+    """파라미터 그룹을 주지 않으면 기본 그룹(SSL 강제 켬)을 넣는다.
+
+    스냅샷 공유 속성을 주지 않으면 모든 스냅샷을 공유하지 않은 것으로 넣는다.
+    """
+    snapshots = snapshots or []
+    cluster_snapshots = cluster_snapshots or []
     data: dict[str, Any] = {
         "db_instances": instances or [],
         "db_clusters": clusters or [],
@@ -92,6 +142,18 @@ def region(
             {CLUSTER_GROUP: ssl_group(FORCE_SSL, "1")}
             if cluster_parameter_groups is None
             else cluster_parameter_groups
+        ),
+        "db_snapshots": snapshots,
+        "db_cluster_snapshots": cluster_snapshots,
+        "db_snapshot_attributes": (
+            {s["DBSnapshotIdentifier"]: restore() for s in snapshots}
+            if snapshot_attributes is None
+            else snapshot_attributes
+        ),
+        "db_cluster_snapshot_attributes": (
+            {s["DBClusterSnapshotIdentifier"]: restore() for s in cluster_snapshots}
+            if cluster_snapshot_attributes is None
+            else cluster_snapshot_attributes
         ),
     }
     for kind in missing:

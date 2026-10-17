@@ -36,6 +36,7 @@ from kompass.rules.rds.rds_002_public_access import Rds002PublicAccess
 from kompass.rules.rds.rds_003_log_exports import Rds003LogExports
 from kompass.rules.rds.rds_004_backup_retention import Rds004BackupRetention
 from kompass.rules.rds.rds_005_ssl_enforcement import Rds005SslEnforcement
+from kompass.rules.rds.rds_006_public_snapshot import Rds006PublicSnapshot
 from kompass.rules.s3.s3_001_account_public_access_block import S3001AccountPublicAccessBlock
 from kompass.rules.s3.s3_002_bucket_public_access_block import S3002BucketPublicAccessBlock
 from kompass.rules.s3.s3_003_public_bucket_policy import S3003PublicBucketPolicy
@@ -77,6 +78,7 @@ RULES: tuple[BaseRule, ...] = (
     Rds003LogExports(),
     Rds004BackupRetention(),
     Rds005SslEnforcement(),
+    Rds006PublicSnapshot(),
     Elb001PlaintextListener(),
     Elb002TlsPolicy(),
     Gd001DetectorEnabled(),

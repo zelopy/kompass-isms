@@ -11,12 +11,23 @@ from moto import mock_aws
 
 from kompass.aws.guard import read_only_session
 from kompass.aws.session import ScanContext
-from kompass.collectors.rds import RESOURCE_KINDS, SSL_PARAMETERS, RdsCollector
+from kompass.collectors.rds import RESOURCE_KINDS, SNAPSHOT_KINDS, SSL_PARAMETERS, RdsCollector
 from kompass.rules.rds.rds_005_ssl_enforcement import ENGINE_PARAMETERS
+from kompass.rules.rds.rds_006_public_snapshot import KINDS
 from kompass.snapshots import SnapshotStore, load_scan
 from tests.collectors.stubbing import StubbingSession
 
 ACCOUNT = "123456789012"
+OTHER_ACCOUNT = "210987654321"
+SNAPSHOT_KEYS = {
+    "db_snapshots",
+    "db_cluster_snapshots",
+    "db_snapshot_attributes",
+    "db_cluster_snapshot_attributes",
+}
+EMPTY_SNAPSHOTS: dict[str, Any] = {
+    key: [] if key.endswith("snapshots") else {} for key in SNAPSHOT_KEYS
+}
 HOME = "ap-northeast-2"
 OTHER = "us-east-1"
 
@@ -75,12 +86,38 @@ def _build(region: str = HOME) -> None:
     )
 
 
+def _stub_no_snapshots(stub: Stubber) -> None:
+    stub.add_response("describe_db_snapshots", {"DBSnapshots": []}, {"SnapshotType": "manual"})
+    stub.add_response(
+        "describe_db_cluster_snapshots", {"DBClusterSnapshots": []}, {"SnapshotType": "manual"}
+    )
+
+
+def _build_snapshots(rds: Any) -> None:
+    rds.create_db_snapshot(DBSnapshotIdentifier="orders-public", DBInstanceIdentifier="orders")
+    rds.modify_db_snapshot_attribute(
+        DBSnapshotIdentifier="orders-public", AttributeName="restore", ValuesToAdd=["all"]
+    )
+    rds.create_db_snapshot(DBSnapshotIdentifier="orders-shared", DBInstanceIdentifier="orders")
+    rds.modify_db_snapshot_attribute(
+        DBSnapshotIdentifier="orders-shared", AttributeName="restore", ValuesToAdd=[OTHER_ACCOUNT]
+    )
+    rds.create_db_cluster_snapshot(
+        DBClusterSnapshotIdentifier="ledger-final", DBClusterIdentifier="ledger"
+    )
+
+
 def test_collects_instances_and_clusters(aws: None) -> None:
     _build()
     snapshot = RdsCollector().collect(_scan())
     assert snapshot.service == "rds" and snapshot.errors == ()
     region = snapshot.data["regions"][HOME]
-    assert set(region) == {*RESOURCE_KINDS, "db_parameter_groups", "db_cluster_parameter_groups"}
+    assert set(region) == {
+        *RESOURCE_KINDS,
+        "db_parameter_groups",
+        "db_cluster_parameter_groups",
+        *SNAPSHOT_KEYS,
+    }
     assert [i["DBInstanceIdentifier"] for i in region["db_instances"]] == ["orders"]
     assert [c["DBClusterIdentifier"] for c in region["db_clusters"]] == ["ledger"]
     assert region["db_instances"][0]["PubliclyAccessible"] is True
@@ -112,6 +149,7 @@ def test_failed_parameter_group_is_missing_and_recorded(aws: None) -> None:
         stub.add_response("describe_db_instances", {"DBInstances": [instance]})
         stub.add_response("describe_db_clusters", {"DBClusters": []})
         stub.add_client_error("describe_db_parameters", service_error_code="AccessDenied")
+        _stub_no_snapshots(stub)
         snapshot = RdsCollector().collect(
             _scan(session=StubbingSession(session, {("rds", HOME): client}))
         )
@@ -129,6 +167,7 @@ def test_only_scan_regions_are_collected(aws: None) -> None:
             "db_clusters": [],
             "db_parameter_groups": {},
             "db_cluster_parameter_groups": {},
+            **EMPTY_SNAPSHOTS,
         }
     }
 
@@ -148,10 +187,74 @@ def test_failed_kind_is_missing_and_recorded(aws: None) -> None:
     with Stubber(client) as stub:
         stub.add_client_error("describe_db_instances", service_error_code="AccessDenied")
         stub.add_response("describe_db_clusters", {"DBClusters": []})
+        _stub_no_snapshots(stub)
         snapshot = RdsCollector().collect(
             _scan(session=StubbingSession(session, {("rds", HOME): client}))
         )
-    assert snapshot.data["regions"][HOME] == {"db_clusters": [], "db_cluster_parameter_groups": {}}
+    assert snapshot.data["regions"][HOME] == {
+        "db_clusters": [],
+        "db_cluster_parameter_groups": {},
+        **EMPTY_SNAPSHOTS,
+    }
     [error] = snapshot.errors
     assert error.operation == "rds:DescribeDBInstances"
     assert error.region == HOME and error.error_code == "AccessDenied"
+
+
+def test_collects_manual_snapshots_and_attributes(aws: None) -> None:
+    _build()
+    _build_snapshots(boto3.client("rds", region_name=HOME))
+    snapshot = RdsCollector().collect(_scan())
+    assert snapshot.errors == ()
+    region = snapshot.data["regions"][HOME]
+    # moto가 만드는 자동 스냅샷(rds:orders-…)은 수집하지 않는다
+    assert sorted(s["DBSnapshotIdentifier"] for s in region["db_snapshots"]) == [
+        "orders-public",
+        "orders-shared",
+    ]
+    assert [s["DBClusterSnapshotIdentifier"] for s in region["db_cluster_snapshots"]] == [
+        "ledger-final"
+    ]
+    attributes = region["db_snapshot_attributes"]
+    assert attributes["orders-public"] == [{"AttributeName": "restore", "AttributeValues": ["all"]}]
+    assert attributes["orders-shared"][0]["AttributeValues"] == [OTHER_ACCOUNT]
+    assert region["db_cluster_snapshot_attributes"]["ledger-final"] == [
+        {"AttributeName": "restore", "AttributeValues": []}
+    ]
+
+
+def test_failed_snapshot_attributes_are_missing_and_recorded(aws: None) -> None:
+    session = read_only_session()
+    client = session.client("rds", region_name=HOME)
+    with Stubber(client) as stub:
+        stub.add_response("describe_db_instances", {"DBInstances": []})
+        stub.add_response("describe_db_clusters", {"DBClusters": []})
+        stub.add_response(
+            "describe_db_snapshots",
+            {"DBSnapshots": [{"DBSnapshotIdentifier": "orders-copy"}]},
+            {"SnapshotType": "manual"},
+        )
+        stub.add_client_error(
+            "describe_db_snapshot_attributes",
+            service_error_code="AccessDenied",
+            expected_params={"DBSnapshotIdentifier": "orders-copy"},
+        )
+        stub.add_client_error("describe_db_cluster_snapshots", service_error_code="AccessDenied")
+        snapshot = RdsCollector().collect(
+            _scan(session=StubbingSession(session, {("rds", HOME): client}))
+        )
+    region = snapshot.data["regions"][HOME]
+    assert region["db_snapshot_attributes"] == {}
+    assert "db_cluster_snapshots" not in region
+    assert "db_cluster_snapshot_attributes" not in region
+    assert [(e.operation, e.resource) for e in snapshot.errors] == [
+        ("rds:DescribeDBSnapshotAttributes", "orders-copy"),
+        ("rds:DescribeDBClusterSnapshots", None),
+    ]
+
+
+def test_snapshot_keys_match_rule() -> None:
+    assert {kind.list_key for kind in KINDS} == set(SNAPSHOT_KINDS)
+    assert {kind.attributes_key for kind in KINDS} == {
+        spec.attributes_key for spec in SNAPSHOT_KINDS.values()
+    }

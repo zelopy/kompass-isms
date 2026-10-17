@@ -353,6 +353,22 @@ def test_rds_identifiers_and_endpoint_are_masked() -> None:
         assert raw not in text, raw
 
 
+def test_rds_snapshot_identifiers_are_masked() -> None:
+    finding = {
+        "resource": "cluster-snapshot:ledger-before-migration",
+        "message": "모든 AWS 계정에 공개된 스냅샷: ledger-before-migration",
+        "evidence": {
+            "snapshot": "ledger-before-migration",
+            "db_cluster": "ledger",
+            "shared_accounts": ["210987654321"],
+        },
+    }
+    masker = Masker.for_values([finding])
+    text = json.dumps(masker.mask(finding), ensure_ascii=False)
+    for raw in ("ledger", "210987654321"):
+        assert raw not in text, raw
+
+
 # --- 증적 문서의 개인정보 (ADR-049) ---
 
 

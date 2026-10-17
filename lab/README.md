@@ -17,7 +17,7 @@ kompass 룰이 기대한 FAIL/PASS/REVIEW를 내는지 확인하기 위한 **의
 | S3 버킷, VPC, 서브넷, 보안그룹, 연결되지 않은 ENI, IAM | 무료 또는 사실상 0 |
 | GuardDuty (`enable_guardduty = true`일 때만) | 30일 무료 체험 뒤 분석한 이벤트량에 따라 과금. 확인 후 끈다 |
 | ALB 2개 (`enable_elb = true`일 때만) | ALB 2대 시간당 과금(LCU 포함). 확인 후 바로 끈다 |
-| RDS 2개 (`enable_public_rds = true`일 때만) | db.t4g.micro 2대 시간당 과금 + Secrets Manager 시크릿 2개. 확인 후 바로 끈다 |
+| RDS 2개와 수동 스냅샷 2개 (`enable_public_rds = true`일 때만) | db.t4g.micro 2대 시간당 과금 + Secrets Manager 시크릿 2개 + 스냅샷 저장(빈 DB라 매우 적음). 확인 후 바로 끈다 |
 
 EC2 인스턴스, NAT 게이트웨이, 로드 밸런서는 만들지 않는다. 리소스 존재는 연결되지 않은 네트워크 인터페이스로 흉내 낸다.
 
@@ -46,7 +46,7 @@ terraform apply
 | `cloudtrail_read_write_type` | `All` | `WriteOnly` → CT-001 FAIL (`require_read_events: true`일 때) |
 | `enable_guardduty` | `false` | `true` → GuardDuty 탐지기 + 결과 알림 규칙(EventBridge → SNS) 생성: GD-001·GD-002 PASS |
 | `enable_elb` | `false` | `true` → internal ALB 2개 생성 (`weak`: ELB-001·002 FAIL, `strict`: ELB-001·002 PASS). `tls` provider로 만든 자체 서명 인증서를 ACM으로 가져옴 |
-| `enable_public_rds` | `false` | `true` → RDS 2개 생성 (`public`: RDS-001~005 FAIL·VPC-002 REVIEW, `private`: RDS-001~005 PASS) |
+| `enable_public_rds` | `false` | `true` → RDS 2개와 수동 스냅샷 2개 생성 (`public`: RDS-001~005 FAIL·VPC-002 REVIEW, 공개 스냅샷 RDS-006 FAIL, `private`: RDS-001~006 PASS) |
 
 ## 기대 결과표
 
@@ -139,6 +139,7 @@ terraform apply
 | RDS-003 | `kompass-lab-public` / `kompass-lab-private` | FAIL / PASS (로그 내보내기가 없으면 `EnabledCloudwatchLogsExports` 키가 생략됨) |
 | RDS-004 | `kompass-lab-public` (백업 0일) / `kompass-lab-private` (7일) | FAIL / PASS |
 | RDS-005 | `kompass-lab-public` (`rds.force_ssl=0` 그룹) / `kompass-lab-private` (기본 그룹) | FAIL / PASS (2026-10-17 확인, 기본 그룹 `default.postgres18`의 `rds.force_ssl`은 `1`) |
+| RDS-006 | `kompass-lab-public-snapshot` (모든 계정에 공개) / `kompass-lab-private-snapshot` (공유 안 함) | FAIL / PASS (실습 계정 확인 전) |
 
 ### ELB
 

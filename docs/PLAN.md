@@ -146,6 +146,11 @@
     - [x] 실습 가공 2개 생성 (`lab-elb-001`·`lab-elb-002`)
     - [x] 보강 3개: Classic HTTP FAIL·NLB TCP REVIEW, 규칙·리스너 조회 거부 ERROR, Classic 구형 협상 정책 FAIL·NLB 정책 조회 거부 ERROR. 오라클 68개 모든 지표 100% (ELB ARN 종류 구간 마스킹 수정 후)
     - [x] 실제 모델 실행 (실습 가공 2개 + 보강 3개, `lab-rds-005`와 함께 6개 × 2회, $0.82): 채점기 오판 2종 수정 후 모든 지표 100% (ADR-033 기록)
+- [ ] 룰: RDS 공개 스냅샷 RDS-006 (CA-10, ADR-053) — 수동 스냅샷·공유 속성 수집, 실습 `public` 스냅샷 공개
+  - [x] 룰·collector·테스트, 매핑 `kisa_verified: false`, 실습 Terraform·기대값
+  - [ ] 사용자 확인: KISA CA-10 매핑 원문 근거 (근거 수준 해석)
+  - [ ] 실습 계정 확인 (`enable_public_rds = true`)
+  - [ ] 평가 케이스 추가 (실습 가공·보강, ADR-033)
 - [x] Prowler OCSF 출력 어댑터 필요성 검토 — 보류, 후보로 내림 (2026-10-17, ADR-050). 대신 Prowler ISMS-P 대응표를 매핑 협의 참고 자료로 비교
   - [x] Prowler `kisa_isms_p_2023_aws` 대응표와 ISMS-P 매핑 초안 비교표 (`docs/ISMS_P_MAPPING_REVIEW.md` 참고 절) — 같음 10·다름 21·대응 없음 4, 협의 쟁점 4건에 참고 의견. RDS-005 추가 후 같음 11 (Prowler `rds_instance_transport_encrypted`도 2.7.1·2.10.2)
 - [ ] Azure 지원
@@ -153,6 +158,6 @@
 
 ### 후보 (결정 기록에서 미룬 것, 우선순위 미정)
 
-- 룰: S3 최소 TLS 버전 (CA-12, ADR-042·051), RDS 공개 스냅샷 (ADR-039), AWS Backup 계획 (CA-18), CloudWatch 경보 (CA-19, ADR-041), KMS 고객 관리형 키 자동 교체 (KISA 대응 항목 없음, ISMS-P 2.7.2 후보)
+- 룰: S3 최소 TLS 버전 (CA-12, ADR-042·051), AWS Backup 계획 (CA-18), CloudWatch 경보 (CA-19, ADR-041), KMS 고객 관리형 키 자동 교체 (KISA 대응 항목 없음, ISMS-P 2.7.2 후보)
 - 연동: Prowler OCSF 출력 어댑터 (ADR-050에서 보류. KISA 축 밖의 점검이 필요해지거나 다른 기준을 더할 때 다시 검토)
 - LLM: 로컬 LLM 공급자 구현체 (ADR-007·029에서 자리만 둠), 종합 위험 평가의 평가 (ADR-034), 평가셋 난이도 보강과 LLM 판정자 지표 (ADR-033)

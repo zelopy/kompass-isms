@@ -67,6 +67,7 @@ expectations:
   - {rule: RDS-003, resource: account, status: N/A, when: {enable_public_rds: false}}
   - {rule: RDS-004, resource: account, status: N/A, when: {enable_public_rds: false}}
   - {rule: RDS-005, resource: account, status: N/A, when: {enable_public_rds: false}}
+  - {rule: RDS-006, resource: account, status: N/A, when: {enable_public_rds: false}}
   - {rule: RDS-001, resource: kompass-lab-public, status: FAIL, when: {enable_public_rds: true}}
   - {rule: RDS-002, resource: kompass-lab-public, status: FAIL, when: {enable_public_rds: true}}
   - {rule: RDS-003, resource: kompass-lab-public, status: FAIL, when: {enable_public_rds: true}}
@@ -77,6 +78,8 @@ expectations:
   - {rule: RDS-003, resource: kompass-lab-private, status: PASS, when: {enable_public_rds: true}}
   - {rule: RDS-004, resource: kompass-lab-private, status: PASS, when: {enable_public_rds: true}}
   - {rule: RDS-005, resource: kompass-lab-private, status: PASS, when: {enable_public_rds: true}}
+  - {rule: RDS-006, resource: kompass-lab-public-snapshot, status: FAIL, when: {enable_public_rds: true}}
+  - {rule: RDS-006, resource: kompass-lab-private-snapshot, status: PASS, when: {enable_public_rds: true}}
   - {rule: LOG-001, resource: /aws/rds/instance/kompass-lab-private/postgresql, status: FAIL, when: {enable_public_rds: true}}
 
   # S3

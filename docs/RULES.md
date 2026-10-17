@@ -334,7 +334,7 @@ finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 
 
 ## RDS
 
-5단계에서 추가한 룰이다 (ADR-039). 점검 리전(`ScanContext.regions`)마다 `rds:DescribeDBInstances`와 `rds:DescribeDBClusters`로 수집한다. RDS-005(ADR-051)를 위해 인스턴스·클러스터가 쓰는 파라미터 그룹을 `rds:DescribeDBParameters`·`rds:DescribeDBClusterParameters`로 조회하고 SSL 강제 파라미터만 저장한다.
+5단계에서 추가한 룰이다 (ADR-039). 점검 리전(`ScanContext.regions`)마다 `rds:DescribeDBInstances`와 `rds:DescribeDBClusters`로 수집한다. RDS-005(ADR-051)를 위해 인스턴스·클러스터가 쓰는 파라미터 그룹을 `rds:DescribeDBParameters`·`rds:DescribeDBClusterParameters`로 조회하고 SSL 강제 파라미터만 저장한다. RDS-006(ADR-053)을 위해 수동 스냅샷 목록을 `rds:DescribeDBSnapshots`·`rds:DescribeDBClusterSnapshots`로, 스냅샷마다 공유 속성을 `rds:DescribeDBSnapshotAttributes`·`rds:DescribeDBClusterSnapshotAttributes`로 조회한다.
 
 - **대상 엔진.** 관계형 데이터베이스만 본다. `docdb`(DocumentDB)·`neptune`(Neptune)은 같은 API로 조회되지만 대상에서 빼고, 리전 finding의 evidence에 제외한 식별자를 남긴다.
 - **클러스터 단위 판정.** `DBClusterIdentifier`가 있는 인스턴스(Aurora, Multi-AZ DB 클러스터)는 암호화·로그·백업이 클러스터 설정이므로 클러스터로 판정한다. 클러스터 finding의 resource는 `cluster:<클러스터 식별자>`로 써서 같은 이름의 인스턴스와 구분한다. 퍼블릭 접근(`PubliclyAccessible`)은 인스턴스 설정이라 RDS-002는 클러스터 소속 인스턴스도 인스턴스 단위로 판정한다.
@@ -388,6 +388,19 @@ finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 
 - 비고: 클라이언트가 실제로 TLS로 접속하는지와 TLS 버전·인증서 검증은 판정하지 않는다. collector는 파라미터 그룹마다 SSL 강제 파라미터만 저장한다.
 - ISMS-P(초안): 2.7.1 암호정책 적용, 2.10.2 클라우드 보안
 - KISA: CA-12 통신구간 암호화 설정 (중, 865쪽) — 근거 수준: 직접 ("클라우드 리소스 통신 구간에 암호화가 적용된 경우")
+
+### RDS-006 데이터베이스 스냅샷 공개
+- 심각도: high
+- API: `rds:DescribeDBSnapshots`, `rds:DescribeDBClusterSnapshots` (`SnapshotType=manual`), `rds:DescribeDBSnapshotAttributes`, `rds:DescribeDBClusterSnapshotAttributes`
+- 대상: 계정이 소유한 수동 스냅샷(인스턴스 스냅샷과 클러스터 스냅샷). 자동 스냅샷은 공유할 수 없고, 다른 계정이 공유한 스냅샷은 이 계정의 리소스가 아니므로 수집하지 않는다. DocumentDB·Neptune 스냅샷은 다른 RDS 룰과 같이 빼고 리전 finding의 evidence에 남긴다.
+- finding 단위: 스냅샷마다 하나. resource는 인스턴스 스냅샷 식별자, 클러스터 스냅샷은 `cluster-snapshot:<식별자>`.
+- 판정: 공유 속성 `restore`의 값에 `all`이 있으면 FAIL(모든 AWS 계정이 복원 가능), 없으면 PASS. 특정 계정에만 공유한 스냅샷은 공개가 아니므로 PASS이며 evidence에 공유 계정을 남긴다 (조직 안의 계정인지는 룰이 알 수 없다).
+- 오류: 리전의 인스턴스·클러스터 스냅샷 목록 중 하나라도 수집하지 못하면 그 리전은 ERROR 하나. 스냅샷의 공유 속성을 수집하지 못했거나 응답에 `restore` 속성이 없으면 그 스냅샷은 ERROR.
+- 해당 없음: 리전에 수동 스냅샷이 없으면 리전 단위 `NOT_APPLICABLE`.
+- evidence: 스냅샷 식별자, 원본 인스턴스·클러스터, 엔진, 암호화 여부, 생성 시각, 공유 계정 목록.
+- 비고: 암호화된 스냅샷은 AWS가 공개를 허용하지 않는다. 계정 공유로 전달된 스냅샷의 이후 사용은 판정하지 않는다.
+- ISMS-P(초안): 2.10.2 클라우드 보안
+- KISA: CA-10 스토리지 리소스 퍼블릭 접근 관리 (중, 863쪽) — 근거 수준: 해석 ("스토리지 리소스에 모든 인터넷 사용자 접근권한의 차단 여부 점검"). DB 스냅샷을 원문의 "스토리지 리소스"로 보는 것은 해석이다. 확인 전 (`kisa_verified: false`).
 
 ## ELB
 
