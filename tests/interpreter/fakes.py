@@ -11,6 +11,8 @@ from kompass.interpreter.llm import LLMResponse, Usage
 from kompass.models import (
     ActionStep,
     Citation,
+    EvidenceFact,
+    EvidenceReviewDraft,
     Remediation,
     ResourceNote,
     RiskAssessmentDraft,
@@ -95,4 +97,49 @@ def cite_first_source(payload: dict[str, Any], attempt: int) -> RuleExplanationD
         citations=[Citation(scheme=source["scheme"], code=source["code"], quote=source["text"])],
         remediation=Remediation(steps=["조치"], aws_cli=[], terraform=None),
         resource_notes=[ResourceNote(finding_key=first["key"], note="메모")],
+    )
+
+
+# --- 증적 검토 (ADR-049) ---
+
+
+class ReviewProvider:
+    """프롬프트의 JSON을 읽어 `responder(payload, 같은 요청 몇 번째 시도)`의 결과를 돌려준다."""
+
+    def __init__(self, responder: Any) -> None:
+        self.responder = responder
+        self.calls: list[tuple[str, str]] = []
+        self.count_calls = 0
+
+    @property
+    def model(self) -> str:
+        return "fake-model"
+
+    def complete[T: BaseModel](self, system: str, prompt: str, schema: type[T]) -> LLMResponse[T]:
+        self.calls.append((system, prompt))
+        request_id = payload_of(prompt)["request"]["id"]
+        attempt = sum(1 for _, p in self.calls if payload_of(p)["request"]["id"] == request_id)
+        result = self.responder(payload_of(prompt), attempt)
+        if isinstance(result, Exception):
+            raise result
+        assert isinstance(result, schema)
+        return LLMResponse(
+            parsed=result, model="fake-model", usage=Usage(100, 50, 0, 0), fallback_used=False
+        )
+
+    def count_input_tokens(self, system: str, prompt: str, schema: type[BaseModel]) -> int:
+        self.count_calls += 1
+        return 1000
+
+
+def quote_first_line(payload: dict[str, Any], attempt: int) -> EvidenceReviewDraft:
+    """첫 문서에서 가려진 값이 든 첫 줄(머리줄 다음)을 그대로 발췌하는 올바른 응답."""
+    document = payload["documents"][0]
+    lines = document["text"].splitlines()[1:]
+    line = next((line for line in lines if "MASKED_" in line), lines[0])
+    return EvidenceReviewDraft(
+        summary="문서 검토",
+        facts=[EvidenceFact(statement="사실", document_id=document["id"], excerpt=line)],
+        gaps=["검토 주기 확인 안 됨"],
+        follow_up_requests=["검토 주기 문서 요청"],
     )

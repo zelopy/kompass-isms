@@ -186,6 +186,43 @@ def estimate_review(
     )
 
 
+def render_preview(
+    report: AuditReport,
+    submission: EvidenceSubmission,
+    catalog: Mapping[str, EvidenceCatalogItem],
+    lookup: SourceLookup,
+    *,
+    terms: Iterable[str],
+    max_chars: int = MAX_DOCUMENT_CHARS,
+) -> str:
+    """보낼 프롬프트 전체(마스킹 후)를 사람이 확인할 수 있게 이어 붙인다 (전송 전 확인, ADR-049).
+
+    가려지지 않은 이름이 보이면 사전에 더해 다시 실행한다. 로컬에만 쓰고 보내지 않는다.
+    """
+    requests = _requests(catalog)
+    _require_known(submission, requests)
+    names = report_names(report)
+    terms = tuple(terms)
+    parts = [
+        "# 증적 검토 전송 미리보기",
+        "",
+        "아래는 LLM에 보낼 내용 그대로임. 가려지지 않은 이름·연락처가 있으면 마스킹 사전에 "
+        "더한 뒤 다시 실행해야 함.",
+    ]
+    for request_id in select_requests(submission):
+        parts += ["", f"## {request_id}", ""]
+        try:
+            prepared = prepare_review(
+                report, submission, requests[request_id], lookup, names, terms, max_chars
+            )
+        except MaskingError as exc:
+            parts.append(f"보내지 않음: {exc}")
+            continue
+        counts = ", ".join(f"{k} {v}" for k, v in prepared.masker.token_counts().items())
+        parts += [f"가린 값: {counts or '없음'}", "", prepared.prompt]
+    return "\n".join(parts) + "\n"
+
+
 def prepare_review(
     report: AuditReport,
     submission: EvidenceSubmission,

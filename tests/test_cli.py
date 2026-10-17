@@ -17,6 +17,7 @@ from kompass.interpreter.llm import LLMError
 from kompass.interpreter.sources import INDEX_ENV
 from kompass.mappings.data import load_mappings
 from kompass.models import (
+    EvidenceReviewReport,
     ExplanationReport,
     InvestigationDraft,
     InvestigationFact,
@@ -27,7 +28,12 @@ from kompass.models import (
 )
 from tests.agent.fakes import ScriptedAgent
 from tests.conftest import AwsFiles
-from tests.interpreter.fakes import FakeProvider, cite_first_source
+from tests.interpreter.fakes import (
+    FakeProvider,
+    ReviewProvider,
+    cite_first_source,
+    quote_first_line,
+)
 
 runner = CliRunner()
 REGION = "ap-northeast-2"
@@ -577,3 +583,118 @@ def test_mcp_rejects_other_account(aws: None, store: Path, monkeypatch: pytest.M
     result = runner.invoke(app, ["mcp", "--store", str(store), "--profile", "audit"])
     assert result.exit_code == EXIT_SESSION and served == []
     assert result.stdout == ""
+
+
+# --- 증적 검토 (ADR-049) ---
+
+
+@pytest.fixture
+def review_llm(monkeypatch: pytest.MonkeyPatch) -> ReviewProvider:
+    provider = ReviewProvider(quote_first_line)
+    monkeypatch.setattr("kompass.cli.make_provider", lambda settings: provider)
+    return provider
+
+
+@pytest.fixture
+def evidence_dir(tmp_path: Path) -> Path:
+    root = tmp_path / "evidence"
+    (root / "CA-09-1").mkdir(parents=True)
+    (root / "CA-09-1" / "검토 기록.txt").write_text(
+        "보안그룹 검토 기록\n2026-09-30 검토자 홍길동 (hong@corp.example)\n", encoding="utf-8"
+    )
+    (root / "CA-09-2").mkdir()
+    (root / "CA-09-2" / "scan.png").write_bytes(b"\x89PNG")
+    (root / "misc").mkdir()
+    return root
+
+
+def _review_args(store: Path, evidence_dir: Path, terms: Path, *extra: str) -> list[str]:
+    return ["review-evidence", "--store", str(store), "--dir", str(evidence_dir),
+            "--terms", str(terms), *extra]  # fmt: skip
+
+
+@pytest.fixture
+def terms_file(tmp_path: Path) -> Path:
+    path = tmp_path / "terms.txt"
+    path.write_text("홍길동\n", encoding="utf-8")
+    return path
+
+
+def test_review_evidence_dry_run_writes_preview_only(
+    aws: None, store: Path, source_index: Path, review_llm: ReviewProvider,
+    evidence_dir: Path, terms_file: Path,
+) -> None:  # fmt: skip
+    _scanned(store)
+    result = runner.invoke(app, _review_args(store, evidence_dir, terms_file, "--dry-run"))
+    assert result.exit_code == 0, result.output
+    assert "검토 대상: 요청 1개, 문서 1개" in result.output
+    assert "가린 값: EMAIL 1, TERM 1" in result.output
+    assert "사람이 검토할 파일: CA-09-2/scan.png" in result.output
+    assert "요청 ID 폴더가 아니어서 읽지 않음: misc" in result.output
+    assert review_llm.calls == [] and review_llm.count_calls == 1
+    [preview] = (store / "evidence-reviews").rglob("*.evidence-preview.md")
+    text = preview.read_text(encoding="utf-8")
+    assert "MASKED_TERM_1" in text and "홍길동" not in text and "hong@corp.example" not in text
+    assert not list((store / "evidence-reviews").rglob("*.evidence-review.json"))
+
+
+def test_review_evidence_writes_review_file(
+    aws: None, store: Path, source_index: Path, review_llm: ReviewProvider,
+    evidence_dir: Path, terms_file: Path,
+) -> None:  # fmt: skip
+    _scanned(store)
+    result = runner.invoke(app, _review_args(store, evidence_dir, terms_file, "--yes"))
+    assert result.exit_code == 0, result.output
+    assert "검토 CA-09-1" in result.output and "발췌 검증됨 1" in result.output
+    [path] = (store / "evidence-reviews").rglob("*.evidence-review.json")
+    review = EvidenceReviewReport.model_validate_json(path.read_text(encoding="utf-8"))
+    assert [r.request_id for r in review.reviews] == ["CA-09-1"]
+    assert "홍길동" in review.reviews[0].review.facts[0].excerpt  # 복원된 값
+    assert [u.path for u in review.unreadable] == ["CA-09-2/scan.png"]
+    assert "홍길동" not in review_llm.calls[0][1]
+
+
+def test_review_evidence_asks_and_warns_without_terms(
+    aws: None, store: Path, source_index: Path, review_llm: ReviewProvider, evidence_dir: Path
+) -> None:
+    _scanned(store)
+    args = ["review-evidence", "--store", str(store), "--dir", str(evidence_dir)]
+    result = runner.invoke(app, args, input="n\n")
+    assert result.exit_code == 0
+    assert "마스킹 사전이 없습니다" in result.output
+    assert "확인하셨습니까?" in result.output and "취소했습니다" in result.output
+    assert review_llm.calls == []
+
+
+def test_review_evidence_missing_folder_is_usage_error(
+    aws: None, store: Path, source_index: Path, review_llm: ReviewProvider, tmp_path: Path
+) -> None:
+    _scanned(store)
+    args = ["review-evidence", "--store", str(store), "--dir", str(tmp_path / "nope")]
+    result = runner.invoke(app, args)
+    assert result.exit_code == EXIT_USAGE and "증적 폴더가 없습니다" in result.output
+
+
+def test_review_evidence_without_readable_files_sends_nothing(
+    aws: None, store: Path, source_index: Path, review_llm: ReviewProvider,
+    tmp_path: Path, terms_file: Path,
+) -> None:  # fmt: skip
+    _scanned(store)
+    root = tmp_path / "only-scans"
+    (root / "CA-09-1").mkdir(parents=True)
+    (root / "CA-09-1" / "a.png").write_bytes(b"x")
+    result = runner.invoke(app, _review_args(store, root, terms_file, "--yes"))
+    assert result.exit_code == 0, result.output
+    assert "검토할 것이 없습니다" in result.output and review_llm.calls == []
+
+
+def test_review_evidence_all_failed_exit_code(
+    aws: None, store: Path, source_index: Path, monkeypatch: pytest.MonkeyPatch,
+    evidence_dir: Path, terms_file: Path,
+) -> None:  # fmt: skip
+    provider = ReviewProvider(lambda payload, attempt: LLMError("Claude API 호출 실패"))
+    monkeypatch.setattr("kompass.cli.make_provider", lambda settings: provider)
+    _scanned(store)
+    result = runner.invoke(app, _review_args(store, evidence_dir, terms_file, "--yes"))
+    assert result.exit_code == EXIT_LLM
+    assert "CA-09-1 검토 실패" in result.output

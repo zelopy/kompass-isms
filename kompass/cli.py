@@ -5,6 +5,7 @@
 - `scan`: collect와 evaluate를 이어서 실행한다 (`--report`로 보고서까지)
 - `report`: 판정 결과에 KISA·ISMS-P 매핑을 붙여 보고서(Markdown, Excel, JSON)를 만든다
 - `explain`: 조치가 필요한 결과를 룰별로 LLM이 해설한다 (참고 자료, 판정은 바꾸지 않는다)
+- `review-evidence`: 담당자가 제출한 증적 문서를 요청별로 LLM이 검토한다 (참고, ADR-049)
 
 종료 코드: 0 완료(FAIL이 있어도 0), 1 `--fail-on` 기준 해당, 2 사용법·설정 오류,
 3 세션 오류, 4 스냅샷 오류, 5 LLM 해설 전부 실패.
@@ -38,6 +39,12 @@ from kompass.agent.tools import ToolContext
 from kompass.aws.guard import ReadOnlyViolation
 from kompass.aws.session import ScanContext, SessionError, open_scan
 from kompass.config import ConfigError, LlmSettings, Settings, load_settings
+from kompass.interpreter.documents import EvidenceFolderError, load_submission
+from kompass.interpreter.evidence_reviewer import (
+    estimate_review,
+    render_preview,
+    review_submission,
+)
 from kompass.interpreter.explainer import (
     estimate_assessment,
     estimate_explanation,
@@ -46,14 +53,17 @@ from kompass.interpreter.explainer import (
     select_groups,
 )
 from kompass.interpreter.llm import PRICES, ClaudeProvider, LLMError, LLMProvider
-from kompass.interpreter.masking import MaskingError
+from kompass.interpreter.masking import MaskingError, load_terms
 from kompass.interpreter.sources import SourceIndexError, SourceLookup, load_index
+from kompass.mappings.data import load_mappings
 from kompass.models import AuditReport, EvaluationReport, Snapshot, Status
 from kompass.pipeline import (
     COLLECTORS,
     attach_explanations,
     attach_investigations,
     collect,
+    default_evidence_preview_path,
+    default_evidence_review_path,
     default_explanations_path,
     default_findings_path,
     default_investigations_path,
@@ -704,6 +714,137 @@ def investigate_command(
     if report:
         _reports(snapshot_store, findings, report)
     if not result.investigations:
+        raise typer.Exit(EXIT_LLM)
+
+
+@app.command("review-evidence")
+def review_evidence_command(
+    evidence_dir: Path = typer.Option(
+        ...,
+        "--dir",
+        help="증적 폴더. 요청 ID 폴더(예: CA-02-1) 아래에 제출 파일을 둡니다.",
+    ),
+    terms: Path | None = typer.Option(
+        None,
+        "--terms",
+        help="마스킹 사전 (UTF-8, 한 줄에 하나). 직원 이름 등 LLM에 보내지 않을 용어.",
+    ),
+    findings: Path | None = typer.Option(
+        None, "--findings", help="증적을 요청한 판정 결과 파일. 없으면 가장 최근에 판정한 결과."
+    ),
+    account_id: str | None = AccountOption,
+    store: Path | None = StoreOption,
+    config: Path | None = ConfigOption,
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="검토를 요청하지 않고 미리보기 파일과 예상 비용만 만듭니다."
+    ),
+    yes: bool = typer.Option(False, "--yes", "-y", help="미리보기·비용 확인 없이 진행합니다."),
+) -> None:
+    """제출된 증적 문서를 요청별로 LLM이 검토합니다. 판정·항목 결과는 바꾸지 않습니다.
+
+    PDF·xlsx·텍스트 파일에서 뽑은 텍스트만 보내며, 원본 파일은 보내지 않습니다.
+
+    식별정보(계정 ID·IP·ARN·리소스 이름)와 개인정보, 마스킹 사전의 용어를 가린 뒤 보냅니다.
+    보내기 전에 마스킹한 내용을 미리보기 파일로 확인해 주십시오.
+    """
+    settings = _settings(config)
+    snapshot_store = SnapshotStore(store)
+    findings = _findings_path(snapshot_store, findings, account_id)
+    audit = _audit_report(snapshot_store, findings)
+    catalog = load_mappings().evidence
+    try:
+        lookup = SourceLookup(load_index())
+        dictionary = load_terms(terms) if terms is not None else ()
+        submission = load_submission(
+            evidence_dir, [r.id for item in catalog.values() for r in item.requests]
+        )
+    except (SourceIndexError, MaskingError, EvidenceFolderError) as exc:
+        _abort(str(exc), EXIT_USAGE)
+
+    for ignored in submission.ignored:
+        typer.echo(f"경고: 요청 ID 폴더가 아니어서 읽지 않음: {ignored}", err=True)
+    for file in submission.files:
+        if file.problem:
+            typer.echo(f"사람이 검토할 파일: {file.path} ({file.problem})")
+    if terms is None:
+        typer.echo(
+            "경고: 마스킹 사전이 없습니다. 직원 이름 등은 가려지지 않을 수 있으니 "
+            "--terms로 사전을 지정해 주십시오",
+            err=True,
+        )
+    try:
+        provider = make_provider(settings.llm)
+        estimate = estimate_review(audit, submission, catalog, provider, lookup, terms=dictionary)
+    except LLMError as exc:
+        _abort(str(exc), EXIT_USAGE)
+    if estimate.blocked:
+        typer.echo(
+            f"경고: 마스킹 검증에 실패해 보내지 않을 요청: {', '.join(estimate.blocked)}", err=True
+        )
+    if not estimate.requests:
+        typer.echo("텍스트를 읽을 수 있는 제출 문서가 없어 검토할 것이 없습니다.")
+        return
+    preview_path = default_evidence_preview_path(
+        snapshot_store, audit.scan.account_id, audit.scan.scan_id
+    )
+    preview_path.parent.mkdir(parents=True, exist_ok=True)
+    preview_path.write_text(
+        render_preview(audit, submission, catalog, lookup, terms=dictionary), encoding="utf-8"
+    )
+    masked = ", ".join(f"{kind} {count}" for kind, count in estimate.masked.items())
+    typer.echo(
+        f"검토 대상: 요청 {estimate.requests}개, 문서 {estimate.documents}개 "
+        f"(모델 {provider.model}, effort {settings.llm.effort})"
+    )
+    typer.echo(f"가린 값: {masked or '없음'}")
+    typer.echo(f"전송 미리보기: {preview_path}")
+    typer.echo(f"입력 토큰: {estimate.input_tokens:,} (마스킹한 프롬프트 기준)")
+    if estimate.cost_usd is None:
+        typer.echo("예상 비용: 단가를 모르는 모델")
+    else:
+        typer.echo(
+            f"예상 비용: 약 ${estimate.cost_usd:.2f} "
+            f"(출력 요청당 {estimate.assumed_output_tokens // estimate.requests:,} 토큰 가정, "
+            "재시도 제외)"
+        )
+    if dry_run:
+        return
+    if not yes and not typer.confirm(
+        "미리보기에서 가려지지 않은 이름·연락처가 없음을 확인하셨습니까? 검토를 요청하시겠습니까?"
+    ):
+        typer.echo("취소했습니다.")
+        return
+
+    result = review_submission(
+        audit,
+        submission,
+        catalog,
+        provider,
+        lookup,
+        terms=dictionary,
+        effort=settings.llm.effort,
+        on_progress=lambda request_id: typer.echo(f"  검토 {request_id}"),
+    )
+    path = write_report(
+        result, default_evidence_review_path(snapshot_store, result.account_id, result.scan_id)
+    )
+    verified = sum(1 for r in result.reviews if r.verified)
+    typer.echo(
+        f"검토: 발췌 검증됨 {verified}, 검증되지 않음 {len(result.reviews) - verified}, "
+        f"실패 {len(result.failures)}, 사람이 검토할 파일 {len(result.unreadable)}개"
+    )
+    for failure in result.failures:
+        typer.echo(f"경고: {failure.request_id} 검토 실패: {failure.error}", err=True)
+    cost = (
+        f", 비용 약 ${result.estimated_cost_usd:.2f}"
+        if result.estimated_cost_usd is not None
+        else ""
+    )
+    typer.echo(
+        f"토큰: 입력 {result.usage.input_tokens:,}, 출력 {result.usage.output_tokens:,}{cost}"
+    )
+    typer.echo(f"검토 파일: {path}")
+    if not result.reviews:
         raise typer.Exit(EXIT_LLM)
 
 

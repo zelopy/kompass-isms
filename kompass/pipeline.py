@@ -28,6 +28,7 @@ from kompass.mappings.mapper import build_report
 from kompass.models import (
     AuditReport,
     EvaluationReport,
+    EvidenceReviewReport,
     ExplanationReport,
     InvestigationReport,
     ScanManifest,
@@ -52,6 +53,7 @@ COLLECTORS: dict[str, Callable[[], Collector]] = {
 FINDINGS_DIR = "findings"
 EXPLANATIONS_DIR = "explanations"
 INVESTIGATIONS_DIR = "investigations"
+EVIDENCE_REVIEWS_DIR = "evidence-reviews"
 SNAPSHOTS_DIR = "snapshots"
 
 # 보고서 형식 → (파일 확장자, 렌더러)
@@ -123,7 +125,8 @@ def default_findings_path(store: SnapshotStore, report: EvaluationReport) -> Pat
 
 
 def write_report(
-    report: EvaluationReport | ExplanationReport | InvestigationReport, path: Path
+    report: EvaluationReport | ExplanationReport | InvestigationReport | EvidenceReviewReport,
+    path: Path,
 ) -> Path:
     """판정·해설 결과를 UTF-8 JSON으로 쓴다. 임시 파일에 쓴 뒤 이름을 바꾼다."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -209,6 +212,15 @@ def default_explanations_path(store: SnapshotStore, account_id: str, scan_id: st
 
 def default_investigations_path(store: SnapshotStore, account_id: str, scan_id: str) -> Path:
     return store.root / INVESTIGATIONS_DIR / account_id / f"{scan_id}.investigation.json"
+
+
+def default_evidence_review_path(store: SnapshotStore, account_id: str, scan_id: str) -> Path:
+    return store.root / EVIDENCE_REVIEWS_DIR / account_id / f"{scan_id}.evidence-review.json"
+
+
+def default_evidence_preview_path(store: SnapshotStore, account_id: str, scan_id: str) -> Path:
+    """전송 전 미리보기 (마스킹한 프롬프트). 로컬에서 확인용이며 커밋하지 않는다."""
+    return store.root / EVIDENCE_REVIEWS_DIR / account_id / f"{scan_id}.evidence-preview.md"
 
 
 def attach_explanations(

@@ -4,14 +4,14 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
-from pydantic import BaseModel
 
 from kompass.interpreter.evidence_reviewer import (
     estimate_review,
+    render_preview,
     review_submission,
     select_requests,
 )
-from kompass.interpreter.llm import LLMError, LLMResponse, Usage
+from kompass.interpreter.llm import LLMError
 from kompass.interpreter.sources import SourceLookup
 from kompass.mappings.data import load_mappings
 from kompass.models import (
@@ -25,7 +25,7 @@ from kompass.models import (
     SourceIndex,
     Status,
 )
-from tests.interpreter.fakes import payload_of
+from tests.interpreter.fakes import ReviewProvider, payload_of, quote_first_line
 from tests.reporters.sample import ACCOUNT, finding, sample_report
 
 CATALOG = load_mappings().evidence
@@ -67,48 +67,6 @@ SUBMISSION = EvidenceSubmission(
     ),
     ignored=("notes",),
 )
-
-
-class ReviewProvider:
-    """프롬프트의 JSON을 읽어 `responder(payload, 같은 요청 몇 번째 시도)`의 결과를 돌려준다."""
-
-    def __init__(self, responder: Any) -> None:
-        self.responder = responder
-        self.calls: list[tuple[str, str]] = []
-        self.count_calls = 0
-
-    @property
-    def model(self) -> str:
-        return "fake-model"
-
-    def complete[T: BaseModel](self, system: str, prompt: str, schema: type[T]) -> LLMResponse[T]:
-        self.calls.append((system, prompt))
-        request_id = payload_of(prompt)["request"]["id"]
-        attempt = sum(1 for _, p in self.calls if payload_of(p)["request"]["id"] == request_id)
-        result = self.responder(payload_of(prompt), attempt)
-        if isinstance(result, Exception):
-            raise result
-        assert isinstance(result, schema)
-        return LLMResponse(
-            parsed=result, model="fake-model", usage=Usage(100, 50, 0, 0), fallback_used=False
-        )
-
-    def count_input_tokens(self, system: str, prompt: str, schema: type[BaseModel]) -> int:
-        self.count_calls += 1
-        return 1000
-
-
-def quote_first_line(payload: dict[str, Any], attempt: int) -> EvidenceReviewDraft:
-    """첫 문서에서 가려진 값이 든 첫 줄(머리줄 다음)을 그대로 발췌하는 올바른 응답."""
-    document = payload["documents"][0]
-    lines = document["text"].splitlines()[1:]
-    line = next((line for line in lines if "MASKED_" in line), lines[0])
-    return EvidenceReviewDraft(
-        summary="문서 검토",
-        facts=[EvidenceFact(statement="사실", document_id=document["id"], excerpt=line)],
-        gaps=["검토 주기 확인 안 됨"],
-        follow_up_requests=["검토 주기 문서 요청"],
-    )
 
 
 def _review(responder: Any = quote_first_line, **kwargs: Any) -> Any:
@@ -258,3 +216,18 @@ def test_unknown_request_folder_is_rejected() -> None:
             REPORT, submission, CATALOG, ReviewProvider(quote_first_line), LOOKUP,
             terms=(), effort="high",
         )  # fmt: skip
+
+
+def test_preview_shows_exactly_what_would_be_sent() -> None:
+    preview = render_preview(REPORT, SUBMISSION, CATALOG, LOOKUP, terms=TERMS)
+    provider = ReviewProvider(quote_first_line)
+    review_submission(REPORT, SUBMISSION, CATALOG, provider, LOOKUP, terms=TERMS, effort="high")
+    for _, prompt in provider.calls:
+        assert prompt in preview
+    assert (
+        "## CA-02-1" in preview
+        and "가린 값: ACCOUNT 1, EMAIL 1, NAME 1, PHONE 1, TERM 1" in preview
+    )
+    for raw in ("홍길동", "hong@corp.example", "010-1234-5678"):
+        assert raw not in preview.split("## CA-02-1", 1)[1]
+    assert "CA-09-1" not in preview  # 읽을 수 있는 파일이 없는 요청은 보내지 않는다
