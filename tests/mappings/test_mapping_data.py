@@ -138,3 +138,57 @@ def test_evidence_basis_quotes_exist_in_source() -> None:
         for r in item.requests:
             assert lookup.contains_quote("kisa", code, r.basis), (r.id, r.basis)
             assert not lookup.is_boilerplate("kisa", r.basis), (r.id, r.basis)
+
+
+# --- ISMS-P 매핑 검토표 (실제 진단 프로젝트에서 담당자에게 바로 전달하는 양식) ---
+
+_CONTROL = re.compile(r"\b\d\.\d{1,2}\.\d{1,2}\b")
+
+
+def _review_sections() -> dict[str, list[list[str]]]:
+    """검토표의 `##`/`###` 절마다 표 행(칸 목록). 머리줄·구분줄은 뺀다."""
+    text = (DOCS / "ISMS_P_MAPPING_REVIEW.md").read_text(encoding="utf-8")
+    sections: dict[str, list[list[str]]] = {}
+    current = ""
+    for line in text.splitlines():
+        if line.startswith("#"):
+            current = line.lstrip("#").strip()
+            sections[current] = []
+        elif line.startswith("| ") and not line.startswith("| ---"):
+            sections[current].append([c.strip() for c in line.strip().strip("|").split("|")])
+    return {name: rows[1:] for name, rows in sections.items()}
+
+
+def _rules_in(cell: str) -> list[str]:
+    """ "S3-001·002" 같은 표기를 펼친다."""
+    match = re.match(r"([A-Z][A-Z0-9]*)-(\d{3}(?:·\d{3})*)", cell)
+    assert match, cell
+    return [f"{match.group(1)}-{n}" for n in match.group(2).split("·")]
+
+
+def test_review_item_table_matches_kisa_item_mappings() -> None:
+    rows = _review_sections()["항목별 매핑과 근거"]
+    assert [row[0][:5] for row in rows] == sorted(DATA.kisa_items)
+    for row in rows:
+        code = row[0][:5]
+        assert set(_CONTROL.findall(row[1])) == set(DATA.kisa_items[code].isms_p), code
+        assert row[4] == "" and row[5] == "", f"{code}: 의견 칸은 비워 둔 양식이어야 함"
+
+
+def test_review_rule_exceptions_match_rule_mappings() -> None:
+    for row in _review_sections()["룰 단위 예외"]:
+        rule_id = row[0].split()[0]
+        assert set(_CONTROL.findall(row[2])) == set(DATA.rules[rule_id].isms_p), rule_id
+
+
+def test_review_prowler_comparison_uses_current_mappings() -> None:
+    rule_id = ""
+    for row in _review_sections()["쟁점 밖의 차이"]:
+        for rule_id in _rules_in(row[1]):
+            assert set(_CONTROL.findall(row[2])) == set(DATA.rules[rule_id].isms_p), rule_id
+    assert rule_id  # 표를 읽었다
+
+
+def test_review_counts_match_rules() -> None:
+    text = (DOCS / "ISMS_P_MAPPING_REVIEW.md").read_text(encoding="utf-8")
+    assert f"자동 점검 룰 {len(DATA.rules)}개" in text
