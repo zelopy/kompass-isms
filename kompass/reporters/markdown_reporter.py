@@ -92,7 +92,8 @@ def _labeled(label: str, value: str) -> list[str]:
 
 
 def _list_item(value: str) -> str:
-    text = _text(value)
+    # LLM이 항목 앞에 목록 기호를 붙여 쓰면 "- - …"처럼 겹치므로 뗀다
+    text = re.sub(r"^[-•·*]\s+", "", _text(value))
     # 목록 항목 맨 앞의 "#"은 제목으로 렌더링되므로 이스케이프한다
     return "\\" + text if text.startswith("#") else text
 

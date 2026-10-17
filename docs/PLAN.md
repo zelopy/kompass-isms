@@ -125,7 +125,8 @@
   - [x] 검토기: 요청별 사실(문서 발췌 대조 검증)·부족한 점·추가 요청. status 없음 — `interpreter/evidence_reviewer.py`, 문서 안의 지시는 따르지 않도록 프롬프트에 명시
   - [x] `kompass review-evidence` (마스킹 결과 미리보기·확인, 비용 확인, `--dry-run`, 검토 결과 파일) — `reports/evidence-reviews/<계정>/<점검 ID>.evidence-review.json`, 미리보기 `.evidence-preview.md`
   - [x] 보고서 "증적 검토 (참고)" 절 (md·xlsx·json) — `AuditReport.with_evidence_reviews`, 같은 판정 결과의 검토만 붙음. `review-evidence --report`
-  - [ ] 평가 케이스와 실제 호출 확인 (가공 증적 문서)
+  - [x] 평가 케이스와 실제 호출 확인 (가공 증적 문서) — 8개 × 2회 모든 지표 100% (채점기 오판 수정 후), 약 $0.72. `scripts/run_evidence_eval.py`
+  - [ ] 후보: 프롬프트 다듬기 — 확인 대상(targets)이 비어 있을 때 그 사실을 부족한 점으로 쓰지 않게, 충분한 문서에 지적이 많은 경향 (평가셋으로 회귀 확인)
 - [ ] Prowler OCSF 출력 어댑터 (`rule_id` 형식에 출처 접두사 허용 여부 결정, ADR-019). ADR-008의 목적은 커버리지 확장이었는데 지금은 KISA 19개 항목 모두 자체 룰이 있으므로 필요성부터 다시 검토
 - [ ] Azure 지원
 - [ ] 다른 기준 추가 (CSAP 등)

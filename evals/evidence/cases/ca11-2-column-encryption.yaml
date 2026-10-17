@@ -1,0 +1,17 @@
+id: ca11-2-column-encryption
+title: 컬럼 암호화 현황. 알고리즘 기재 없음, 전화번호 컬럼 미적용
+tags: [주민등록번호, DB 이름]
+terms: []
+findings:
+  - {rule_id: RDS-001, resource: "arn:aws:rds:ap-northeast-2:123456789012:db:customer-db", region: ap-northeast-2, status: PASS, severity: high, message: "스토리지 암호화 적용: customer-db", evidence: {db_identifier: customer-db, engine: mysql}, collected_at: "2026-10-13T12:00:00Z"}
+files:
+  - path: CA-11-2/개인정보_암호화_현황.csv
+    text: |
+      DB,테이블,컬럼,암호화 여부,비고
+      customer-db,members,resident_no,적용,샘플 900101-1234567 은 시험용 값
+      customer-db,members,phone,미적용,
+      customer-db,members,email,적용,
+sensitive: [customer-db, 900101-1234567]
+expected_gaps:
+  - [알고리즘]
+  - [phone, 전화]

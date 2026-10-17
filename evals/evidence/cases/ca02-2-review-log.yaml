@@ -1,0 +1,22 @@
+id: ca02-2-review-log
+title: 3분기 권한 검토 결과. 검토 수행은 기록됐으나 다음 검토 주기 미정
+tags: [검토 기록, 확인 대상 finding]
+terms: [한지민]
+findings:
+  - {rule_id: IAM-007, resource: "arn:aws:iam::123456789012:user/deploy-bot", region: null, status: REVIEW, severity: high, message: "관리자 권한을 가진 사용자: deploy-bot", evidence: {user: deploy-bot, sources: [{via: "group:legacy-admins", policy: "arn:aws:iam::aws:policy/AdministratorAccess"}]}, collected_at: "2026-10-13T12:00:00Z"}
+files:
+  - path: CA-02-2/2026Q3_권한검토.md
+    text: |
+      # 2026년 3분기 IAM 권한 검토 결과
+      - 검토일: 2026-09-30
+      - 검토자: 보안팀 한지민 (jimin.han@example-corp.kr)
+      - 대상: IAM 사용자 12명, 그룹 4개
+      ## 조치 결과
+      - deploy-bot: AdministratorAccess 제거 예정, 배포 전용 정책으로 교체 검토 중
+      - 미사용 그룹 legacy-admins 삭제 예정
+      ## 비고
+      - 다음 검토 예정일 미정
+sensitive: [한지민, jimin.han@example-corp.kr, deploy-bot, legacy-admins, "123456789012"]
+expected_gaps:
+  - [주기, 예정일, 정기]
+  - [예정, 미완료, 완료 여부, 조치 완료, 검토 중]

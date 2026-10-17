@@ -1,0 +1,17 @@
+id: ca02-1-mixed-unreadable
+title: 역할·권한 대조표와 텍스트가 없는 스캔 승인서
+tags: [읽지 못한 파일, ARN]
+terms: [문하늘]
+files:
+  - path: CA-02-1/역할_권한_대조표.csv
+    text: |
+      역할,직무,부여 정책,승인자
+      arn:aws:iam::123456789012:role/ops-readonly,운영 모니터링,ReadOnlyAccess,문하늘
+      arn:aws:iam::123456789012:role/ci-deployer,배포 자동화,PowerUserAccess,문하늘
+      arn:aws:iam::123456789012:role/break-glass,비상 접근,AdministratorAccess,
+  - path: CA-02-1/승인서_스캔.pdf
+    binary: blank-pdf
+sensitive: [문하늘, "123456789012", ops-readonly, ci-deployer, break-glass]
+expected_gaps:
+  - [스캔, 읽지, 확인할 수 없, 승인서, 내용을 확인]
+  - [break-glass, 비상, 승인자]

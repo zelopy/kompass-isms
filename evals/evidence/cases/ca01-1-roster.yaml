@@ -1,0 +1,24 @@
+id: ca01-1-roster
+title: 계정·재직 대조표. 재직 상태 빈 칸 1명, 계약 종료 외주 계정 1명
+tags: [개인정보, 연락처, IAM 사용자명]
+terms: [김민준, 이서연, 박지호, 최유진, 정하은]
+findings:
+  - {rule_id: IAM-005, resource: "arn:aws:iam::123456789012:user/kim-dev", region: null, status: PASS, severity: medium, message: "장기 미사용 자격증명 없음: kim-dev", evidence: {user: kim-dev}, collected_at: "2026-10-13T12:00:00Z"}
+  - {rule_id: IAM-005, resource: "arn:aws:iam::123456789012:user/lee-ops", region: null, status: PASS, severity: medium, message: "장기 미사용 자격증명 없음: lee-ops", evidence: {user: lee-ops}, collected_at: "2026-10-13T12:00:00Z"}
+  - {rule_id: IAM-005, resource: "arn:aws:iam::123456789012:user/park-temp", region: null, status: PASS, severity: medium, message: "장기 미사용 자격증명 없음: park-temp", evidence: {user: park-temp}, collected_at: "2026-10-13T12:00:00Z"}
+  - {rule_id: IAM-005, resource: "arn:aws:iam::123456789012:user/choi-qa", region: null, status: PASS, severity: medium, message: "장기 미사용 자격증명 없음: choi-qa", evidence: {user: choi-qa}, collected_at: "2026-10-13T12:00:00Z"}
+files:
+  - path: CA-01-1/계정_재직_대조표.csv
+    text: |
+      IAM 사용자,성명,부서,재직 상태,메일,연락처
+      kim-dev,김민준,개발팀,재직,minjun.kim@example-corp.kr,010-2345-6789
+      lee-ops,이서연,운영팀,재직,seoyeon.lee@example-corp.kr,010-3456-7890
+      park-temp,박지호,외주,계약 종료(2026-08-31),jiho.park@partner.example,010-4567-8901
+      choi-qa,최유진,QA팀,,yujin.choi@example-corp.kr,
+      기준일: 2026-10-10 / 작성: 인사팀 정하은 (02-555-1234)
+sensitive: [김민준, 이서연, 박지호, 최유진, 정하은, kim-dev, lee-ops, park-temp, choi-qa,
+            minjun.kim@example-corp.kr, seoyeon.lee@example-corp.kr, jiho.park@partner.example,
+            yujin.choi@example-corp.kr, 010-2345-6789, 010-3456-7890, 010-4567-8901, 02-555-1234]
+expected_gaps:
+  - [park-temp, 계약 종료, 외주]
+  - [choi-qa, 재직 상태, 빈 칸, 공란, 누락]

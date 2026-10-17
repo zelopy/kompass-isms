@@ -297,6 +297,22 @@ def test_evidence_review_section_lists_facts_gaps_and_unreadable_files() -> None
     assert "## 증적 검토" not in MD and "| 증적 검토 | 없음 |" in MD
 
 
+def test_list_items_drop_bullets_written_by_the_model() -> None:
+    from kompass.models import EvidenceReviewDraft
+    from tests.reporters.sample import REVIEWED
+
+    assert REVIEWED.evidence_reviews is not None
+    data = REVIEWED.evidence_reviews.model_dump(mode="json")
+    data["reviews"][0]["review"] = EvidenceReviewDraft(
+        summary="요약", facts=[], gaps=["- 검토 주기 확인 안 됨", "• 승인 기록 없음"],
+        follow_up_requests=[],
+    ).model_dump(mode="json")  # fmt: skip
+    md = render_markdown(
+        DEFAULT.with_evidence_reviews(type(REVIEWED.evidence_reviews).model_validate(data))
+    )
+    assert "- 검토 주기 확인 안 됨" in md and "- - " not in md and "- • " not in md
+
+
 def test_json_includes_evidence_reviews() -> None:
     from tests.reporters.sample import REVIEWED
 
