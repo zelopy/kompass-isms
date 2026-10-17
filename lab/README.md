@@ -139,7 +139,7 @@ terraform apply
 | RDS-003 | `kompass-lab-public` / `kompass-lab-private` | FAIL / PASS (로그 내보내기가 없으면 `EnabledCloudwatchLogsExports` 키가 생략됨) |
 | RDS-004 | `kompass-lab-public` (백업 0일) / `kompass-lab-private` (7일) | FAIL / PASS |
 | RDS-005 | `kompass-lab-public` (`rds.force_ssl=0` 그룹) / `kompass-lab-private` (기본 그룹) | FAIL / PASS (2026-10-17 확인, 기본 그룹 `default.postgres18`의 `rds.force_ssl`은 `1`) |
-| RDS-006 | `kompass-lab-public-snapshot` (모든 계정에 공개) / `kompass-lab-private-snapshot` (공유 안 함) | FAIL / PASS (실습 계정 확인 전) |
+| RDS-006 | `kompass-lab-public-snapshot` (모든 계정에 공개) / `kompass-lab-private-snapshot` (공유 안 함) | FAIL / PASS (2026-10-17 확인, 공유하지 않은 스냅샷도 `restore` 속성을 빈 목록으로 돌려줌) |
 
 ### ELB
 

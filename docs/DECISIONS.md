@@ -535,3 +535,4 @@
   - 실습 환경: `enable_public_rds = true`일 때 `public` 인스턴스(암호화 없음) 스냅샷을 `shared_accounts = ["all"]`로 공개, `private` 인스턴스(암호화) 스냅샷은 공유하지 않음. 스냅샷에는 빈 데이터베이스뿐이다.
 - 이유: 이미 수집하는 RDS에 Describe 호출만 더해 CA-10 자동화 범위를 S3 밖으로 넓힌다. 공개 스냅샷은 데이터 전체가 유출되는 설정이라 심각도 high.
 - moto 차이: 없음. 수동·자동 스냅샷 구분과 `restore` 속성(공유하지 않으면 빈 목록)을 실제 API와 같이 돌려준다. 실제 AWS가 공유하지 않은 스냅샷에도 `restore` 속성을 돌려주는지는 실습 계정에서 확인한다 (없으면 ERROR로 드러난다).
+- 실습 계정 확인 (2026-10-17, `enable_public_rds = true`): `kompass-lab-public-snapshot` FAIL(`restore: ["all"]`), `kompass-lab-private-snapshot` PASS(`restore: []`). 실제 AWS도 공유하지 않은 스냅샷에 `restore` 속성을 빈 목록으로 돌려준다.
