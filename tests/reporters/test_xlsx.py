@@ -193,3 +193,23 @@ def test_evidence_target_cells_are_not_formulas() -> None:
 
 
 DEFAULT_IAM_008 = "루트 비밀번호 사용 이력을 확인할 수 없다"
+
+
+# --- 증적 검토 (ADR-049) ---
+
+
+def test_evidence_review_sheet_lists_rows() -> None:
+    from tests.reporters.sample import REVIEWED
+
+    book = _book(REVIEWED)
+    assert book.sheetnames[-1] == "증적 검토 (참고)"
+    rows = _rows(book["증적 검토 (참고)"])
+    assert rows[0] == ("요청", "구분", "표시", "내용", "발췌·비고")
+    kinds = [(r[0], r[1]) for r in rows[1:]]
+    assert ("CA-02-2", "사실") in kinds and ("CA-02-2", "확인되지 않은 점") in kinds
+    assert ("CA-09-1", "검토 실패") in kinds and ("CA-09-2", "사람이 검토할 파일") in kinds
+    [fact] = [r for r in rows[1:] if r[1] == "사실"]
+    assert fact[4] == "2026-09-30 권한 검토 수행. 검토자 홍길동"
+    summary = {r[0]: r[1] for r in _rows(book["요약"])}
+    assert str(summary["증적 검토 (참고)"]).startswith("claude-opus-5-5")
+    assert "증적 검토 (참고)" not in _book().sheetnames

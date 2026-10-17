@@ -1,5 +1,7 @@
 """JSON·Markdown 리포터."""
 
+import pytest
+
 from kompass.models import AuditReport
 from kompass.reporters.json_reporter import render_json
 from kompass.reporters.markdown_reporter import render_markdown
@@ -269,3 +271,46 @@ def test_evidence_section_precedes_ai_sections() -> None:
 
     md = render_markdown(INVESTIGATED)
     assert md.index("## 증적 요청 목록") < md.index("## AI 해설 (참고)")
+
+
+# --- 증적 검토 (ADR-049) ---
+
+
+def test_evidence_review_section_lists_facts_gaps_and_unreadable_files() -> None:
+    from tests.reporters.sample import REVIEWED
+
+    md = render_markdown(REVIEWED)
+    section = md.split("## 증적 검토 (참고)", 1)[1].split("\n## ", 1)[0]
+    assert "판정·항목 결과와 증적 요청서의 제출 여부는 바꾸지 않으며" in section
+    assert "### CA-02-2 — 발췌 검증됨" in section
+    assert "- D1: `CA-02-2/권한 검토.pdf` (앞부분만 검토)" in section
+    assert '(D1: "2026-09-30 권한 검토 수행. 검토자 홍길동")' in section
+    assert "&lt;b&gt;수행&lt;/b&gt;" in section and "<b>" not in section
+    assert "- \\# 제목처럼 시작하는 문장" in section
+    assert "- 권한 검토 절차서 요청" in section
+    assert "- CA-09-1: Claude API 호출 실패" in section
+    assert (
+        "| CA-09-2 | CA-09-2/scan.png | 지원하지 않는 형식 (.png). 사람이 검토해야 함 |" in section
+    )
+    assert "읽지 않은 경로 (요청 ID 폴더가 아님): misc" in section
+    assert "| 증적 검토 | claude-opus-5-5 (effort high)" in md
+    assert "## 증적 검토" not in MD and "| 증적 검토 | 없음 |" in MD
+
+
+def test_json_includes_evidence_reviews() -> None:
+    from tests.reporters.sample import REVIEWED
+
+    assert AuditReport.model_validate_json(render_json(REVIEWED)) == REVIEWED
+
+
+def test_evidence_reviews_must_match_the_evaluation() -> None:
+    from tests.reporters.sample import REVIEWED
+
+    assert REVIEWED.evidence_reviews is not None
+    other = sample_report()  # 다른 판정 결과
+    with pytest.raises(ValueError, match="증적 검토"):
+        other.with_evidence_reviews(
+            REVIEWED.evidence_reviews.model_validate(
+                {**REVIEWED.evidence_reviews.model_dump(), "scan_id": "other-scan"}
+            )
+        )

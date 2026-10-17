@@ -59,6 +59,7 @@ from kompass.mappings.data import load_mappings
 from kompass.models import AuditReport, EvaluationReport, Snapshot, Status
 from kompass.pipeline import (
     COLLECTORS,
+    attach_evidence_reviews,
     attach_explanations,
     attach_investigations,
     collect,
@@ -259,7 +260,8 @@ def _evaluate(
 def _reports(store: SnapshotStore, findings_path: Path, formats: list[ReportFormat]) -> None:
     report, warning = attach_explanations(store, _audit_report(store, findings_path))
     report, investigation_warning = attach_investigations(store, report)
-    for message in (warning, investigation_warning):
+    report, review_warning = attach_evidence_reviews(store, report)
+    for message in (warning, investigation_warning, review_warning):
         if message:
             typer.echo(f"경고: {message}", err=True)
     paths = write_reports(report, [f.value for f in formats], default_reports_dir(store, report))
@@ -739,6 +741,11 @@ def review_evidence_command(
         False, "--dry-run", help="검토를 요청하지 않고 미리보기 파일과 예상 비용만 만듭니다."
     ),
     yes: bool = typer.Option(False, "--yes", "-y", help="미리보기·비용 확인 없이 진행합니다."),
+    report: list[ReportFormat] | None = typer.Option(
+        None,
+        "--report",
+        help="검토 후 이 형식의 보고서도 다시 만듭니다 (md, xlsx, json, evidence).",
+    ),
 ) -> None:
     """제출된 증적 문서를 요청별로 LLM이 검토합니다. 판정·항목 결과는 바꾸지 않습니다.
 
@@ -844,6 +851,8 @@ def review_evidence_command(
         f"토큰: 입력 {result.usage.input_tokens:,}, 출력 {result.usage.output_tokens:,}{cost}"
     )
     typer.echo(f"검토 파일: {path}")
+    if report:
+        _reports(snapshot_store, findings, report)
     if not result.reviews:
         raise typer.Exit(EXIT_LLM)
 

@@ -8,6 +8,7 @@ import yaml
 from kompass.models import (
     AuditReport,
     EvidenceRequestGroup,
+    EvidenceReview,
     Finding,
     Investigation,
     ItemOutcome,
@@ -17,6 +18,7 @@ from kompass.reporters._format import (
     ACTION_STATUSES,
     DISCLAIMER,
     EVIDENCE_NOTICE,
+    EVIDENCE_REVIEW_NOTICE,
     EVIDENCE_UNVERIFIED,
     EXPLANATION_NOTICE,
     INVESTIGATION_NOTICE,
@@ -27,6 +29,7 @@ from kompass.reporters._format import (
     STATUS_LABELS,
     STATUS_ORDER,
     compact_json,
+    evidence_review_summary,
     evidence_summary,
     explanation_summary,
     investigation_summary,
@@ -285,6 +288,62 @@ def _investigation_section(report: AuditReport) -> list[str]:
     return lines
 
 
+def _evidence_review(item: EvidenceReview) -> list[str]:
+    draft = item.review
+    label = "발췌 검증됨" if item.verified else "검증되지 않음"
+    lines = [f"### {item.request_id} — {label}", "", "검토한 문서:", ""]
+    for d in item.documents:
+        note = " (앞부분만 검토)" if d.truncated else ""
+        lines.append(f"- {d.document_id}: `{d.path.replace('`', '')}`{note}")
+    lines += ["", *_labeled("요약", draft.summary), "", "문서로 확인된 사실:", ""]
+    lines += [
+        f'- {_text(fact.statement)} ({_text(fact.document_id)}: "{_text(fact.excerpt)}")'
+        for fact in draft.facts
+    ] or ["- 없음"]
+    lines += ["", "확인되지 않은 점:", ""]
+    lines += [f"- {_list_item(g)}" for g in draft.gaps] or ["- 없음"]
+    if draft.follow_up_requests:
+        lines += ["", "추가 요청:", ""]
+        lines += [f"- {_list_item(r)}" for r in draft.follow_up_requests]
+    if item.problems:
+        lines += ["", "검증 문제:", ""] + [f"- {_text(p)}" for p in item.problems]
+    return [*lines, ""]
+
+
+def _evidence_review_section(report: AuditReport) -> list[str]:
+    reviewed = report.evidence_reviews
+    if reviewed is None:
+        return []
+    cost = (
+        f", 예상 비용 약 ${reviewed.estimated_cost_usd:.2f}"
+        if reviewed.estimated_cost_usd is not None
+        else ""
+    )
+    lines = [
+        "",
+        "## 증적 검토 (참고)",
+        "",
+        f"> {EVIDENCE_REVIEW_NOTICE}",
+        "",
+        f"생성 {kst(reviewed.generated_at)}, 모델 {reviewed.model} (effort {reviewed.effort}), "
+        f"토큰 입력 {reviewed.usage.input_tokens:,} · 출력 {reviewed.usage.output_tokens:,}{cost}",
+        "",
+    ]
+    for item in reviewed.reviews:
+        lines += _evidence_review(item)
+    if reviewed.failures:
+        lines += ["### 검토하지 못한 요청", ""]
+        lines += [f"- {f.request_id}: {_text(f.error)}" for f in reviewed.failures]
+        lines.append("")
+    if reviewed.unreadable:
+        lines += ["### 사람이 검토할 파일", "", _row("요청", "파일", "이유"), "|---|---|---|"]
+        lines += [_row(u.request_id, u.path, u.problem) for u in reviewed.unreadable]
+        lines.append("")
+    if reviewed.ignored:
+        lines += ["읽지 않은 경로 (요청 ID 폴더가 아님): " + ", ".join(reviewed.ignored), ""]
+    return lines
+
+
 def _evidence_group(group: EvidenceRequestGroup) -> list[str]:
     lines = [
         "",
@@ -348,6 +407,7 @@ def render_markdown(report: AuditReport) -> str:
         _row("증적 요청", evidence_summary(report)),
         _row("AI 해설", explanation_summary(report)),
         _row("추가 조사", investigation_summary(report)),
+        _row("증적 검토", evidence_review_summary(report)),
         "",
         *_excluded_notice(report),
         "판정 기준값 (kompass.yaml 형식):",
@@ -425,6 +485,7 @@ def render_markdown(report: AuditReport) -> str:
     lines += _evidence_section(report)
     lines += _explanation_section(report)
     lines += _investigation_section(report)
+    lines += _evidence_review_section(report)
 
     related = [c for c in report.isms_p_controls if c.outcome != ItemOutcome.NOT_IMPLEMENTED]
     out_of_scope = len(report.isms_p_controls) - len(related)

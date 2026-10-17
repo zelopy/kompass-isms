@@ -10,6 +10,13 @@ from kompass.models import (
     AuditReport,
     Citation,
     EvaluationReport,
+    EvidenceDocumentRef,
+    EvidenceFact,
+    EvidenceReview,
+    EvidenceReviewDraft,
+    EvidenceReviewFailure,
+    EvidenceReviewReport,
+    EvidenceUnreadable,
     ExplanationFailure,
     ExplanationReport,
     Finding,
@@ -261,3 +268,56 @@ def _investigation_report() -> InvestigationReport:
 
 
 INVESTIGATED = EXPLAINED.with_investigations(_investigation_report())
+
+
+def _evidence_review_report() -> EvidenceReviewReport:
+    return EvidenceReviewReport(
+        scan_id=DEFAULT.scan.scan_id,
+        account_id=ACCOUNT,
+        findings_evaluated_at=DEFAULT.evaluation.evaluated_at,
+        generated_at=T0,
+        model="claude-opus-5-5",
+        effort="high",
+        reviews=(
+            EvidenceReview(
+                request_id="CA-02-2",
+                documents=(
+                    EvidenceDocumentRef(
+                        document_id="D1", path="CA-02-2/권한 검토.pdf", sha256="c" * 64,
+                        truncated=True,
+                    ),
+                ),
+                review=EvidenceReviewDraft(
+                    summary="- 2026년 3분기 검토 기록 있음\n- 검토 주기 정의 없음",
+                    facts=[
+                        EvidenceFact(
+                            statement="2026-09-30 권한 검토 <b>수행</b>",
+                            document_id="D1",
+                            excerpt="2026-09-30 권한 검토 수행. 검토자 홍길동",
+                        )
+                    ],
+                    gaps=["검토 주기 확인 안 됨", "# 제목처럼 시작하는 문장"],
+                    follow_up_requests=["권한 검토 절차서 요청"],
+                ),
+                verified=True,
+                problems=(),
+                model="claude-opus-5-5",
+                fallback_used=False,
+                attempts=1,
+                usage=TokenUsage(input_tokens=2000, output_tokens=300),
+            ),
+        ),
+        failures=(EvidenceReviewFailure(request_id="CA-09-1", error="Claude API 호출 실패"),),
+        unreadable=(
+            EvidenceUnreadable(
+                request_id="CA-09-2", path="CA-09-2/scan.png",
+                problem="지원하지 않는 형식 (.png). 사람이 검토해야 함",
+            ),
+        ),
+        ignored=("misc",),
+        usage=TokenUsage(input_tokens=2000, output_tokens=300),
+        estimated_cost_usd=0.01,
+    )  # fmt: skip
+
+
+REVIEWED = DEFAULT.with_evidence_reviews(_evidence_review_report())

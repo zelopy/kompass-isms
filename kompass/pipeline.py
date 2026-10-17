@@ -244,6 +244,21 @@ def attach_investigations(
     )
 
 
+def attach_evidence_reviews(
+    store: SnapshotStore, report: AuditReport
+) -> tuple[AuditReport, str | None]:
+    """저장된 증적 검토가 이 판정 결과의 것이면 보고서에 붙인다 (해설과 같은 규칙)."""
+    path = default_evidence_review_path(store, report.scan.account_id, report.scan.scan_id)
+    return _attach(
+        path,
+        report,
+        EvidenceReviewReport,
+        report.with_evidence_reviews,
+        "증적 검토",
+        "review-evidence",
+    )
+
+
 def _attach[M: BaseModel](
     path: Path,
     report: AuditReport,

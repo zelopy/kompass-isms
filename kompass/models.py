@@ -308,6 +308,18 @@ class AuditReport(_Frozen):
             raise ValueError("조사 결과가 이 판정 결과를 대상으로 한 것이 아니다")
         return self.model_validate({**self.model_dump(), "investigations": investigations})
 
+    # 제출된 증적 문서 검토 (참고, ADR-049). 같은 판정 결과의 증적 요청을 검토한 것만 붙는다
+    evidence_reviews: "EvidenceReviewReport | None" = None
+
+    def with_evidence_reviews(self, reviews: "EvidenceReviewReport") -> Self:
+        """증적 검토를 붙인 새 보고서. 다른 점검이나 다시 판정하기 전의 검토면 ValueError."""
+        if (
+            reviews.scan_id != self.scan.scan_id
+            or reviews.findings_evaluated_at != self.evaluation.evaluated_at
+        ):
+            raise ValueError("증적 검토가 이 판정 결과를 대상으로 한 것이 아니다")
+        return self.model_validate({**self.model_dump(), "evidence_reviews": reviews})
+
 
 class SourceEntry(_Frozen):
     """기준 문서 원문의 항목 하나 (KISA 항목 또는 ISMS-P 통제항목)."""
@@ -684,5 +696,5 @@ class EvidenceReviewReport(_Frozen):
     estimated_cost_usd: float | None
 
 
-# 전방 참조(ExplanationReport, InvestigationReport)를 해석한다. 모든 모델 정의 뒤에 둔다
+# 전방 참조(ExplanationReport 등)를 해석한다. 모든 모델 정의 뒤에 둔다
 AuditReport.model_rebuild()

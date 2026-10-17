@@ -102,6 +102,27 @@ def investigation_summary(report: AuditReport) -> str:
     )
 
 
+EVIDENCE_REVIEW_NOTICE = (
+    "담당자가 제출한 증적 문서를 LLM이 요청별로 검토한 참고 의견임. 판정·항목 결과와 증적 "
+    '요청서의 제출 여부는 바꾸지 않으며 충족 여부는 사람이 판단해야 함. "발췌 검증됨"은 '
+    "사실마다 단 발췌가 해당 문서에 있다는 뜻이며 해석의 정확성을 보장하지 않음. 발췌에는 "
+    "제출 문서의 원문(개인정보 포함 가능)이 담김."
+)
+
+
+def evidence_review_summary(report: AuditReport) -> str:
+    reviewed = report.evidence_reviews
+    if reviewed is None:
+        return "없음"
+    verified = sum(1 for r in reviewed.reviews if r.verified)
+    unverified = len(reviewed.reviews) - verified
+    return (
+        f"{reviewed.model} (effort {reviewed.effort}), {kst(reviewed.generated_at)}, "
+        f"발췌 검증됨 {verified} · 검증되지 않음 {unverified} · 실패 {len(reviewed.failures)} · "
+        f"사람이 검토할 파일 {len(reviewed.unreadable)}"
+    )
+
+
 # --- 증적 요청 ---
 
 EVIDENCE_NOTICE = (

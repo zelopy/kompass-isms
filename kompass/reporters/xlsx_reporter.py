@@ -27,6 +27,7 @@ from kompass.reporters._format import (
     SCHEME_LABELS,
     STATUS_LABELS,
     STATUS_ORDER,
+    evidence_review_summary,
     evidence_summary,
     explanation_summary,
     investigation_summary,
@@ -113,6 +114,7 @@ def _summary(sheet: Any, report: AuditReport) -> None:
         ("증적 요청", evidence_summary(report)),
         ("AI 해설 (참고)", explanation_summary(report)),
         ("추가 조사 (참고)", investigation_summary(report)),
+        ("증적 검토 (참고)", evidence_review_summary(report)),
         *([("AI 해설 주의", EXPLANATION_NOTICE)] if report.explanations is not None else []),
     ]
     for r, (label, value) in enumerate(rows, start=1):
@@ -210,6 +212,9 @@ def render_xlsx(report: AuditReport) -> bytes:
 
     if report.investigations is not None:
         _investigation_sheet(book.create_sheet("추가 조사 (참고)"), report)
+
+    if report.evidence_reviews is not None:
+        _evidence_review_sheet(book.create_sheet("증적 검토 (참고)"), report)
 
     buffer = io.BytesIO()
     book.save(buffer)
@@ -345,6 +350,32 @@ def _investigation_sheet(sheet: Any, report: AuditReport) -> None:
         ]
     rows += [(f.rule_id, "조사 실패", "", f.error, "") for f in investigated.failures]
     _table(sheet, ["룰", "구분", "표시", "내용", "근거·결과"], rows, [9, 14, 30, 90, 20])
+
+
+def _evidence_review_sheet(sheet: Any, report: AuditReport) -> None:
+    reviewed = report.evidence_reviews
+    assert reviewed is not None
+    rows: list[tuple[Any, ...]] = []
+    for item in reviewed.reviews:
+        draft = item.review
+        label = "발췌 검증됨" if item.verified else "검증되지 않음"
+        rows.append((item.request_id, "요약", label, draft.summary, ""))
+        rows += [
+            (item.request_id, "문서", d.document_id, d.path, "앞부분만 검토" if d.truncated else "")
+            for d in item.documents
+        ]
+        rows += [
+            (item.request_id, "사실", fact.document_id, fact.statement, fact.excerpt)
+            for fact in draft.facts
+        ]
+        rows += [(item.request_id, "확인되지 않은 점", "", g, "") for g in draft.gaps]
+        rows += [(item.request_id, "추가 요청", "", r, "") for r in draft.follow_up_requests]
+        rows += [(item.request_id, "검증 문제", "", p, "") for p in item.problems]
+    rows += [(f.request_id, "검토 실패", "", f.error, "") for f in reviewed.failures]
+    rows += [
+        (u.request_id, "사람이 검토할 파일", "", u.path, u.problem) for u in reviewed.unreadable
+    ]
+    _table(sheet, ["요청", "구분", "표시", "내용", "발췌·비고"], rows, [10, 16, 14, 80, 60])
 
 
 # --- 증적 요청 (ADR-037) ---

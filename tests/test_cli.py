@@ -698,3 +698,21 @@ def test_review_evidence_all_failed_exit_code(
     result = runner.invoke(app, _review_args(store, evidence_dir, terms_file, "--yes"))
     assert result.exit_code == EXIT_LLM
     assert "CA-09-1 검토 실패" in result.output
+
+
+def test_review_evidence_report_includes_review_section(
+    aws: None, store: Path, source_index: Path, review_llm: ReviewProvider,
+    evidence_dir: Path, terms_file: Path,
+) -> None:  # fmt: skip
+    _scanned(store)
+    args = _review_args(store, evidence_dir, terms_file, "--yes", "--report", "md")
+    result = runner.invoke(app, args)
+    assert result.exit_code == 0, result.output
+    [md] = (store / "123456789012").glob("*.md")
+    text = md.read_text(encoding="utf-8")
+    assert "## 증적 검토 (참고)" in text and "### CA-09-1 — 발췌 검증됨" in text
+    # 나중에 report만 다시 만들어도 저장된 검토가 붙는다
+    md.unlink()
+    assert runner.invoke(app, ["report", "--store", str(store), "--format", "md"]).exit_code == 0
+    [md] = (store / "123456789012").glob("*.md")
+    assert "## 증적 검토 (참고)" in md.read_text(encoding="utf-8")

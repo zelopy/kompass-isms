@@ -265,3 +265,16 @@ def test_attach_matching_investigations(tmp_path: Path) -> None:
     assert path.parent == tmp_path / "investigations" / DEFAULT.scan.account_id
     attached, warning = attach_investigations(store, DEFAULT)
     assert attached.investigations is not None and warning is None
+
+
+def test_attach_matching_evidence_reviews(tmp_path: Path) -> None:
+    from kompass.pipeline import attach_evidence_reviews, default_evidence_review_path
+    from tests.reporters.sample import DEFAULT, REVIEWED
+
+    store = SnapshotStore(tmp_path)
+    assert REVIEWED.evidence_reviews is not None
+    path = default_evidence_review_path(store, DEFAULT.scan.account_id, DEFAULT.scan.scan_id)
+    write_report(REVIEWED.evidence_reviews, path)
+    assert path.parent == tmp_path / "evidence-reviews" / DEFAULT.scan.account_id
+    attached, warning = attach_evidence_reviews(store, DEFAULT)
+    assert attached.evidence_reviews == REVIEWED.evidence_reviews and warning is None

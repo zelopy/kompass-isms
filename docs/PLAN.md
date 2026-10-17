@@ -124,7 +124,7 @@
   - [x] 개인정보 마스킹: 이메일·전화번호·주민등록번호 패턴, 사용자 사전(이름 등, 2자부터) — `Masker(personal=True, terms=…)`, `load_terms`. 해설·조사에는 켜지 않음
   - [x] 검토기: 요청별 사실(문서 발췌 대조 검증)·부족한 점·추가 요청. status 없음 — `interpreter/evidence_reviewer.py`, 문서 안의 지시는 따르지 않도록 프롬프트에 명시
   - [x] `kompass review-evidence` (마스킹 결과 미리보기·확인, 비용 확인, `--dry-run`, 검토 결과 파일) — `reports/evidence-reviews/<계정>/<점검 ID>.evidence-review.json`, 미리보기 `.evidence-preview.md`
-  - [ ] 보고서 "증적 검토 (참고)" 절 (md·xlsx·json)
+  - [x] 보고서 "증적 검토 (참고)" 절 (md·xlsx·json) — `AuditReport.with_evidence_reviews`, 같은 판정 결과의 검토만 붙음. `review-evidence --report`
   - [ ] 평가 케이스와 실제 호출 확인 (가공 증적 문서)
 - [ ] Prowler OCSF 출력 어댑터 (`rule_id` 형식에 출처 접두사 허용 여부 결정, ADR-019). ADR-008의 목적은 커버리지 확장이었는데 지금은 KISA 19개 항목 모두 자체 룰이 있으므로 필요성부터 다시 검토
 - [ ] Azure 지원
