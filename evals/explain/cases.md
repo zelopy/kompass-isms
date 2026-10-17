@@ -1,6 +1,6 @@
 # 해설 평가 케이스
 
-총 60개 (실습 가공 26, 보강 34). 모두 가짜 데이터임. 케이스 하나 = 룰 묶음 하나, 해설 대상은 FAIL·ERROR·REVIEW finding임.
+총 62개 (실습 가공 26, 보강 36). 모두 가짜 데이터임. 케이스 하나 = 룰 묶음 하나, 해설 대상은 FAIL·ERROR·REVIEW finding임.
 
 | ID | 출처 | 룰 | 해설 대상 | 전체 | 태그 | 상황 |
 |---|---|---|---|---|---|---|
@@ -51,6 +51,8 @@
 | syn-rds-001-aurora-cluster | synthetic | RDS-001 | FAIL 1 | 2 | rds, variant, fail | 암호화되지 않은 Aurora 클러스터와 암호화된 단일 인스턴스 |
 | syn-rds-002-error | synthetic | RDS-002 | ERROR 1 | 1 | rds, error | DB 인스턴스 목록 조회 권한 없음 (ERROR) |
 | syn-rds-004-short-retention | synthetic | RDS-004 | FAIL 1 | 2 | rds, variant, fail | 자동 백업 3일 보존과 읽기 전용 복제본 |
+| syn-rds-005-engine-default | synthetic | RDS-005 | FAIL 2 | 3 | rds, unseen-rule, fail | MySQL 엔진 기본값(강제 안 함)과 Aurora PostgreSQL 클러스터 rds.force_ssl=0 |
+| syn-rds-005-error-review | synthetic | RDS-005 | ERROR 1, REVIEW 1 | 2 | rds, mixed, error, review | 클러스터 파라미터 조회 권한 없음(ERROR)과 Oracle 인스턴스(REVIEW) |
 | syn-s3-001-error | synthetic | S3-001 | ERROR 1 | 1 | s3, error | 계정 수준 퍼블릭 액세스 차단 조회 권한 없음 (ERROR) |
 | syn-s3-002-error | synthetic | S3-002 | ERROR 2 | 3 | s3, error | 버킷 퍼블릭 액세스 차단 조회 권한 없음 (ERROR 2) |
 | syn-s3-003-mixed | synthetic | S3-003 | ERROR 1, FAIL 1 | 3 | s3, mixed, error, fail | 퍼블릭 버킷 정책 FAIL과 조회 실패 ERROR 혼합 |
@@ -1898,6 +1900,73 @@
 ```
 
 함께 담긴 다른 finding: N/A 1
+
+## syn-rds-005-engine-default — MySQL 엔진 기본값(강제 안 함)과 Aurora PostgreSQL 클러스터 rds.force_ssl=0
+
+- **FAIL** `RDS-005:ap-northeast-2:acme-shop-db` — SSL 연결 강제 설정되지 않음 (엔진 기본값): require_secure_transport
+
+```json
+{
+ "kind": "instance",
+ "db_identifier": "acme-shop-db",
+ "engine": "mysql",
+ "parameter_group": "default.mysql8.0",
+ "parameter": "require_secure_transport",
+ "parameter_apply_status": "in-sync",
+ "value": null,
+ "source": "engine-default"
+}
+```
+
+- **FAIL** `RDS-005:ap-northeast-2:cluster:acme-analytics` — SSL 연결 강제 꺼짐: rds.force_ssl=0
+
+```json
+{
+ "kind": "cluster",
+ "db_identifier": "acme-analytics",
+ "engine": "aurora-postgresql",
+ "parameter_group": "acme-analytics-cluster-params",
+ "parameter": "rds.force_ssl",
+ "value": "0",
+ "source": "user"
+}
+```
+
+함께 담긴 다른 finding: PASS 1
+
+## syn-rds-005-error-review — 클러스터 파라미터 조회 권한 없음(ERROR)과 Oracle 인스턴스(REVIEW)
+
+- **REVIEW** `RDS-005:ap-northeast-2:acme-erp-oracle` — 파라미터 그룹으로 SSL 강제를 확인하지 않는 엔진: oracle-ee
+
+```json
+{
+ "kind": "instance",
+ "db_identifier": "acme-erp-oracle",
+ "engine": "oracle-ee"
+}
+```
+
+- **ERROR** `RDS-005:ap-northeast-2:cluster:acme-ledger` — 파라미터 그룹 설정을 수집하지 못함: acme-ledger-cluster-params
+
+```json
+{
+ "kind": "cluster",
+ "db_identifier": "acme-ledger",
+ "engine": "aurora-mysql",
+ "parameter_group": "acme-ledger-cluster-params",
+ "parameter": "require_secure_transport",
+ "errors": [
+  {
+   "operation": "rds:DescribeDBClusterParameters",
+   "region": "ap-northeast-2",
+   "error_code": "AccessDenied",
+   "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: rds:DescribeDBClusterParameters because no identity-based policy allows the rds:DescribeDBClusterParameters action",
+   "resource": "acme-ledger-cluster-params"
+  }
+ ]
+}
+```
+
 
 ## syn-s3-001-error — 계정 수준 퍼블릭 액세스 차단 조회 권한 없음 (ERROR)
 

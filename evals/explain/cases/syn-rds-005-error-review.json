@@ -1,0 +1,55 @@
+{
+ "id": "syn-rds-005-error-review",
+ "title": "클러스터 파라미터 조회 권한 없음(ERROR)과 Oracle 인스턴스(REVIEW)",
+ "source": "synthetic",
+ "rule_id": "RDS-005",
+ "tags": [
+  "rds",
+  "mixed",
+  "error",
+  "review"
+ ],
+ "findings": [
+  {
+   "rule_id": "RDS-005",
+   "resource": "acme-erp-oracle",
+   "region": "ap-northeast-2",
+   "status": "REVIEW",
+   "severity": "medium",
+   "message": "파라미터 그룹으로 SSL 강제를 확인하지 않는 엔진: oracle-ee",
+   "evidence": {
+    "kind": "instance",
+    "db_identifier": "acme-erp-oracle",
+    "engine": "oracle-ee"
+   },
+   "collected_at": "2026-10-16T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "RDS-005",
+   "resource": "cluster:acme-ledger",
+   "region": "ap-northeast-2",
+   "status": "ERROR",
+   "severity": "medium",
+   "message": "파라미터 그룹 설정을 수집하지 못함: acme-ledger-cluster-params",
+   "evidence": {
+    "kind": "cluster",
+    "db_identifier": "acme-ledger",
+    "engine": "aurora-mysql",
+    "parameter_group": "acme-ledger-cluster-params",
+    "parameter": "require_secure_transport",
+    "errors": [
+     {
+      "operation": "rds:DescribeDBClusterParameters",
+      "region": "ap-northeast-2",
+      "error_code": "AccessDenied",
+      "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: rds:DescribeDBClusterParameters because no identity-based policy allows the rds:DescribeDBClusterParameters action",
+      "resource": "acme-ledger-cluster-params"
+     }
+    ]
+   },
+   "collected_at": "2026-10-16T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

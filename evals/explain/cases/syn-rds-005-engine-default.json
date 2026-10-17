@@ -1,0 +1,72 @@
+{
+ "id": "syn-rds-005-engine-default",
+ "title": "MySQL 엔진 기본값(강제 안 함)과 Aurora PostgreSQL 클러스터 rds.force_ssl=0",
+ "source": "synthetic",
+ "rule_id": "RDS-005",
+ "tags": [
+  "rds",
+  "unseen-rule",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "RDS-005",
+   "resource": "acme-shop-db",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "SSL 연결 강제 설정되지 않음 (엔진 기본값): require_secure_transport",
+   "evidence": {
+    "kind": "instance",
+    "db_identifier": "acme-shop-db",
+    "engine": "mysql",
+    "parameter_group": "default.mysql8.0",
+    "parameter": "require_secure_transport",
+    "parameter_apply_status": "in-sync",
+    "value": null,
+    "source": "engine-default"
+   },
+   "collected_at": "2026-10-16T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "RDS-005",
+   "resource": "acme-orders-db",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "medium",
+   "message": "SSL 연결 강제 설정됨: rds.force_ssl=1",
+   "evidence": {
+    "kind": "instance",
+    "db_identifier": "acme-orders-db",
+    "engine": "postgres",
+    "parameter_group": "default.postgres17",
+    "parameter": "rds.force_ssl",
+    "parameter_apply_status": "in-sync",
+    "value": "1",
+    "source": "system"
+   },
+   "collected_at": "2026-10-16T12:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "RDS-005",
+   "resource": "cluster:acme-analytics",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "SSL 연결 강제 꺼짐: rds.force_ssl=0",
+   "evidence": {
+    "kind": "cluster",
+    "db_identifier": "acme-analytics",
+    "engine": "aurora-postgresql",
+    "parameter_group": "acme-analytics-cluster-params",
+    "parameter": "rds.force_ssl",
+    "value": "0",
+    "source": "user"
+   },
+   "collected_at": "2026-10-16T12:00:00Z",
+   "mappings": null
+  }
+ ]
+}

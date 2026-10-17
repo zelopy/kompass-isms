@@ -983,6 +983,107 @@ def _added_rules(add: Callable[..., None]) -> None:
         ),
     )
 
+    _rds_005(add, region)  # RDS-005(ADR-051). 앞 케이스의 무작위 값이 바뀌지 않게 맨 뒤에 둔다
+
+
+def _rds_005(add: Callable[..., None], region: str) -> None:
+    """RDS-005 보강 케이스. 실습 가공 케이스(`lab-rds-005`)는 실습 계정 확인 뒤 만든다."""
+    mysql_group, analytics_group = "default.mysql8.0", "acme-analytics-cluster-params"
+    shop_host = f"acme-shop-db.{_hex(12)}.{region}.rds.amazonaws.com"
+    writer = {"DBInstanceIdentifier": "acme-analytics-1", "IsClusterWriter": True}
+    engine_default = rds.ssl_group(rds.SECURE_TRANSPORT, None, "engine-default")
+    add(
+        "syn-rds-005-engine-default",
+        "MySQL 엔진 기본값(강제 안 함)과 Aurora PostgreSQL 클러스터 rds.force_ssl=0",
+        "RDS-005",
+        ("unseen-rule",),
+        evaluate(
+            "RDS-005",
+            rds.snapshot(
+                {
+                    region: rds.region(
+                        [
+                            rds.instance(
+                                "acme-shop-db",
+                                engine="mysql",
+                                EnabledCloudwatchLogsExports=["error"],
+                                Endpoint={"Address": shop_host, "Port": 3306},
+                                DBParameterGroups=[
+                                    {
+                                        "DBParameterGroupName": mysql_group,
+                                        "ParameterApplyStatus": "in-sync",
+                                    }
+                                ],
+                            ),
+                            rds.instance("acme-orders-db"),
+                            rds.instance(
+                                "acme-analytics-1",
+                                engine="aurora-postgresql",
+                                DBClusterIdentifier="acme-analytics",
+                            ),
+                        ],
+                        [
+                            rds.cluster(
+                                "acme-analytics",
+                                DBClusterParameterGroup=analytics_group,
+                                DBClusterMembers=[writer],
+                            )
+                        ],
+                        parameter_groups={
+                            rds.INSTANCE_GROUP: rds.ssl_group(rds.FORCE_SSL, "1"),
+                            mysql_group: engine_default,
+                        },
+                        cluster_parameter_groups={
+                            analytics_group: rds.ssl_group(rds.FORCE_SSL, "0", "user"),
+                        },
+                    )
+                }
+            ),
+        ),
+    )
+    ledger_group = "acme-ledger-cluster-params"
+    oracle_host = f"acme-erp-oracle.{_hex(12)}.{region}.rds.amazonaws.com"
+    add(
+        "syn-rds-005-error-review",
+        "클러스터 파라미터 조회 권한 없음(ERROR)과 Oracle 인스턴스(REVIEW)",
+        "RDS-005",
+        ("mixed", "error", "review"),
+        evaluate(
+            "RDS-005",
+            rds.snapshot(
+                {
+                    region: rds.region(
+                        [
+                            rds.instance(
+                                "acme-erp-oracle",
+                                engine="oracle-ee",
+                                EnabledCloudwatchLogsExports=["alert"],
+                                Endpoint={"Address": oracle_host, "Port": 1521},
+                                DBParameterGroups=[
+                                    {
+                                        "DBParameterGroupName": "default.oracle-ee-19",
+                                        "ParameterApplyStatus": "in-sync",
+                                    }
+                                ],
+                            )
+                        ],
+                        [
+                            rds.cluster(
+                                "acme-ledger",
+                                engine="aurora-mysql",
+                                EnabledCloudwatchLogsExports=["error"],
+                                DBClusterParameterGroup=ledger_group,
+                            )
+                        ],
+                        parameter_groups={},
+                        cluster_parameter_groups={},
+                    )
+                },
+                errors=(denied("rds:DescribeDBClusterParameters", resource=ledger_group),),
+            ),
+        ),
+    )
+
 
 def build_synthetic() -> list[EvalCase]:
     # 실습 가공이 난수를 얼마나 썼는지와 무관하게 같은 값이 나오도록 다시 시드한다

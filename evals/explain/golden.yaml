@@ -160,6 +160,12 @@ rules:
       --backup-retention-period 7 --apply-immediately
   RDS-005:
     fail: [rds:ModifyDBParameterGroup, rds:ModifyDBClusterParameterGroup, rds:ModifyDBInstance, rds:ModifyDBCluster]
+    # REVIEW는 파라미터 그룹으로 강제하지 않는 엔진 (Oracle은 옵션 그룹의 SSL 옵션)
+    review:
+      - rds:ModifyOptionGroup
+      - rds:DescribeOptionGroups
+      - rds:ModifyDBParameterGroup
+      - rds:ModifyDBInstance
     example: >-
       aws rds modify-db-parameter-group --db-parameter-group-name {resource}-params
       --parameters "ParameterName=rds.force_ssl,ParameterValue=1,ApplyMethod=immediate"
