@@ -127,11 +127,13 @@
   - [x] 보고서 "증적 검토 (참고)" 절 (md·xlsx·json) — `AuditReport.with_evidence_reviews`, 같은 판정 결과의 검토만 붙음. `review-evidence --report`
   - [x] 평가 케이스와 실제 호출 확인 (가공 증적 문서) — 8개 × 2회 모든 지표 100% (채점기 오판 수정 후), 약 $0.72. `scripts/run_evidence_eval.py`
   - [x] 프롬프트 다듬기: 요청 범위 밖 지적·빈 확인 대상 언급·필드 이름·자리표시자 뒤 조사 — 지표 `gap_budget`·`no_field_names` 추가, v1 8개 × 1회 모든 지표 100% (약 $0.34)
-- [ ] Prowler OCSF 출력 어댑터 (`rule_id` 형식에 출처 접두사 허용 여부 결정, ADR-019). ADR-008의 목적은 커버리지 확장이었는데 지금은 KISA 19개 항목 모두 자체 룰이 있으므로 필요성부터 다시 검토
+- [x] Prowler OCSF 출력 어댑터 필요성 검토 — 보류, 후보로 내림 (2026-10-17, ADR-050). 대신 Prowler ISMS-P 대응표를 매핑 협의 참고 자료로 비교
+  - [ ] Prowler `kisa_isms_p_2023_aws` 대응표와 ISMS-P 매핑 초안 비교표 (`docs/ISMS_P_MAPPING_REVIEW.md` 참고 절)
 - [ ] Azure 지원
 - [ ] 다른 기준 추가 (CSAP 등)
 
 ### 후보 (결정 기록에서 미룬 것, 우선순위 미정)
 
 - 룰: RDS SSL 강제·ELB HTTP 리스너와 오래된 TLS 정책·S3 최소 TLS 버전 (CA-12, ADR-039·042), RDS 공개 스냅샷 (ADR-039), AWS Backup 계획 (CA-18), CloudWatch 경보 (CA-19, ADR-041), KMS 고객 관리형 키 자동 교체 (KISA 대응 항목 없음, ISMS-P 2.7.2 후보)
+- 연동: Prowler OCSF 출력 어댑터 (ADR-050에서 보류. KISA 축 밖의 점검이 필요해지거나 다른 기준을 더할 때 다시 검토)
 - LLM: 로컬 LLM 공급자 구현체 (ADR-007·029에서 자리만 둠), 종합 위험 평가의 평가 (ADR-034), 평가셋 난이도 보강과 LLM 판정자 지표 (ADR-033)
