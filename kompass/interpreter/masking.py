@@ -95,6 +95,7 @@ _NAME_KEYS = frozenset(
         "db_cluster",
         "endpoint",
         "subnet_group",
+        "parameter_group",
         "UserName",
         "GroupName",
         "RoleName",

@@ -1,9 +1,31 @@
-# 선택: RDS 인스턴스 2개 (RDS-001~004, VPC-002 확인용, ADR-039).
+# 선택: RDS 인스턴스 2개 (RDS-001~005, VPC-002 확인용, ADR-039·051).
 # 시간당 과금되므로 enable_public_rds = true로 확인한 뒤 바로 false로 되돌려 apply한다.
 #
-# - public: 공개, 암호화 없음, 로그 내보내기 없음, 자동 백업 꺼짐 → RDS-001~004 모두 FAIL, VPC-002 REVIEW
-# - private: 비공개, 암호화, postgresql 로그 내보내기, 백업 7일 → RDS-001~004 모두 PASS
+# - public: 공개, 암호화 없음, 로그 내보내기 없음, 자동 백업 꺼짐, rds.force_ssl=0 그룹
+#   → RDS-001~005 모두 FAIL, VPC-002 REVIEW
+# - private: 비공개, 암호화, postgresql 로그 내보내기, 백업 7일, 기본 파라미터 그룹
+#   → RDS-001~005 모두 PASS (PostgreSQL 15 이상 기본 그룹은 rds.force_ssl=1)
 # 두 인스턴스 모두 public-only VPC의 서브넷 그룹(2개 AZ)을 쓴다. private은 PubliclyAccessible만 끈다.
+# 파라미터 그룹 계열이 엔진 버전과 맞아야 하므로 두 인스턴스 모두 기본 버전을 명시한다.
+
+data "aws_rds_engine_version" "postgres" {
+  count = var.enable_public_rds ? 1 : 0
+
+  engine       = "postgres"
+  default_only = true
+}
+
+resource "aws_db_parameter_group" "no_ssl" {
+  count = var.enable_public_rds ? 1 : 0
+
+  name   = "${local.name}-no-ssl"
+  family = data.aws_rds_engine_version.postgres[0].parameter_group_family
+
+  parameter {
+    name  = "rds.force_ssl"
+    value = "0"
+  }
+}
 
 resource "aws_db_subnet_group" "public" {
   count = var.enable_public_rds ? 1 : 0
@@ -25,6 +47,8 @@ resource "aws_db_instance" "public" {
 
   identifier                  = "${local.name}-public"
   engine                      = "postgres"
+  engine_version              = data.aws_rds_engine_version.postgres[0].version
+  parameter_group_name        = aws_db_parameter_group.no_ssl[0].name
   instance_class              = "db.t4g.micro"
   allocated_storage           = 20
   storage_encrypted           = false
@@ -53,6 +77,7 @@ resource "aws_db_instance" "private" {
 
   identifier                      = "${local.name}-private"
   engine                          = "postgres"
+  engine_version                  = data.aws_rds_engine_version.postgres[0].version
   instance_class                  = "db.t4g.micro"
   allocated_storage               = 20
   storage_encrypted               = true

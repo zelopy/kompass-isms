@@ -85,6 +85,8 @@ RULE_HINTS: dict[str, str] = {
     "RDS-002": "연결된 보안그룹 규칙과 서브넷 경로(인터넷 게이트웨이 여부), 공개 설정 변경 이력",
     "RDS-003": "데이터베이스 설정 변경 이력(ModifyDBInstance·ModifyDBCluster 이벤트)",
     "RDS-004": "백업 설정 변경 이력(ModifyDBInstance·ModifyDBCluster 이벤트)",
+    "RDS-005": "파라미터 그룹 변경 이력(ModifyDBParameterGroup·ModifyDBClusterParameterGroup "
+    "이벤트), 데이터베이스에 연결된 파라미터 그룹 변경(ModifyDBInstance·ModifyDBCluster)",
 }
 
 

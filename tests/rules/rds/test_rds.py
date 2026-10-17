@@ -1,4 +1,4 @@
-"""RDS-001~004 룰 테스트. 공통 동작(대상 선정·오류)과 룰별 판정."""
+"""RDS-001~005 룰 테스트. 공통 동작(대상 선정·오류)과 룰별 판정."""
 
 from typing import Any
 
@@ -11,14 +11,16 @@ from kompass.rules.rds.rds_001_storage_encryption import Rds001StorageEncryption
 from kompass.rules.rds.rds_002_public_access import Rds002PublicAccess
 from kompass.rules.rds.rds_003_log_exports import Rds003LogExports
 from kompass.rules.rds.rds_004_backup_retention import Rds004BackupRetention
+from kompass.rules.rds.rds_005_ssl_enforcement import Rds005SslEnforcement
 from tests.rules.rds.data import REGION, cluster, collect_error, instance, region, snapshot
 
 RDS001 = Rds001StorageEncryption()
 RDS002 = Rds002PublicAccess()
 RDS003 = Rds003LogExports()
 RDS004 = Rds004BackupRetention()
-ALL = (RDS001, RDS002, RDS003, RDS004)
-CLUSTER_LEVEL = (RDS001, RDS003, RDS004)
+RDS005 = Rds005SslEnforcement()
+ALL = (RDS001, RDS002, RDS003, RDS004, RDS005)
+CLUSTER_LEVEL = (RDS001, RDS003, RDS004, RDS005)
 
 
 def _run(

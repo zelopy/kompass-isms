@@ -158,6 +158,11 @@ rules:
     example: >-
       aws rds modify-db-instance --db-instance-identifier {resource}
       --backup-retention-period 7 --apply-immediately
+  RDS-005:
+    fail: [rds:ModifyDBParameterGroup, rds:ModifyDBClusterParameterGroup, rds:ModifyDBInstance, rds:ModifyDBCluster]
+    example: >-
+      aws rds modify-db-parameter-group --db-parameter-group-name {resource}-params
+      --parameters "ParameterName=rds.force_ssl,ParameterValue=1,ApplyMethod=immediate"
   S3-004:
     fail: [s3:PutBucketEncryption]
     example: >-

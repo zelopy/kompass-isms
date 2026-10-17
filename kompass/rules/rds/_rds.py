@@ -1,4 +1,4 @@
-"""RDS-001~004 공통: 대상 데이터베이스 선정과 리전 단위 오류·해당 없음 처리 (ADR-039).
+"""RDS-001~005 공통: 대상 데이터베이스 선정과 리전 단위 오류·해당 없음 처리 (ADR-039).
 
 - 관계형 데이터베이스만 본다. DocumentDB·Neptune은 같은 API로 조회되지만 뺀다.
 - 클러스터 단위 룰은 클러스터에 속하지 않은 인스턴스와 클러스터를 판정한다. 클러스터 finding의
@@ -52,6 +52,12 @@ class RdsRule(BaseRule):
     def _assess(self, target: Target, settings: Settings) -> tuple[Status, str, dict[str, Any]]:
         raise NotImplementedError
 
+    def _assess_in_region(
+        self, target: Target, data: dict[str, Any], snapshot: Snapshot, settings: Settings
+    ) -> tuple[Status, str, dict[str, Any]]:
+        """리전의 다른 수집 데이터(파라미터 그룹 등)가 필요한 룰은 이것을 재정의한다."""
+        return self._assess(target, settings)
+
     def evaluate(self, snapshot: Snapshot, settings: Settings) -> list[Finding]:
         findings: list[Finding] = []
         kinds = ("db_instances", "db_clusters") if self.cluster_level else ("db_instances",)
@@ -85,7 +91,7 @@ class RdsRule(BaseRule):
                 )
                 continue
             for target in targets:
-                status, message, evidence = self._assess(target, settings)
+                status, message, evidence = self._assess_in_region(target, data, snapshot, settings)
                 findings.append(
                     self.finding(
                         snapshot,

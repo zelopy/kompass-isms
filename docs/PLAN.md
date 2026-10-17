@@ -117,10 +117,12 @@
 
 - [x] 사용자 확인: 5단계 룰 12개 KISA 매핑 원문 근거 (`kisa_verified`) — RDS-001~004, VPC-003, GD-001~002, S3-007, CT-002, LOG-001, IAM-010~011. S3-007 근거 구절을 판단 기준으로 교체 (2026-10-17, ADR-048)
 - [ ] 다음 재실습 때 실습 통합 테스트 재실행: 자격증명 보고서가 새로 만들어진 뒤(4시간 안에는 재사용, ADR-045) IAM-003·005의 `console-no-mfa` 사용자 판정 확인 (실습 정리됨)
+  - `enable_public_rds = true`로 RDS-005 기대값 확인: 기본 파라미터 그룹이 `rds.force_ssl` 값 `1`을 돌려주는지 (ADR-051)
+- [ ] 사용자 확인: RDS-005 KISA 매핑 원문 근거 (`kisa_verified`, CA-12 판단 기준 구절, 근거 수준 직접)
 
 ### 다음 작업 (규모가 커서 진행할 때 범위부터 정함)
 
-- [ ] 제출된 증적 문서 검토 — 범위 결정 (2026-10-17, ADR-049). Chroma 벡터 검색은 쓰지 않음
+- [x] 제출된 증적 문서 검토 — 범위 결정 (2026-10-17, ADR-049). Chroma 벡터 검색은 쓰지 않음
   - [x] 증적 폴더 읽기·텍스트 추출 (요청 ID 폴더, PDF·xlsx·텍스트류, `pypdf` 런타임 의존성) — `interpreter/documents.py`
   - [x] 개인정보 마스킹: 이메일·전화번호·주민등록번호 패턴, 사용자 사전(이름 등, 2자부터) — `Masker(personal=True, terms=…)`, `load_terms`. 해설·조사에는 켜지 않음
   - [x] 검토기: 요청별 사실(문서 발췌 대조 검증)·부족한 점·추가 요청. status 없음 — `interpreter/evidence_reviewer.py`, 문서 안의 지시는 따르지 않도록 프롬프트에 명시
@@ -128,13 +130,15 @@
   - [x] 보고서 "증적 검토 (참고)" 절 (md·xlsx·json) — `AuditReport.with_evidence_reviews`, 같은 판정 결과의 검토만 붙음. `review-evidence --report`
   - [x] 평가 케이스와 실제 호출 확인 (가공 증적 문서) — 8개 × 2회 모든 지표 100% (채점기 오판 수정 후), 약 $0.72. `scripts/run_evidence_eval.py`
   - [x] 프롬프트 다듬기: 요청 범위 밖 지적·빈 확인 대상 언급·필드 이름·자리표시자 뒤 조사 — 지표 `gap_budget`·`no_field_names` 추가, v1 8개 × 1회 모든 지표 100% (약 $0.34)
+- [x] 룰: RDS SSL 연결 강제 RDS-005 (CA-12, ADR-051) — 파라미터 그룹 SSL 강제 파라미터 수집, 실습 `public`에 `rds.force_ssl=0` 그룹 (실습 계정 확인 전)
+  - [ ] 평가 케이스 추가 (실습 가공·보강, ADR-033)
 - [x] Prowler OCSF 출력 어댑터 필요성 검토 — 보류, 후보로 내림 (2026-10-17, ADR-050). 대신 Prowler ISMS-P 대응표를 매핑 협의 참고 자료로 비교
-  - [x] Prowler `kisa_isms_p_2023_aws` 대응표와 ISMS-P 매핑 초안 비교표 (`docs/ISMS_P_MAPPING_REVIEW.md` 참고 절) — 같음 10·다름 21·대응 없음 4, 협의 쟁점 4건에 참고 의견
+  - [x] Prowler `kisa_isms_p_2023_aws` 대응표와 ISMS-P 매핑 초안 비교표 (`docs/ISMS_P_MAPPING_REVIEW.md` 참고 절) — 같음 10·다름 21·대응 없음 4, 협의 쟁점 4건에 참고 의견. RDS-005 추가 후 같음 11 (Prowler `rds_instance_transport_encrypted`도 2.7.1·2.10.2)
 - [ ] Azure 지원
 - [ ] 다른 기준 추가 (CSAP 등)
 
 ### 후보 (결정 기록에서 미룬 것, 우선순위 미정)
 
-- 룰: RDS SSL 강제·ELB HTTP 리스너와 오래된 TLS 정책·S3 최소 TLS 버전 (CA-12, ADR-039·042), RDS 공개 스냅샷 (ADR-039), AWS Backup 계획 (CA-18), CloudWatch 경보 (CA-19, ADR-041), KMS 고객 관리형 키 자동 교체 (KISA 대응 항목 없음, ISMS-P 2.7.2 후보)
+- 룰: ELB HTTP 리스너와 오래된 TLS 정책·S3 최소 TLS 버전 (CA-12, ADR-042·051), RDS 공개 스냅샷 (ADR-039), AWS Backup 계획 (CA-18), CloudWatch 경보 (CA-19, ADR-041), KMS 고객 관리형 키 자동 교체 (KISA 대응 항목 없음, ISMS-P 2.7.2 후보)
 - 연동: Prowler OCSF 출력 어댑터 (ADR-050에서 보류. KISA 축 밖의 점검이 필요해지거나 다른 기준을 더할 때 다시 검토)
 - LLM: 로컬 LLM 공급자 구현체 (ADR-007·029에서 자리만 둠), 종합 위험 평가의 평가 (ADR-034), 평가셋 난이도 보강과 LLM 판정자 지표 (ADR-033)

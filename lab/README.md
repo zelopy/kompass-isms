@@ -44,7 +44,7 @@ terraform apply
 | `cloudtrail_enabled` | `true` | `false` → CT-001 FAIL (로깅 중지) |
 | `cloudtrail_read_write_type` | `All` | `WriteOnly` → CT-001 FAIL (`require_read_events: true`일 때) |
 | `enable_guardduty` | `false` | `true` → GuardDuty 탐지기 + 결과 알림 규칙(EventBridge → SNS) 생성: GD-001·GD-002 PASS |
-| `enable_public_rds` | `false` | `true` → RDS 2개 생성 (`public`: RDS-001~004 FAIL·VPC-002 REVIEW, `private`: RDS-001~004 PASS) |
+| `enable_public_rds` | `false` | `true` → RDS 2개 생성 (`public`: RDS-001~005 FAIL·VPC-002 REVIEW, `private`: RDS-001~005 PASS) |
 
 ## 기대 결과표
 
@@ -136,6 +136,7 @@ terraform apply
 | RDS-002 | `kompass-lab-public` / `kompass-lab-private` | FAIL / PASS |
 | RDS-003 | `kompass-lab-public` / `kompass-lab-private` | FAIL / PASS (로그 내보내기가 없으면 `EnabledCloudwatchLogsExports` 키가 생략됨) |
 | RDS-004 | `kompass-lab-public` (백업 0일) / `kompass-lab-private` (7일) | FAIL / PASS |
+| RDS-005 | `kompass-lab-public` (`rds.force_ssl=0` 그룹) / `kompass-lab-private` (기본 그룹) | FAIL / PASS — 아직 실습 계정에서 확인하지 않음. 기본 그룹이 값 `1`을 돌려주는지 확인 |
 
 ### CloudTrail
 

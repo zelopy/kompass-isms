@@ -334,7 +334,7 @@ finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 
 
 ## RDS
 
-5단계에서 추가한 룰이다 (ADR-039). 점검 리전(`ScanContext.regions`)마다 `rds:DescribeDBInstances`와 `rds:DescribeDBClusters`로 수집한다.
+5단계에서 추가한 룰이다 (ADR-039). 점검 리전(`ScanContext.regions`)마다 `rds:DescribeDBInstances`와 `rds:DescribeDBClusters`로 수집한다. RDS-005(ADR-051)를 위해 인스턴스·클러스터가 쓰는 파라미터 그룹을 `rds:DescribeDBParameters`·`rds:DescribeDBClusterParameters`로 조회하고 SSL 강제 파라미터만 저장한다.
 
 - **대상 엔진.** 관계형 데이터베이스만 본다. `docdb`(DocumentDB)·`neptune`(Neptune)은 같은 API로 조회되지만 대상에서 빼고, 리전 finding의 evidence에 제외한 식별자를 남긴다.
 - **클러스터 단위 판정.** `DBClusterIdentifier`가 있는 인스턴스(Aurora, Multi-AZ DB 클러스터)는 암호화·로그·백업이 클러스터 설정이므로 클러스터로 판정한다. 클러스터 finding의 resource는 `cluster:<클러스터 식별자>`로 써서 같은 이름의 인스턴스와 구분한다. 퍼블릭 접근(`PubliclyAccessible`)은 인스턴스 설정이라 RDS-002는 클러스터 소속 인스턴스도 인스턴스 단위로 판정한다.
@@ -374,6 +374,20 @@ finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 
 - 비고: AWS Backup 계획으로 백업하는 경우는 이 룰에서 인정하지 않는다 (AWS Backup collector 이후). 백업·복구 절차는 증적 요청 목록으로 확인한다.
 - ISMS-P(초안): 2.9.3 백업 및 복구관리
 - KISA: CA-18 백업 사용 여부 (중, 871쪽) — 근거 수준: 직접 ("클라우드 리소스를 기관 정책에 따라 주기적으로 백업이 수행된 경우")
+
+### RDS-005 데이터베이스 SSL 연결 미강제
+- 심각도: medium
+- API: `rds:DescribeDBInstances`, `rds:DescribeDBClusters`, `rds:DescribeDBParameters`, `rds:DescribeDBClusterParameters`
+- 판정: 클러스터에 속하지 않은 인스턴스는 DB 파라미터 그룹, 클러스터는 클러스터 파라미터 그룹에서 엔진별 SSL 강제 파라미터를 본다. 값이 `1`·`ON`·`TRUE`이면 PASS, `0`·`OFF`·`FALSE`이면 FAIL (대소문자 구분 없음).
+  - `postgres`·`aurora-postgresql`·`sqlserver-*`: `rds.force_ssl`
+  - `mysql`·`mariadb`·`aurora-mysql`: `require_secure_transport`
+- 값 없음: `ParameterValue`가 없는 파라미터는 엔진 기본값이며 강제하지 않는 것으로 보고 FAIL. evidence에 `Source`(예: `engine-default`)를 남긴다. PostgreSQL 15 이상의 기본 그룹은 `rds.force_ssl` 값 `1`을 돌려주는 것으로 예상하며 실습 계정에서 확인한다.
+- 오류: 파라미터 그룹 이름이 응답에 없거나, 그룹의 파라미터를 수집하지 못했거나, 그룹에 SSL 강제 파라미터가 없거나, 값을 해석할 수 없으면 ERROR.
+- REVIEW: 파라미터 그룹으로 SSL을 강제하지 않는 엔진(Oracle은 옵션 그룹의 SSL 옵션, Db2, RDS Custom 등)은 사람이 확인한다.
+- evidence: 파라미터 그룹, 파라미터 이름, 값, `Source`, 인스턴스의 `ParameterApplyStatus`.
+- 비고: 클라이언트가 실제로 TLS로 접속하는지와 TLS 버전·인증서 검증은 판정하지 않는다. collector는 파라미터 그룹마다 SSL 강제 파라미터만 저장한다.
+- ISMS-P(초안): 2.7.1 암호정책 적용, 2.10.2 클라우드 보안
+- KISA: CA-12 통신구간 암호화 설정 (중, 865쪽) — 근거 수준: 직접 ("클라우드 리소스 통신 구간에 암호화가 적용된 경우"). 사용자 확인 전 (`kisa_verified: false`)
 
 ## GuardDuty
 

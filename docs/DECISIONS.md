@@ -485,3 +485,15 @@
   - Prowler 점검에는 KISA 클라우드 항목 대응표가 없어 결과를 보고서의 KISA 축에 붙이려면 점검마다 매핑을 새로 만들고 원문으로 확인해야 한다. 확인 없이 붙이면 원칙 7에 어긋나고, 붙이지 않으면 "KISA 대응 없음"으로만 쌓인다.
   - Prowler는 자체 자격증명으로 AWS를 호출하므로 읽기 전용 가드(원칙 2) 밖이고, 수집 실패를 ERROR로 남기는 방식(원칙 3)을 보장할 수 없다. 자체 룰과 결과가 겹치고 출력 형식 변화에 계속 맞춰야 한다.
 - 다시 검토할 때: KISA 축 밖의 점검(후보 룰 목록 이상)이 필요해지거나 다른 기준(CSAP 등)을 더할 때.
+
+## ADR-051 RDS SSL 연결 강제 (RDS-005)
+- 상태: 채택 (2026-10-17, 후보 룰 중 다음 작업으로 선정). KISA 매핑은 사용자 확인 전이라 `kisa_verified: false`.
+- 결정:
+  - RDS collector가 인스턴스·클러스터가 쓰는 파라미터 그룹을 `rds:DescribeDBParameters`·`rds:DescribeDBClusterParameters`로 조회한다 (Describe 호출, 가드 허용 목록 변경 없음). 그룹마다 수백 개 파라미터 중 SSL 강제 파라미터(`rds.force_ssl`, `require_secure_transport`)만 저장한다. 실패한 그룹은 키가 없고 오류의 resource가 그룹 이름이다.
+  - RDS-005는 클러스터 단위로 판정한다 (Aurora·Multi-AZ DB 클러스터의 SSL 강제는 클러스터 파라미터 그룹 설정). 엔진별 파라미터: PostgreSQL·Aurora PostgreSQL·SQL Server는 `rds.force_ssl`, MySQL·MariaDB·Aurora MySQL은 `require_secure_transport`. `1`·`ON`·`TRUE`이면 PASS, `0`·`OFF`·`FALSE`이면 FAIL.
+  - `ParameterValue`가 없으면 엔진 기본값으로 보고 FAIL한다. MySQL 계열의 기본값은 강제하지 않음이고, PostgreSQL 15 이상 기본 그룹은 값 `1`을 돌려주는 것으로 예상한다. 이 예상은 실습 계정에서 확인해야 하며, 다르면 엔진 기본값 조회(`DescribeEngineDefaultParameters`)를 검토한다.
+  - 그룹 이름이 없거나, 그룹을 수집하지 못했거나, 그룹에 파라미터가 없거나, 값을 해석할 수 없으면 ERROR (원칙 3). 파라미터 그룹으로 SSL을 강제하지 않는 엔진(Oracle 옵션 그룹, Db2, RDS Custom)은 REVIEW.
+  - 클라이언트의 실제 TLS 사용·TLS 버전·인증서 검증은 판정하지 않는다 (CA-12 `partial` 유지).
+  - KISA CA-12 근거 구절은 판단 기준 "클라우드 리소스 통신 구간에 암호화가 적용된 경우", 근거 수준 직접 (데이터베이스 연결은 클라우드 리소스 간 중요 정보 통신 구간). ISMS-P 초안은 S3-007과 같은 2.7.1·2.10.2.
+  - 실습 환경: `public` 인스턴스에 `rds.force_ssl=0` 그룹, `private`은 기본 그룹. 파라미터 그룹 계열을 맞추려고 두 인스턴스에 기본 엔진 버전을 명시한다.
+- 이유: 이미 수집하는 RDS에 Describe 호출만 더해 CA-12 자동화 범위를 넓힌다. S3 최소 TLS 버전(`s3:TlsVersion`)은 AWS가 모든 엔드포인트에 TLS 1.2 이상을 강제하고 있어 정책 검사의 실익이 작아 후보로 남긴다.
