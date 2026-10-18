@@ -101,11 +101,16 @@ class OracleProvider(_Scripted):
         rule_id = payload["rule"]["id"]
         targets = [f for f in payload["findings"] if f["status"] in _NEEDS_ACTION]
         statuses = {f["status"] for f in targets}
-        resource = next((f["resource"] for f in targets if f["resource"] != "account"), "account")
+        target = next((f for f in targets if f["resource"] != "account"), None)
+        resource = "account" if target is None else target["resource"]
         commands = []
         if statuses & {"FAIL", "REVIEW"}:
             short = resource.rsplit("/", 1)[-1]
-            commands.append(self.golden.rules[rule_id].example.replace("{resource}", short))
+            example = self.golden.rules[rule_id].example.replace("{resource}", short)
+            plan_id = None if target is None else target["evidence"].get("backup_plan_id")
+            if isinstance(plan_id, str):
+                example = example.replace("{backup_plan_id}", plan_id)
+            commands.append(example)
         if "ERROR" in statuses:
             commands.append(self.golden.error_example)
         return RuleExplanationDraft(

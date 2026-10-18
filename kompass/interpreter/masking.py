@@ -102,6 +102,7 @@ _NAME_KEYS = frozenset(
         "load_balancer",
         "policy_name",
         "backup_plan",
+        "backup_plan_id",
         "selection",
         "rule_name",
         "vault",

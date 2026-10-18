@@ -1,0 +1,64 @@
+{
+ "id": "syn-bkp-003-stale",
+ "title": "27일 전이 마지막인 백업(FAIL)과 백업 대상이 지정됐으나 백업되지 않은 리전(FAIL)",
+ "source": "synthetic",
+ "rule_id": "BKP-003",
+ "tags": [
+  "backup",
+  "unseen-rule",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "BKP-003",
+   "resource": "arn:aws:rds:ap-northeast-2:123456789012:db:acme-erp-db",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "마지막 백업이 27일 전임: arn:aws:rds:ap-northeast-2:123456789012:db:acme-erp-db",
+   "evidence": {
+    "resource_type": "RDS",
+    "resource_name": "acme-erp-db",
+    "last_backup_time": "2026-09-20T05:00:00Z",
+    "days_since_backup": 27,
+    "max_backup_age_days": 7,
+    "last_backup_vault": "arn:aws:backup:ap-northeast-2:123456789012:backup-vault:acme-main-vault"
+   },
+   "collected_at": "2026-10-18T00:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "BKP-003",
+   "resource": "arn:aws:dynamodb:ap-northeast-2:123456789012:table/acme-orders",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "medium",
+   "message": "최근 7일 안에 백업됨: arn:aws:dynamodb:ap-northeast-2:123456789012:table/acme-orders",
+   "evidence": {
+    "resource_type": "DynamoDB",
+    "resource_name": "acme-orders",
+    "last_backup_time": "2026-10-17T05:00:00Z",
+    "days_since_backup": 0,
+    "max_backup_age_days": 7,
+    "last_backup_vault": "arn:aws:backup:ap-northeast-2:123456789012:backup-vault:acme-main-vault"
+   },
+   "collected_at": "2026-10-18T00:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "BKP-003",
+   "resource": "account",
+   "region": "ap-northeast-1",
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "백업 대상이 지정된 계획은 있으나 백업된 리소스가 없음",
+   "evidence": {
+    "plans_with_selections": [
+     "acme-dr-weekly"
+    ]
+   },
+   "collected_at": "2026-10-18T00:00:00Z",
+   "mappings": null
+  }
+ ]
+}

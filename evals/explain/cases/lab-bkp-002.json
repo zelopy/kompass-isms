@@ -16,6 +16,7 @@
    "severity": "medium",
    "message": "백업 보존 기간이 7일 이상임: kompass-lab-daily",
    "evidence": {
+    "backup_plan_id": "f276e262-ba8e-6551-f822-d6f298ebba16",
     "min_retention_days": 7,
     "rules": [
      {
@@ -40,6 +41,7 @@
    "severity": "medium",
    "message": "보존 기간이 7일보다 짧은 백업 규칙이 있음: kompass-lab-short",
    "evidence": {
+    "backup_plan_id": "1d466546-302a-90a7-2037-70ab01c3a489",
     "min_retention_days": 7,
     "rules": [
      {

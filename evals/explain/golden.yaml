@@ -4,7 +4,8 @@
 # - fail: FAIL finding을 해소하는 작업. review: REVIEW finding을 사람이 확인·조치하는 작업 (없으면 fail을 쓴다).
 # - ERROR finding은 룰과 무관하게 error_actions(점검 권한 부여) 또는 거부됐던 조회 작업의 재실행이면 정답이다.
 # - example: 정답 예시 명령. 오라클 해설에 쓰며, 채점기가 유효하다고 판정해야 한다 (테스트로 검사).
-#   {resource}는 케이스의 대상 리소스 이름(ARN이면 마지막 구간)으로 바뀐다.
+#   {resource}는 케이스의 대상 리소스 이름(ARN이면 마지막 구간)으로, {backup_plan_id}는 대상 finding
+#   증적의 백업 계획 ID로 바뀐다.
 #
 # 인용 정답은 여기 두지 않는다. KISA 매핑이 있는 룰은 그 항목의 판단 기준·조치 방법·점검 및 조치 사례
 # 구간을, KISA 매핑이 없는 룰은 매핑된 ISMS-P 통제 본문을 인용해야 한다 (채점기 규칙).
@@ -36,7 +37,7 @@ rules:
     # REVIEW는 복사 뒤 원본 삭제. 복사 대상 저장소의 복구 지점 보존 기간을 확인한다
     review: [backup:UpdateBackupPlan, backup:GetBackupPlan, backup:ListRecoveryPointsByBackupVault]
     example: >-
-      aws backup update-backup-plan --backup-plan-id 11111111-2222-3333-4444-555555555555
+      aws backup update-backup-plan --backup-plan-id {backup_plan_id}
       --backup-plan file://daily-backup-35-days.json
   BKP-003:
     # 백업 작업 실패 원인을 확인하고 다시 백업하거나, 지운 리소스의 복구 지점을 정리한다

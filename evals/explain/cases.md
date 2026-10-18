@@ -1,6 +1,6 @@
 # 해설 평가 케이스
 
-총 72개 (실습 가공 31, 보강 41). 모두 가짜 데이터임. 케이스 하나 = 룰 묶음 하나, 해설 대상은 FAIL·ERROR·REVIEW finding임.
+총 77개 (실습 가공 31, 보강 46). 모두 가짜 데이터임. 케이스 하나 = 룰 묶음 하나, 해설 대상은 FAIL·ERROR·REVIEW finding임.
 
 | ID | 출처 | 룰 | 해설 대상 | 전체 | 태그 | 상황 |
 |---|---|---|---|---|---|---|
@@ -35,6 +35,11 @@
 | lab-vpc-001 | lab | VPC-001 | FAIL 1 | 3 | ec2, fail | 실습 결과 VPC-001 (공개·내부 서브넷 미분리) |
 | lab-vpc-002 | lab | VPC-002 | REVIEW 1 | 1 | ec2, review | 실습 결과 VPC-002 (공인 IP가 할당된 네트워크 인터페이스) |
 | lab-vpc-003 | lab | VPC-003 | FAIL 1 | 3 | ec2, fail | 실습 결과 VPC-003 (VPC 흐름 로그 미설정) |
+| syn-bkp-001-error | synthetic | BKP-001 | ERROR 2 | 2 | backup, error | 백업 계획 목록 조회 권한 없음(ERROR)과 백업 대상 선택 조회 권한 없음(ERROR) |
+| syn-bkp-001-review-fail | synthetic | BKP-001 | FAIL 1, REVIEW 1 | 2 | backup, unseen-rule, fail, review | 백업 대상이 지정되지 않은 계획(FAIL)과 계획이 없는 리전(REVIEW) |
+| syn-bkp-002-review-error | synthetic | BKP-002 | ERROR 1, REVIEW 1 | 2 | backup, mixed, error, review | 복사 뒤 원본 복구 지점을 삭제하는 규칙(REVIEW)과 계획 상세 조회 권한 없음(ERROR) |
+| syn-bkp-003-error | synthetic | BKP-003 | ERROR 2 | 2 | backup, error | 보호 리소스 조회 권한 없음(ERROR)과 백업이 없는 리전의 계획 목록 조회 권한 없음(ERROR) |
+| syn-bkp-003-stale | synthetic | BKP-003 | FAIL 2 | 3 | backup, unseen-rule, fail | 27일 전이 마지막인 백업(FAIL)과 백업 대상이 지정됐으나 백업되지 않은 리전(FAIL) |
 | syn-ct-001-error | synthetic | CT-001 | ERROR 1 | 1 | cloudtrail, error | 추적 목록 조회 권한 없음 (ERROR) |
 | syn-ct-001-no-trail | synthetic | CT-001 | FAIL 1 | 1 | cloudtrail, unseen-rule, fail | 추적이 하나도 없음 |
 | syn-ct-001-single-region-stopped | synthetic | CT-001 | FAIL 1 | 1 | cloudtrail, unseen-rule, fail | 단일 리전 추적, 로깅 중지 |
@@ -83,6 +88,7 @@
 
 ```json
 {
+ "backup_plan_id": "1d466546-302a-90a7-2037-70ab01c3a489",
  "min_retention_days": 7,
  "rules": [
   {
@@ -1497,6 +1503,194 @@
 ```
 
 함께 담긴 다른 finding: N/A 1, PASS 1
+
+## syn-bkp-001-error — 백업 계획 목록 조회 권한 없음(ERROR)과 백업 대상 선택 조회 권한 없음(ERROR)
+
+- **ERROR** `BKP-001:ap-northeast-2:account` — AWS Backup 백업 계획 목록을 수집하지 못함
+
+```json
+{
+ "errors": [
+  {
+   "operation": "backup:ListBackupPlans",
+   "region": "ap-northeast-2",
+   "error_code": "AccessDeniedException",
+   "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: backup:ListBackupPlans because no identity-based policy allows the backup:ListBackupPlans action",
+   "resource": null
+  }
+ ]
+}
+```
+
+- **ERROR** `BKP-001:ap-northeast-1:account` — 백업 계획의 규칙이나 백업 대상을 수집하지 못함
+
+```json
+{
+ "plans": [
+  {
+   "backup_plan": "acme-dr-weekly",
+   "rules": [
+    {
+     "rule_name": "daily",
+     "schedule": "cron(0 5 ? * * *)",
+     "vault": "main",
+     "delete_after_days": 35
+    }
+   ],
+   "selections": null
+  }
+ ],
+ "errors": [
+  {
+   "operation": "backup:ListBackupSelections",
+   "region": "ap-northeast-1",
+   "error_code": "AccessDeniedException",
+   "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: backup:ListBackupSelections because no identity-based policy allows the backup:ListBackupSelections action",
+   "resource": "acme-dr-weekly"
+  }
+ ]
+}
+```
+
+
+## syn-bkp-001-review-fail — 백업 대상이 지정되지 않은 계획(FAIL)과 계획이 없는 리전(REVIEW)
+
+- **FAIL** `BKP-001:ap-northeast-2:account` — 백업 계획에 규칙이나 백업 대상 선택이 없음
+
+```json
+{
+ "plans": [
+  {
+   "backup_plan": "acme-nightly",
+   "rules": [
+    {
+     "rule_name": "nightly-35d",
+     "schedule": "cron(0 5 ? * * *)",
+     "vault": "main",
+     "delete_after_days": 35
+    }
+   ],
+   "selections": []
+  }
+ ]
+}
+```
+
+- **REVIEW** `BKP-001:ap-northeast-1:account` — AWS Backup 백업 계획이 없음. 다른 수단의 백업 여부 확인 필요
+
+```json
+{
+ "plans": []
+}
+```
+
+
+## syn-bkp-002-review-error — 복사 뒤 원본 복구 지점을 삭제하는 규칙(REVIEW)과 계획 상세 조회 권한 없음(ERROR)
+
+- **REVIEW** `BKP-002:ap-northeast-2:backup-plan:acme-erp-dr` — 복사 뒤 원본 복구 지점을 삭제하는 규칙이 있어 복사본 보존 기간 확인 필요: acme-erp-dr
+
+```json
+{
+ "backup_plan_id": "id-acme-erp-dr",
+ "min_retention_days": 7,
+ "rules": [
+  {
+   "rule_name": "daily-copy-to-dr",
+   "delete_after_days": 35,
+   "move_to_cold_storage_after_days": null,
+   "delete_after_event": "DELETE_AFTER_COPY",
+   "continuous_backup": false,
+   "copy_actions": [
+    {
+     "destination_vault": "arn:aws:backup:ap-northeast-1:123456789012:backup-vault:acme-dr-vault",
+     "delete_after_days": 365
+    }
+   ]
+  }
+ ],
+ "short_rules": []
+}
+```
+
+- **ERROR** `BKP-002:ap-northeast-2:backup-plan:acme-shop-daily` — 백업 계획 상세를 수집하지 못함: acme-shop-daily
+
+```json
+{
+ "backup_plan_id": "id-acme-shop-daily",
+ "errors": [
+  {
+   "operation": "backup:GetBackupPlan",
+   "region": "ap-northeast-2",
+   "error_code": "AccessDeniedException",
+   "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: backup:GetBackupPlan because no identity-based policy allows the backup:GetBackupPlan action",
+   "resource": "acme-shop-daily"
+  }
+ ]
+}
+```
+
+
+## syn-bkp-003-error — 보호 리소스 조회 권한 없음(ERROR)과 백업이 없는 리전의 계획 목록 조회 권한 없음(ERROR)
+
+- **ERROR** `BKP-003:ap-northeast-2:account` — AWS Backup 보호 리소스 목록을 수집하지 못함
+
+```json
+{
+ "errors": [
+  {
+   "operation": "backup:ListProtectedResources",
+   "region": "ap-northeast-2",
+   "error_code": "AccessDeniedException",
+   "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: backup:ListProtectedResources because no identity-based policy allows the backup:ListProtectedResources action",
+   "resource": null
+  }
+ ]
+}
+```
+
+- **ERROR** `BKP-003:ap-northeast-1:account` — 백업된 리소스가 없으나 백업 계획 목록을 수집하지 못해 판정할 수 없음
+
+```json
+{
+ "errors": [
+  {
+   "operation": "backup:ListBackupPlans",
+   "region": "ap-northeast-1",
+   "error_code": "AccessDeniedException",
+   "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: backup:ListBackupPlans because no identity-based policy allows the backup:ListBackupPlans action",
+   "resource": null
+  }
+ ]
+}
+```
+
+
+## syn-bkp-003-stale — 27일 전이 마지막인 백업(FAIL)과 백업 대상이 지정됐으나 백업되지 않은 리전(FAIL)
+
+- **FAIL** `BKP-003:ap-northeast-2:arn:aws:rds:ap-northeast-2:123456789012:db:acme-erp-db` — 마지막 백업이 27일 전임: arn:aws:rds:ap-northeast-2:123456789012:db:acme-erp-db
+
+```json
+{
+ "resource_type": "RDS",
+ "resource_name": "acme-erp-db",
+ "last_backup_time": "2026-09-20T05:00:00Z",
+ "days_since_backup": 27,
+ "max_backup_age_days": 7,
+ "last_backup_vault": "arn:aws:backup:ap-northeast-2:123456789012:backup-vault:acme-main-vault"
+}
+```
+
+- **FAIL** `BKP-003:ap-northeast-1:account` — 백업 대상이 지정된 계획은 있으나 백업된 리소스가 없음
+
+```json
+{
+ "plans_with_selections": [
+  "acme-dr-weekly"
+ ]
+}
+```
+
+함께 담긴 다른 finding: PASS 1
 
 ## syn-ct-001-error — 추적 목록 조회 권한 없음 (ERROR)
 

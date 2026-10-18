@@ -268,6 +268,18 @@ def test_rds_targets_include_cluster_snapshot_identifier() -> None:
     assert "acme-orders-db-handover" not in targets  # PASS finding
 
 
+def test_backup_targets_include_plan_name_and_id() -> None:
+    # BKP-002 오라클 실행에서 발견: finding의 리소스는 "backup-plan:<이름>"이지만
+    # update-backup-plan은 --backup-plan-id <ID>로 가리킨다
+    from kompass.evals.grader import _targets
+
+    cases = {c.id: c for c in load_cases(EVAL_DIR / "cases")}
+    findings = cases["syn-bkp-002-review-error"].findings
+    targets = _targets(findings)
+    review = next(f for f in findings if f.status.value == "REVIEW")
+    assert {"acme-erp-dr", review.evidence["backup_plan_id"]} <= targets
+
+
 def test_error_actions_include_denied_lookups_nested_in_listeners() -> None:
     # ELB는 리스너별 수집 오류를 evidence.listeners[].errors에 남긴다.
     # 거부된 조회의 재실행도 정답이다

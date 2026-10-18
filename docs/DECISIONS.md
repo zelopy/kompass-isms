@@ -301,6 +301,8 @@
 - RDS-006 케이스 추가 (2026-10-17): 실습 가공 1개(`lab-rds-006`)와 보강 2개(Aurora 클러스터 스냅샷 공개 FAIL·특정 계정 공유 PASS, 공개 MySQL 스냅샷 FAIL·공유 속성 조회 거부 ERROR)로 71개. 오라클 3개 모든 지표 100%.
   - 실제 모델 실행 (2026-10-18, 사용자 승인): 3개 × 2회(claude-opus-5-5 effort high, $0.40). 검증 통과 100%, 채점기 오판 1종 수정 후 모든 지표 100% (`.claude/hillclimb/explain/rds006/metrics.md`). 기준선·`rds005`·`elb-rds005`·`elb-oracle`·`rds006-oracle`은 수정한 채점기로 다시 채점해도 같다.
   - 채점기 오판: 클러스터 스냅샷 finding의 리소스 `cluster-snapshot:<식별자>`를 명령의 `--db-cluster-snapshot-identifier <식별자>`와 맞추지 못함 (대상 일치 66.7%로 기록됨).
+- BKP-001~003 케이스 추가 (2026-10-18): 실습 가공 1개(`lab-bkp-002`)와 보강 5개로 77개. 보강은 백업 대상 없는 계획 FAIL·계획 없는 리전 REVIEW, 계획 목록·선택 목록 조회 거부 ERROR 2, 복사 뒤 원본 삭제 REVIEW·계획 상세 조회 거부 ERROR, 27일 전 백업 FAIL·백업 대상 지정 계획만 있고 백업 없음 FAIL, 보호 리소스·계획 목록 조회 거부 ERROR 2. AWS Backup의 거부 오류 코드는 `AccessDeniedException`이다. 오라클 6개 모든 지표 100% (`.claude/hillclimb/explain/bkp-oracle/metrics.md`).
+  - 오라클이 찾은 결함: BKP-002 조치 명령 `update-backup-plan`은 계획 이름이 아니라 `--backup-plan-id`를 받는데 증적에 ID가 없어, 정답 해설도 대상 일치 0%였다. BKP-002 증적에 `backup_plan_id`를 넣고(collector가 이미 수집), 마스킹 키에 더하고, 채점기는 `backup-plan:` 접두어를 뗀 이름과 계획 ID를 대상으로 본다. 정답 예시는 `{backup_plan_id}` 자리표시자를 쓴다. `lab-bkp-002`는 저장된 실습 스냅샷을 다시 판정(`kompass evaluate --scan`)해 만들었다.
 
 ## ADR-034 종합 위험 평가
 - 상태: 채택 (사용자 결정, 2026-10-14)

@@ -129,6 +129,7 @@ _VIA_GROUP = re.compile(r'"group:([^"]+)"')
 _RDS_CLUSTER_PREFIX = "cluster:"  # RDS 클러스터 finding의 리소스 "cluster:<식별자>"
 _RDS_CLUSTER_SNAPSHOT_PREFIX = "cluster-snapshot:"  # RDS-006 "cluster-snapshot:<식별자>"
 _ELB_CLASSIC_PREFIX = "classic:"  # Classic 로드 밸런서 finding의 리소스 "classic:<이름>"
+_BACKUP_PLAN_PREFIX = "backup-plan:"  # BKP-002 "backup-plan:<이름>"
 _WRITE_PREFIXES = (
     "Put",
     "Delete",
@@ -508,7 +509,8 @@ def _iam_action_to_botocore(operation: str) -> str | None:
 def _targets(findings: Sequence[Any]) -> set[str]:
     """변경 명령이 가리켜도 되는 리소스: finding의 리소스(값, ARN 마지막 구간)와 증적에 나온
     관련 리소스(ENI의 서브넷·VPC·보안그룹, 권한 출처 그룹, RDS 파라미터 그룹 등).
-    RDS 클러스터·클러스터 스냅샷과 Classic 로드 밸런서는 접두어를 뗀 이름도 대상이다.
+    RDS 클러스터·클러스터 스냅샷, Classic 로드 밸런서, 백업 계획은 접두어를 뗀 이름도 대상이다.
+    백업 계획은 ID(`update-backup-plan --backup-plan-id`)도 대상이다.
     계정 단위 finding만 있으면 비어 있다."""
     targets: set[str] = set()
     for finding in findings:
@@ -518,6 +520,7 @@ def _targets(findings: Sequence[Any]) -> set[str]:
             targets.add(finding.resource.removeprefix(_RDS_CLUSTER_PREFIX))
             targets.add(finding.resource.removeprefix(_RDS_CLUSTER_SNAPSHOT_PREFIX))
             targets.add(finding.resource.removeprefix(_ELB_CLASSIC_PREFIX))
+            targets.add(finding.resource.removeprefix(_BACKUP_PLAN_PREFIX))
             evidence = json.dumps(finding.evidence)
             targets |= set(_SENSITIVE[0].findall(evidence))
             targets |= {f"--group-name {name}" for name in _VIA_GROUP.findall(evidence)}
@@ -525,4 +528,7 @@ def _targets(findings: Sequence[Any]) -> set[str]:
             group = finding.evidence.get("parameter_group")
             if isinstance(group, str) and not group.startswith("default."):
                 targets.add(group)
+            plan_id = finding.evidence.get("backup_plan_id")
+            if isinstance(plan_id, str):
+                targets.add(plan_id)
     return {t for t in targets if len(t) >= 3}

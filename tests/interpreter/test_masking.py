@@ -386,11 +386,13 @@ def test_backup_plan_and_resource_names_are_masked() -> None:
                 }
             ],
             "plans_with_selections": ["fin-daily"],
+            "backup_plan_id": "8a7b6c5d-e4f3-4a2b-9c1d-0e1f2a3b4c5d",
         },
     }
     masker = Masker.for_values([finding])
     text = json.dumps(masker.mask(finding), ensure_ascii=False)
-    for raw in ("ledger-orders", "fin-vault", "fin-daily", "fin-35d", "fin-tables", "123456789012"):
+    raws = ("ledger-orders", "fin-vault", "fin-daily", "fin-35d", "fin-tables", "123456789012")
+    for raw in (*raws, "8a7b6c5d-e4f3-4a2b-9c1d-0e1f2a3b4c5d"):
         assert raw not in text, raw
 
 

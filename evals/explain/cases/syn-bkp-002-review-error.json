@@ -1,0 +1,66 @@
+{
+ "id": "syn-bkp-002-review-error",
+ "title": "복사 뒤 원본 복구 지점을 삭제하는 규칙(REVIEW)과 계획 상세 조회 권한 없음(ERROR)",
+ "source": "synthetic",
+ "rule_id": "BKP-002",
+ "tags": [
+  "backup",
+  "mixed",
+  "error",
+  "review"
+ ],
+ "findings": [
+  {
+   "rule_id": "BKP-002",
+   "resource": "backup-plan:acme-erp-dr",
+   "region": "ap-northeast-2",
+   "status": "REVIEW",
+   "severity": "medium",
+   "message": "복사 뒤 원본 복구 지점을 삭제하는 규칙이 있어 복사본 보존 기간 확인 필요: acme-erp-dr",
+   "evidence": {
+    "backup_plan_id": "id-acme-erp-dr",
+    "min_retention_days": 7,
+    "rules": [
+     {
+      "rule_name": "daily-copy-to-dr",
+      "delete_after_days": 35,
+      "move_to_cold_storage_after_days": null,
+      "delete_after_event": "DELETE_AFTER_COPY",
+      "continuous_backup": false,
+      "copy_actions": [
+       {
+        "destination_vault": "arn:aws:backup:ap-northeast-1:123456789012:backup-vault:acme-dr-vault",
+        "delete_after_days": 365
+       }
+      ]
+     }
+    ],
+    "short_rules": []
+   },
+   "collected_at": "2026-10-18T00:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "BKP-002",
+   "resource": "backup-plan:acme-shop-daily",
+   "region": "ap-northeast-2",
+   "status": "ERROR",
+   "severity": "medium",
+   "message": "백업 계획 상세를 수집하지 못함: acme-shop-daily",
+   "evidence": {
+    "backup_plan_id": "id-acme-shop-daily",
+    "errors": [
+     {
+      "operation": "backup:GetBackupPlan",
+      "region": "ap-northeast-2",
+      "error_code": "AccessDeniedException",
+      "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: backup:GetBackupPlan because no identity-based policy allows the backup:GetBackupPlan action",
+      "resource": "acme-shop-daily"
+     }
+    ]
+   },
+   "collected_at": "2026-10-18T00:00:00Z",
+   "mappings": null
+  }
+ ]
+}

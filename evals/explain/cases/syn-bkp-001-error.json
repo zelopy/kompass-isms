@@ -1,0 +1,68 @@
+{
+ "id": "syn-bkp-001-error",
+ "title": "백업 계획 목록 조회 권한 없음(ERROR)과 백업 대상 선택 조회 권한 없음(ERROR)",
+ "source": "synthetic",
+ "rule_id": "BKP-001",
+ "tags": [
+  "backup",
+  "error"
+ ],
+ "findings": [
+  {
+   "rule_id": "BKP-001",
+   "resource": "account",
+   "region": "ap-northeast-2",
+   "status": "ERROR",
+   "severity": "medium",
+   "message": "AWS Backup 백업 계획 목록을 수집하지 못함",
+   "evidence": {
+    "errors": [
+     {
+      "operation": "backup:ListBackupPlans",
+      "region": "ap-northeast-2",
+      "error_code": "AccessDeniedException",
+      "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: backup:ListBackupPlans because no identity-based policy allows the backup:ListBackupPlans action",
+      "resource": null
+     }
+    ]
+   },
+   "collected_at": "2026-10-18T00:00:00Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "BKP-001",
+   "resource": "account",
+   "region": "ap-northeast-1",
+   "status": "ERROR",
+   "severity": "medium",
+   "message": "백업 계획의 규칙이나 백업 대상을 수집하지 못함",
+   "evidence": {
+    "plans": [
+     {
+      "backup_plan": "acme-dr-weekly",
+      "rules": [
+       {
+        "rule_name": "daily",
+        "schedule": "cron(0 5 ? * * *)",
+        "vault": "main",
+        "delete_after_days": 35
+       }
+      ],
+      "selections": null
+     }
+    ],
+    "errors": [
+     {
+      "operation": "backup:ListBackupSelections",
+      "region": "ap-northeast-1",
+      "error_code": "AccessDeniedException",
+      "message": "User: arn:aws:sts::123456789012:assumed-role/kompass-audit-role/audit-session-7 is not authorized to perform: backup:ListBackupSelections because no identity-based policy allows the backup:ListBackupSelections action",
+      "resource": "acme-dr-weekly"
+     }
+    ]
+   },
+   "collected_at": "2026-10-18T00:00:00Z",
+   "mappings": null
+  }
+ ]
+}

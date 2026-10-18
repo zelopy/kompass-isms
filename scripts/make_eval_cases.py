@@ -31,6 +31,7 @@ if ROOT is None:
     sys.exit("kompass 저장소 안에서 실행해 주십시오")
 sys.path.insert(0, str(ROOT))  # tests/의 스냅샷 헬퍼를 쓴다
 
+from tests.rules.backup import data as bkp  # noqa: E402
 from tests.rules.ec2 import data as ec2  # noqa: E402
 from tests.rules.elb import data as elb  # noqa: E402
 from tests.rules.iam import data as iam  # noqa: E402
@@ -184,15 +185,17 @@ def denied(
     region: str | None = "ap-northeast-2",
     resource: str | None = None,
     action: str | None = None,
+    error_code: str = "AccessDenied",
 ) -> CollectError:
     """실제 AccessDenied 형태. `operation`은 수집기가 기록하는 API 작업 이름(botocore),
     `action`은 메시지에 나오는 IAM 권한 이름이다 (S3는 둘이 다르다). 메시지에는 assumed-role
-    ARN이 들어간다 (마스킹 경로 시험)."""
+    ARN이 들어간다 (마스킹 경로 시험). AWS Backup 같은 JSON 프로토콜 서비스는 오류 코드가
+    `AccessDeniedException`이다."""
     action = action or operation
     return CollectError(
         operation=operation,
         region=region,
-        error_code="AccessDenied",
+        error_code=error_code,
         message=(
             f"User: arn:aws:sts::{EVAL_ACCOUNT}:assumed-role/kompass-audit-role/audit-session-7 "
             f"is not authorized to perform: {action} because no identity-based policy allows the "
@@ -987,6 +990,7 @@ def _added_rules(add: Callable[..., None]) -> None:
     _rds_005(add, region)  # RDS-005(ADR-051). 앞 케이스의 무작위 값이 바뀌지 않게 맨 뒤에 둔다
     _elb(add)  # ELB-001~002(ADR-052). 같은 이유로 RDS-005 뒤에 둔다
     _rds_006(add, region)  # RDS-006(ADR-053). 같은 이유로 ELB 뒤에 둔다
+    _backup(add)  # BKP-001~003(ADR-054). 같은 이유로 RDS-006 뒤에 둔다
 
 
 def _rds_005(add: Callable[..., None], region: str) -> None:
@@ -1259,6 +1263,145 @@ def _elb(add: Callable[..., None]) -> None:
                         "elbv2:DescribeSSLPolicies",
                         resource="ELBSecurityPolicy-TLS13-1-2-Res-2021-06",
                     ),
+                ),
+            ),
+        ),
+    )
+
+
+def _backup_denied(operation: str, region: str, resource: str | None = None) -> CollectError:
+    return denied(operation, region, resource, error_code="AccessDeniedException")
+
+
+def _backup(add: Callable[..., None]) -> None:
+    """BKP-001~003 보강 케이스. 실습(계획 2개 모두 완전, 최근 백업 PASS)에 없는 계획 없음·빈 계획·
+    복사 뒤 원본 삭제·오래된 백업·백업 미수행과 수집 거부를 다룬다."""
+    seoul, tokyo = bkp.REGION, "ap-northeast-1"
+    vault = f"arn:aws:backup:{seoul}:{EVAL_ACCOUNT}:backup-vault:acme-main-vault"
+    dr_vault = f"arn:aws:backup:{tokyo}:{EVAL_ACCOUNT}:backup-vault:acme-dr-vault"
+    erp_db = f"arn:aws:rds:{seoul}:{EVAL_ACCOUNT}:db:acme-erp-db"
+    orders = f"arn:aws:dynamodb:{seoul}:{EVAL_ACCOUNT}:table/acme-orders"
+
+    # BKP-001: 도쿄는 계획 없음(REVIEW), 서울은 규칙만 있고 백업 대상 선택이 없는 계획(FAIL)
+    add(
+        "syn-bkp-001-review-fail",
+        "백업 대상이 지정되지 않은 계획(FAIL)과 계획이 없는 리전(REVIEW)",
+        "BKP-001",
+        ("unseen-rule",),
+        evaluate(
+            "BKP-001",
+            bkp.snapshot(
+                {
+                    seoul: {
+                        "plans": [
+                            bkp.plan(
+                                "acme-nightly",
+                                rules=[bkp.backup_rule("nightly-35d", DeleteAfterDays=35)],
+                                selections=[],
+                            )
+                        ],
+                        "protected_resources": [],
+                    },
+                    tokyo: {"plans": [], "protected_resources": []},
+                }
+            ),
+        ),
+    )
+    # BKP-001: 서울은 계획 목록 조회 거부, 도쿄는 계획의 선택 목록 조회 거부 (둘 다 ERROR)
+    add(
+        "syn-bkp-001-error",
+        "백업 계획 목록 조회 권한 없음(ERROR)과 백업 대상 선택 조회 권한 없음(ERROR)",
+        "BKP-001",
+        (),
+        evaluate(
+            "BKP-001",
+            bkp.snapshot(
+                {
+                    seoul: {"protected_resources": []},
+                    tokyo: {
+                        "plans": [bkp.plan("acme-dr-weekly", selections=None)],
+                        "protected_resources": [],
+                    },
+                },
+                errors=(
+                    _backup_denied("backup:ListBackupPlans", seoul),
+                    _backup_denied("backup:ListBackupSelections", tokyo, "acme-dr-weekly"),
+                ),
+            ),
+        ),
+    )
+    # BKP-002: 도쿄로 복사한 뒤 원본을 지우는 규칙(REVIEW)과 계획 상세 조회 거부(ERROR)
+    copy_then_delete = bkp.backup_rule(
+        "daily-copy-to-dr", DeleteAfterDays=35, DeleteAfterEvent="DELETE_AFTER_COPY"
+    )
+    copy_then_delete["CopyActions"] = [
+        {"DestinationBackupVaultArn": dr_vault, "Lifecycle": {"DeleteAfterDays": 365}}
+    ]
+    add(
+        "syn-bkp-002-review-error",
+        "복사 뒤 원본 복구 지점을 삭제하는 규칙(REVIEW)과 계획 상세 조회 권한 없음(ERROR)",
+        "BKP-002",
+        ("mixed",),
+        evaluate(
+            "BKP-002",
+            bkp.snapshot(
+                {
+                    seoul: {
+                        "plans": [
+                            bkp.plan("acme-erp-dr", rules=[copy_then_delete]),
+                            bkp.plan("acme-shop-daily", rules=None),
+                        ],
+                        "protected_resources": [],
+                    }
+                },
+                errors=(_backup_denied("backup:GetBackupPlan", seoul, "acme-shop-daily"),),
+            ),
+        ),
+    )
+    # BKP-003: 서울은 27일 전 백업(FAIL)과 최근 백업(PASS), 도쿄는 대상 지정 계획뿐 백업 없음(FAIL)
+    add(
+        "syn-bkp-003-stale",
+        "27일 전이 마지막인 백업(FAIL)과 백업 대상이 지정됐으나 백업되지 않은 리전(FAIL)",
+        "BKP-003",
+        ("unseen-rule",),
+        evaluate(
+            "BKP-003",
+            bkp.snapshot(
+                {
+                    seoul: {
+                        "plans": [bkp.plan("acme-erp-daily")],
+                        "protected_resources": [
+                            bkp.protected(
+                                erp_db,
+                                last="2026-09-20T05:00:00Z",
+                                resource_type="RDS",
+                                name="acme-erp-db",
+                                vault=vault,
+                            ),
+                            bkp.protected(orders, name="acme-orders", vault=vault),
+                        ],
+                    },
+                    tokyo: {"plans": [bkp.plan("acme-dr-weekly")], "protected_resources": []},
+                }
+            ),
+        ),
+    )
+    # BKP-003: 서울은 보호 리소스 조회 거부, 도쿄는 백업 없음인데 계획 목록 조회 거부 (둘 다 ERROR)
+    add(
+        "syn-bkp-003-error",
+        "보호 리소스 조회 권한 없음(ERROR)과 백업이 없는 리전의 계획 목록 조회 권한 없음(ERROR)",
+        "BKP-003",
+        (),
+        evaluate(
+            "BKP-003",
+            bkp.snapshot(
+                {
+                    seoul: {"plans": [bkp.plan("acme-ebs-daily")]},
+                    tokyo: {"protected_resources": []},
+                },
+                errors=(
+                    _backup_denied("backup:ListProtectedResources", seoul),
+                    _backup_denied("backup:ListBackupPlans", tokyo),
                 ),
             ),
         ),

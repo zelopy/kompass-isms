@@ -69,6 +69,8 @@ class Bkp002Retention(BackupRule):
         self, snapshot: Snapshot, settings: Settings, region: str, plan: dict[str, Any]
     ) -> Finding:
         name = plan_name(plan)
+        # 조치 명령(update-backup-plan)은 계획 이름이 아니라 ID를 받는다
+        plan_id = plan.get("BackupPlanId")
         minimum = settings.backup.min_retention_days
         rules = plan_rules(plan)
 
@@ -89,7 +91,7 @@ class Bkp002Retention(BackupRule):
             return result(
                 Status.ERROR,
                 f"백업 계획 상세를 수집하지 못함: {name}",
-                {"errors": errors_evidence(errors)},
+                {"backup_plan_id": plan_id, "errors": errors_evidence(errors)},
             )
         if not rules:
             return result(Status.NOT_APPLICABLE, f"백업 계획에 규칙이 없음: {name}", {})
@@ -99,7 +101,12 @@ class Bkp002Retention(BackupRule):
             for r in evidence_rules
             if r["delete_after_days"] is not None and r["delete_after_days"] < minimum
         ]
-        evidence = {"min_retention_days": minimum, "rules": evidence_rules, "short_rules": short}
+        evidence = {
+            "backup_plan_id": plan_id,
+            "min_retention_days": minimum,
+            "rules": evidence_rules,
+            "short_rules": short,
+        }
         if short:
             return result(
                 Status.FAIL, f"보존 기간이 {minimum}일보다 짧은 백업 규칙이 있음: {name}", evidence

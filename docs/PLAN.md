@@ -160,7 +160,8 @@
   - [x] 실습 계정 확인 (2026-10-18, `enable_backup`·`enable_elb` 켬, 첫 백업 뒤): `pytest -m lab` 통과. `SecurityAudit`으로 backup 조회 실패 없음, BKP-001 PASS·BKP-002 `daily` PASS·`short` FAIL·BKP-003 PASS. ELB 기대값 6개 처음으로 실제 대조해 일치. 백업 서비스 역할이 IAM-010 REVIEW(`ssm:SendCommand`)라 기대값에 추가. 끈 뒤(`enable_backup`·`enable_elb` false)에도 통과: BKP-001 REVIEW, BKP-002·003 N/A
   - [ ] 평가 케이스 추가 (실습 가공·보강, ADR-033)
     - [x] 실습 가공 1개 생성 (2026-10-18, `lab-bkp-002`: `short` FAIL·`daily` PASS). BKP-001·003은 실습에서 PASS라 실습 케이스 없음
-    - [ ] 보강: BKP-001 REVIEW(계획 없음)·FAIL·ERROR, BKP-002 REVIEW(복사 뒤 삭제)·ERROR, BKP-003 FAIL(오래된 백업·백업 미수행)·ERROR
+    - [x] 보강 5개: BKP-001 REVIEW(계획 없음)·FAIL·ERROR, BKP-002 REVIEW(복사 뒤 삭제)·ERROR, BKP-003 FAIL(오래된 백업·백업 미수행)·ERROR. 오라클 6개 모든 지표 100% (2026-10-18)
+    - [x] 오라클이 찾은 결함 수정: BKP-002 증적에 계획 ID(`backup_plan_id`)가 없어 조치 명령 대상 일치 0% → 증적·마스킹·채점기 수정, `lab-bkp-002` 재생성 (ADR-033 기록)
     - [ ] 실제 모델 실행
 - [x] Prowler OCSF 출력 어댑터 필요성 검토 — 보류, 후보로 내림 (2026-10-17, ADR-050). 대신 Prowler ISMS-P 대응표를 매핑 협의 참고 자료로 비교
   - [x] Prowler `kisa_isms_p_2023_aws` 대응표와 ISMS-P 매핑 초안 비교표 (`docs/ISMS_P_MAPPING_REVIEW.md` 참고 절) — 같음 10·다름 21·대응 없음 4, 협의 쟁점 4건에 참고 의견. RDS-005 추가 후 같음 11 (Prowler `rds_instance_transport_encrypted`도 2.7.1·2.10.2)

@@ -1,94 +1,35 @@
 """BKP-001 백업 계획 미설정, BKP-002 보존 기간 부족, BKP-003 최근 백업 없음."""
 
-from datetime import UTC, datetime
 from typing import Any
 
 import pytest
 
 from kompass.config import BackupSettings, Settings
-from kompass.models import CollectError, Finding, Snapshot, Status
+from kompass.models import CollectError, Finding, Status
 from kompass.rules.backup.bkp_001_backup_plan import Bkp001BackupPlan
 from kompass.rules.backup.bkp_002_retention import Bkp002Retention
 from kompass.rules.backup.bkp_003_recent_backup import Bkp003RecentBackup
+from tests.rules.backup.data import (
+    REGION,
+    TABLE,
+    VAULT,
+    backup_rule,
+    plan,
+    protected,
+    selection,
+    snapshot,
+)
 
-REGION = "ap-northeast-2"
-ACCOUNT = "123456789012"
-COLLECTED = datetime(2026, 10, 18, tzinfo=UTC)
-TABLE = f"arn:aws:dynamodb:{REGION}:{ACCOUNT}:table/orders"
-VAULT = f"arn:aws:backup:{REGION}:{ACCOUNT}:backup-vault:main"
 BKP001 = Bkp001BackupPlan()
 BKP002 = Bkp002Retention()
 BKP003 = Bkp003RecentBackup()
-
-UNSET: Any = object()  # 키를 넣지 않음 (수집 실패)
-
-
-def backup_rule(name: str = "daily", **lifecycle: Any) -> dict[str, Any]:
-    item: dict[str, Any] = {
-        "RuleName": name,
-        "TargetBackupVaultName": "main",
-        "ScheduleExpression": "cron(0 5 ? * * *)",
-    }
-    if lifecycle:
-        item["Lifecycle"] = lifecycle
-    return item
-
-
-def selection(name: str = "tables", detail: bool = True, **fields: Any) -> dict[str, Any]:
-    item: dict[str, Any] = {"SelectionId": f"id-{name}", "SelectionName": name}
-    if detail:
-        item["BackupSelection"] = {
-            "SelectionName": name,
-            "IamRoleArn": f"arn:aws:iam::{ACCOUNT}:role/backup",
-            "Resources": [TABLE],
-            **fields,
-        }
-    return item
-
-
-def plan(
-    name: str = "daily",
-    rules: Any = UNSET,
-    selections: Any = UNSET,
-) -> dict[str, Any]:
-    item: dict[str, Any] = {"BackupPlanId": f"id-{name}", "BackupPlanName": name}
-    if rules is not None:
-        item["BackupPlan"] = {
-            "BackupPlanName": name,
-            "Rules": [backup_rule(DeleteAfterDays=35)] if rules is UNSET else rules,
-        }
-    if selections is not None:
-        item["Selections"] = [selection()] if selections is UNSET else selections
-    return item
-
-
-def protected(arn: str = TABLE, last: str | None = "2026-10-17T05:00:00Z") -> dict[str, Any]:
-    item: dict[str, Any] = {
-        "ResourceArn": arn,
-        "ResourceType": "DynamoDB",
-        "ResourceName": "orders",
-        "LastBackupVaultArn": VAULT,
-    }
-    if last is not None:
-        item["LastBackupTime"] = last
-    return item
-
-
-def _snapshot(data: dict[str, Any], *errors: CollectError) -> Snapshot:
-    return Snapshot(
-        service="backup",
-        account_id=ACCOUNT,
-        regions=(REGION,),
-        collected_at=COLLECTED,
-        data={"regions": {REGION: data}},
-        errors=errors,
-    )
 
 
 def _run(
     rule: Any, data: dict[str, Any], *errors: CollectError, settings: Settings | None = None
 ) -> list[Finding]:
-    findings: list[Finding] = rule.evaluate(_snapshot(data, *errors), settings or Settings())
+    snap = snapshot({REGION: data}, errors)
+    findings: list[Finding] = rule.evaluate(snap, settings or Settings())
     assert all(f.region == REGION for f in findings)
     return findings
 
@@ -211,6 +152,8 @@ def test_bkp001_counts_tag_and_condition_selections() -> None:
 def test_bkp002_pass_when_retention_meets_minimum() -> None:
     finding = _one(BKP002, {"plans": [plan()]})
     assert finding.status == Status.PASS and finding.resource == "backup-plan:daily"
+    # 조치 명령(update-backup-plan)은 계획 이름이 아니라 ID를 받는다
+    assert finding.evidence["backup_plan_id"] == "id-daily"
     assert finding.evidence["min_retention_days"] == 7
     assert finding.evidence["short_rules"] == []
 
@@ -263,6 +206,7 @@ def test_bkp002_error_when_plans_not_collected() -> None:
 def test_bkp002_error_when_plan_detail_missing() -> None:
     finding = _one(BKP002, {"plans": [plan(rules=None)]}, _error("backup:GetBackupPlan", "daily"))
     assert finding.status == Status.ERROR and finding.resource == "backup-plan:daily"
+    assert finding.evidence["backup_plan_id"] == "id-daily"
     assert finding.evidence["errors"][0]["resource"] == "daily"
 
 
