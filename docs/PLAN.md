@@ -146,13 +146,13 @@
     - [x] 실습 가공 2개 생성 (`lab-elb-001`·`lab-elb-002`)
     - [x] 보강 3개: Classic HTTP FAIL·NLB TCP REVIEW, 규칙·리스너 조회 거부 ERROR, Classic 구형 협상 정책 FAIL·NLB 정책 조회 거부 ERROR. 오라클 68개 모든 지표 100% (ELB ARN 종류 구간 마스킹 수정 후)
     - [x] 실제 모델 실행 (실습 가공 2개 + 보강 3개, `lab-rds-005`와 함께 6개 × 2회, $0.82): 채점기 오판 2종 수정 후 모든 지표 100% (ADR-033 기록)
-- [ ] 룰: RDS 공개 스냅샷 RDS-006 (CA-10, ADR-053) — 수동 스냅샷·공유 속성 수집, 실습 `public` 스냅샷 공개 (실습 계정 확인 2026-10-17)
+- [x] 룰: RDS 공개 스냅샷 RDS-006 (CA-10, ADR-053) — 수동 스냅샷·공유 속성 수집, 실습 `public` 스냅샷 공개 (실습 계정 확인 2026-10-17)
   - [x] 룰·collector·테스트, 매핑 `kisa_verified: false`, 실습 Terraform·기대값
   - [x] 사용자 확인: KISA CA-10 매핑 원문 근거 (근거 수준 해석) (2026-10-18)
   - [x] 실습 계정 확인 (2026-10-17, `enable_public_rds = true`): `pytest -m lab` 통과. 공개 스냅샷 FAIL, 비공유 스냅샷 PASS. 공유하지 않은 스냅샷도 `restore` 속성을 빈 목록으로 돌려줌
-  - [ ] 평가 케이스 추가 (실습 가공·보강, ADR-033)
+  - [x] 평가 케이스 추가 (실습 가공·보강, ADR-033)
     - [x] 실습 가공 1개(`lab-rds-006`), 보강 2개: Aurora 클러스터 스냅샷 공개 FAIL·특정 계정 공유 PASS, 공개 MySQL 스냅샷 FAIL·공유 속성 조회 거부 ERROR. 오라클 3개 모든 지표 100%
-    - [ ] 실제 모델 실행 (3개 × 2회)
+    - [x] 실제 모델 실행 (3개 × 2회, $0.40): 채점기 오판 1종 수정 후 모든 지표 100% (ADR-033 기록)
 - [x] Prowler OCSF 출력 어댑터 필요성 검토 — 보류, 후보로 내림 (2026-10-17, ADR-050). 대신 Prowler ISMS-P 대응표를 매핑 협의 참고 자료로 비교
   - [x] Prowler `kisa_isms_p_2023_aws` 대응표와 ISMS-P 매핑 초안 비교표 (`docs/ISMS_P_MAPPING_REVIEW.md` 참고 절) — 같음 10·다름 21·대응 없음 4, 협의 쟁점 4건에 참고 의견. RDS-005 추가 후 같음 11 (Prowler `rds_instance_transport_encrypted`도 2.7.1·2.10.2)
 - [ ] Azure 지원

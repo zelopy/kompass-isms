@@ -298,6 +298,9 @@
   - 실제 모델 실행 (2026-10-17): 실습 가공 3개(`lab-rds-005`, `lab-elb-001~002`)와 보강 3개, 6개 × 2회(claude-opus-5-5 effort high, $0.82). 검증 통과 100%, 채점기 오판 2종 수정 후 모든 지표 100% (`.claude/hillclimb/explain/elb-rds005/metrics.md`). 기준선·`rds005`·`elb-oracle`은 수정한 채점기로 다시 채점해도 같다.
   - 채점기 오판: Classic finding의 리소스 `classic:<이름>`을 명령의 `--load-balancer-name <이름>`과 맞추지 못함, ELB가 `listeners[].errors`에 남긴 거부된 조회(`elbv2:DescribeSSLPolicies`·`DescribeRules`)를 ERROR 정답 작업에 넣지 않음.
   - 오라클이 찾은 결함: 마스킹이 ELB ARN의 둘째 구간(`listener/app/…`의 `app`, `net`, `gwy`)을 이름으로 모아 `MASKED_NAME_`으로 바꿨고, 채점기가 이 이름이 프롬프트의 `"application"`에 부분 일치한다고 보고 노출로 판정했다. 이 구간은 AWS가 정한 로드 밸런서 종류라 식별정보가 아니므로, `elasticloadbalancing` ARN에서만 리소스 종류와 함께 남기도록 마스킹을 고쳤다 (`_type_segments`). 다른 서비스의 `app` 구간(예: IAM 역할 `role/app`)은 그대로 가린다.
+- RDS-006 케이스 추가 (2026-10-17): 실습 가공 1개(`lab-rds-006`)와 보강 2개(Aurora 클러스터 스냅샷 공개 FAIL·특정 계정 공유 PASS, 공개 MySQL 스냅샷 FAIL·공유 속성 조회 거부 ERROR)로 71개. 오라클 3개 모든 지표 100%.
+  - 실제 모델 실행 (2026-10-18, 사용자 승인): 3개 × 2회(claude-opus-5-5 effort high, $0.40). 검증 통과 100%, 채점기 오판 1종 수정 후 모든 지표 100% (`.claude/hillclimb/explain/rds006/metrics.md`). 기준선·`rds005`·`elb-rds005`·`elb-oracle`·`rds006-oracle`은 수정한 채점기로 다시 채점해도 같다.
+  - 채점기 오판: 클러스터 스냅샷 finding의 리소스 `cluster-snapshot:<식별자>`를 명령의 `--db-cluster-snapshot-identifier <식별자>`와 맞추지 못함 (대상 일치 66.7%로 기록됨).
 
 ## ADR-034 종합 위험 평가
 - 상태: 채택 (사용자 결정, 2026-10-14)

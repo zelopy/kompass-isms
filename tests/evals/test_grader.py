@@ -257,6 +257,17 @@ def test_elb_targets_include_classic_load_balancer_name() -> None:
     assert "acme-shop-alb" not in targets  # PASS finding
 
 
+def test_rds_targets_include_cluster_snapshot_identifier() -> None:
+    # RDS-006 실제 실행에서 발견: 클러스터 스냅샷 finding의 리소스는
+    # "cluster-snapshot:<식별자>"이고, 명령은 --db-cluster-snapshot-identifier <식별자>로 가리킨다
+    from kompass.evals.grader import _targets
+
+    cases = {c.id: c for c in load_cases(EVAL_DIR / "cases")}
+    targets = _targets(cases["syn-rds-006-cluster-shared"].findings)
+    assert "acme-analytics-export" in targets
+    assert "acme-orders-db-handover" not in targets  # PASS finding
+
+
 def test_error_actions_include_denied_lookups_nested_in_listeners() -> None:
     # ELB는 리스너별 수집 오류를 evidence.listeners[].errors에 남긴다.
     # 거부된 조회의 재실행도 정답이다
