@@ -1,9 +1,16 @@
 """판정 기준값 설정 테스트."""
 
+import json
+import re
+from pathlib import Path
+from typing import Any
+
 import pytest
 from pydantic import ValidationError
 
 from kompass.config import Settings
+
+MANUAL = Path(__file__).parents[1] / "docs" / "MANUAL.md"
 
 
 def test_defaults() -> None:
@@ -52,3 +59,32 @@ def test_judgment_criteria_exclude_llm() -> None:
     criteria = Settings.model_validate({"llm": {"effort": "low"}}).judgment_criteria()
     assert "llm" not in criteria
     assert criteria["ec2"]["admin_ports"] == [22, 3389]
+
+
+def _flatten(value: Any, prefix: str = "") -> dict[str, Any]:
+    if isinstance(value, dict):
+        flat: dict[str, Any] = {}
+        for key, child in value.items():
+            flat |= _flatten(child, f"{prefix}{key}.")
+        return flat
+    return {prefix.rstrip("."): value}
+
+
+def _manual_value(value: Any) -> str:
+    """MANUAL.md 부록 B의 기본값 표기. 긴 작업 목록은 개수만 적는다."""
+    if isinstance(value, bool):
+        return str(value).lower()
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    if isinstance(value, list):
+        return f"[{len(value)}개 작업]" if len(value) > 6 else json.dumps(value)
+    return str(value)
+
+
+def test_manual_lists_every_setting_with_its_default() -> None:
+    # 매뉴얼 부록 B가 설정 키·기본값의 사용자용 정본이다. 키·기본값을 바꾸면 함께 고친다
+    appendix = MANUAL.read_text(encoding="utf-8").split("### B. `kompass.yaml` 전체 키", 1)[1]
+    appendix = appendix.split("\n### ", 1)[0]
+    documented = dict(re.findall(r"^\| `([a-z0-9_.]+)` \| `([^`]+)` \|", appendix, re.M))
+    defaults = _flatten(Settings().model_dump(mode="json"))
+    assert documented == {key: _manual_value(value) for key, value in defaults.items()}
