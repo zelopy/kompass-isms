@@ -51,10 +51,7 @@ claude mcp add kompass -- uv --directory <저장소 경로> run kompass mcp --pr
 uv run kompass investigate --dry-run      # 대상과 최대 비용만 확인
 uv run kompass investigate --profile <aws-profile> --report md --report xlsx
 
-# 해설 평가셋 (개발용, docs/DECISIONS.md ADR-033)
-uv run python scripts/run_explain_eval.py --provider oracle --variant v0 --reps 1  # 무료 배선 점검
-uv run python scripts/run_explain_eval.py --dry-run                                # 예상 비용
-uv run python scripts/run_explain_eval.py --variant v1                             # 실행 (비용 발생)
+# 평가셋 실행 (개발용): evals/README.md
 ```
 
 | 옵션 | 설명 |

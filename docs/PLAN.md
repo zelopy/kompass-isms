@@ -74,11 +74,7 @@
 - [x] 위험 우선순위: 여러 finding을 엮은 종합 평가 — 룰별 우선순위 의견 + 종합 위험 평가(시나리오·조치 순서, `--assessment-only`로 재실행, ADR-034)
 - [x] 조치 방안: AWS CLI 명령 + Terraform 수정안 (룰별 해설 스키마에 포함. 유효성은 평가셋에서 측정)
 - [x] 평가셋: 실습 환경 결과 기반 골든셋, 인용 정확도·조치 유효성 측정 (ADR-033)
-  - [x] 케이스 스키마·실습 결과 가공·보강 케이스 → `cases.md` 사용자 승인 (40개: 실습 가공 16, 보강 24)
-  - [x] 정답(핵심 근거 구간·해소 작업)·채점기·오라클/널 테스트 (오라클 40/40 만점, 널 0점)
-  - [x] 기록용 공급자 래퍼·실행기 (재개·동시 실행·오류 분류·dry-run) — `scripts/run_explain_eval.py`, 오라클 실행으로 형식·보고서 빌더 확인
-  - [x] 파일럿 5개 실행 → 채점 결과 사용자 승인 ($0.36, 채점기 오판 2종 수정)
-  - [x] 전체 기준선 실행 → `report.html`·`metrics.md` (40개 × 2회, 약 $5.2, 검증 통과 100%, 조치 작업 99.4%)
+  - [x] 케이스 40개 사용자 승인, 정답·채점기·오라클/널 테스트, 실행기, 파일럿 채점 사용자 승인, 기준선 실행 — 구성과 실행 기록은 [evals/README.md](../evals/README.md)
 - [x] CLI: `kompass explain` (--dry-run 예상 비용, 비용 확인, --report로 보고서 반영. ADR-031)
 
 **완료 기준:** 평가셋에서 인용 정확도와 조치 유효성 수치를 보고서로 낼 수 있다.
@@ -111,7 +107,7 @@
   - [x] 권한 보유 주체 현황: IAM-010~011 (CA-05·CA-06, ADR-044). KISA 19개 항목 모두 자동 점검 룰 보유
   - [x] 실습 계정 확인 (2026-10-16, `enable_public_rds`·`enable_guardduty` 켬): VPC-003·S3-007·CT-002·LOG-001·IAM-010~011·GD-001~002·RDS-001~004 기대값 일치. `expected.yaml`에 선택 변수별 기대값(`when`)
   - [x] 발견한 결함 수정: 자격증명 보고서 재사용으로 새 사용자가 빠지던 문제 → ERROR (ADR-045)
-  - [x] 평가 케이스 추가: 5단계 룰 20개(실습 가공 10, 보강 10). 20×2회 약 $2.55, 채점기 오판 2종 수정 후 모든 지표 100% (ADR-033 기록)
+  - [x] 평가 케이스 추가: 5단계 룰 20개(실습 가공 10, 보강 10)와 실제 모델 실행 (evals/README.md)
 
 ### 남은 확인
 
@@ -131,38 +127,25 @@
   - [x] 검토기: 요청별 사실(문서 발췌 대조 검증)·부족한 점·추가 요청. status 없음 — `interpreter/evidence_reviewer.py`, 문서 안의 지시는 따르지 않도록 프롬프트에 명시
   - [x] `kompass review-evidence` (마스킹 결과 미리보기·확인, 비용 확인, `--dry-run`, 검토 결과 파일) — `reports/evidence-reviews/<계정>/<점검 ID>.evidence-review.json`, 미리보기 `.evidence-preview.md`
   - [x] 보고서 "증적 검토 (참고)" 절 (md·xlsx·json) — `AuditReport.with_evidence_reviews`, 같은 판정 결과의 검토만 붙음. `review-evidence --report`
-  - [x] 평가 케이스와 실제 호출 확인 (가공 증적 문서) — 8개 × 2회 모든 지표 100% (채점기 오판 수정 후), 약 $0.72. `scripts/run_evidence_eval.py`
-  - [x] 프롬프트 다듬기: 요청 범위 밖 지적·빈 확인 대상 언급·필드 이름·자리표시자 뒤 조사 — 지표 `gap_budget`·`no_field_names` 추가, v1 8개 × 1회 모든 지표 100% (약 $0.34)
+  - [x] 평가셋(가공 증적 문서 8개)과 실제 호출 확인 (evals/README.md)
+  - [x] 프롬프트 다듬기 v1: 과한 지적·빈 확인 대상 언급·필드 이름·자리표시자 뒤 조사 (지표 `gap_budget`·`no_field_names` 추가)
 - [x] 룰: RDS SSL 연결 강제 RDS-005 (CA-12, ADR-051) — 파라미터 그룹 SSL 강제 파라미터 수집, 실습 `public`에 `rds.force_ssl=0` 그룹 (실습 계정 확인 2026-10-17)
-  - [x] 평가 케이스 추가 (실습 가공·보강, ADR-033)
-    - [x] 보강 2개: 엔진 기본값·`rds.force_ssl=0` 클러스터 FAIL, 클러스터 파라미터 조회 거부 ERROR·Oracle REVIEW. 오라클 모든 지표 100%. 정답에 RDS-005 `review` 작업 추가
-    - [x] 실제 모델 실행 (2개 × 2회, $0.33): 대상 일치 외 100%, 채점기 오판 2종 수정 후 대상 일치 91.7%. 남은 1건은 기본 파라미터 그룹 이름 마스킹 영향 (ADR-033 기록)
-    - [x] 실습 가공 1개 생성 (2026-10-17, `lab-rds-005`)
-    - [x] 실제 모델 실행 (`lab-rds-005`, ELB 케이스와 함께): 모든 지표 100%
+  - [x] 평가 케이스 추가: 보강 2개, 실습 가공 1개(`lab-rds-005`)와 실제 모델 실행 (evals/README.md)
 - [x] 룰: 로드 밸런서 평문 리스너·TLS 정책 ELB-001~002 (CA-12, ADR-052) — ALB·NLB·Classic, TCP 리스너 REVIEW, 기준 `elb.min_tls_version`. 실습 `enable_elb`로 internal ALB 2개
   - [x] 사용자 확인: KISA 매핑 원문 근거 (`kisa_verified`). ELB-001 판단 기준 구절(직접), ELB-002 판단 기준 + 조치 사례의 "TLS v1.2 이상" 예시(해석) (2026-10-17)
   - [x] 실습 계정 확인 (2026-10-17): 기대값 일치
-  - [x] 평가 케이스 추가 (실습 가공·보강, ADR-033)
-    - [x] 실습 가공 2개 생성 (`lab-elb-001`·`lab-elb-002`)
-    - [x] 보강 3개: Classic HTTP FAIL·NLB TCP REVIEW, 규칙·리스너 조회 거부 ERROR, Classic 구형 협상 정책 FAIL·NLB 정책 조회 거부 ERROR. 오라클 68개 모든 지표 100% (ELB ARN 종류 구간 마스킹 수정 후)
-    - [x] 실제 모델 실행 (실습 가공 2개 + 보강 3개, `lab-rds-005`와 함께 6개 × 2회, $0.82): 채점기 오판 2종 수정 후 모든 지표 100% (ADR-033 기록)
+  - [x] 평가 케이스 추가: 실습 가공 2개, 보강 3개와 실제 모델 실행 (evals/README.md)
 - [x] 룰: RDS 공개 스냅샷 RDS-006 (CA-10, ADR-053) — 수동 스냅샷·공유 속성 수집, 실습 `public` 스냅샷 공개 (실습 계정 확인 2026-10-17)
   - [x] 룰·collector·테스트, 매핑 `kisa_verified: false`, 실습 Terraform·기대값
   - [x] 사용자 확인: KISA CA-10 매핑 원문 근거 (근거 수준 해석) (2026-10-18)
   - [x] 실습 계정 확인 (2026-10-17, `enable_public_rds = true`): `pytest -m lab` 통과. 공개 스냅샷 FAIL, 비공유 스냅샷 PASS. 공유하지 않은 스냅샷도 `restore` 속성을 빈 목록으로 돌려줌
-  - [x] 평가 케이스 추가 (실습 가공·보강, ADR-033)
-    - [x] 실습 가공 1개(`lab-rds-006`), 보강 2개: Aurora 클러스터 스냅샷 공개 FAIL·특정 계정 공유 PASS, 공개 MySQL 스냅샷 FAIL·공유 속성 조회 거부 ERROR. 오라클 3개 모든 지표 100%
-    - [x] 실제 모델 실행 (3개 × 2회, $0.40): 채점기 오판 1종 수정 후 모든 지표 100% (ADR-033 기록)
+  - [x] 평가 케이스 추가: 실습 가공 1개, 보강 2개와 실제 모델 실행 (evals/README.md)
 - [x] 룰: AWS Backup 계획·보존 기간·최근 백업 BKP-001~003 (CA-18, ADR-054) — 새 collector `backup`, 계획 없음은 REVIEW. 실습 `enable_backup`으로 계획 2개·빈 DynamoDB 테이블
   - [x] 룰·collector·테스트, 매핑 `kisa_verified: false`, 실습 Terraform·기대값, ISMS-P 검토표·Prowler 비교(`backup_plans_exist` 2.9.3·2.12.1)
   - [x] 실습 통합 테스트 결함 수정: `LAB_FLAGS`에 `enable_elb`가 없어 ELB 기대값 6개가 대조에서 빠지던 문제 (기본 실행 검사 `tests/test_lab_expected.py` 추가)
   - [x] 사용자 확인: KISA CA-18 매핑 원문 근거 (BKP-001·003 직접, BKP-002 해석) (2026-10-18). RDS-004에 7일 기준은 해석이라는 비고 추가
   - [x] 실습 계정 확인 (2026-10-18, `enable_backup`·`enable_elb` 켬, 첫 백업 뒤): `pytest -m lab` 통과. `SecurityAudit`으로 backup 조회 실패 없음, BKP-001 PASS·BKP-002 `daily` PASS·`short` FAIL·BKP-003 PASS. ELB 기대값 6개 처음으로 실제 대조해 일치. 백업 서비스 역할이 IAM-010 REVIEW(`ssm:SendCommand`)라 기대값에 추가. 끈 뒤(`enable_backup`·`enable_elb` false)에도 통과: BKP-001 REVIEW, BKP-002·003 N/A
-  - [x] 평가 케이스 추가 (실습 가공·보강, ADR-033)
-    - [x] 실습 가공 1개 생성 (2026-10-18, `lab-bkp-002`: `short` FAIL·`daily` PASS). BKP-001·003은 실습에서 PASS라 실습 케이스 없음
-    - [x] 보강 5개: BKP-001 REVIEW(계획 없음)·FAIL·ERROR, BKP-002 REVIEW(복사 뒤 삭제)·ERROR, BKP-003 FAIL(오래된 백업·백업 미수행)·ERROR. 오라클 6개 모든 지표 100% (2026-10-18)
-    - [x] 오라클이 찾은 결함 수정: BKP-002 증적에 계획 ID(`backup_plan_id`)가 없어 조치 명령 대상 일치 0% → 증적·마스킹·채점기 수정, `lab-bkp-002` 재생성 (ADR-033 기록)
-    - [x] 실제 모델 실행 (2026-10-18, 6개 × 2회, $0.80): 모든 지표 100%. BKP-002 조치 명령이 증적의 계획 ID를 씀
+  - [x] 평가 케이스 추가: 실습 가공 1개(`lab-bkp-002`, BKP-001·003은 실습에서 PASS라 없음), 보강 5개와 실제 모델 실행 (evals/README.md). 오라클이 찾은 BKP-002 증적의 계획 ID 누락 수정
 - [x] Prowler OCSF 출력 어댑터 필요성 검토 — 보류, 후보로 내림 (2026-10-17, ADR-050). 대신 Prowler ISMS-P 대응표를 매핑 협의 참고 자료로 비교
   - [x] Prowler `kisa_isms_p_2023_aws` 대응표와 ISMS-P 매핑 초안 비교표 (`docs/ISMS_P_MAPPING_REVIEW.md` 참고 절) — 같음 10·다름 21·대응 없음 4, 협의 쟁점 4건에 참고 의견. RDS-005 추가 후 같음 11 (Prowler `rds_instance_transport_encrypted`도 2.7.1·2.10.2)
 - [ ] Azure 지원
