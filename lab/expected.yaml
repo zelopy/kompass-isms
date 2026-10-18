@@ -1,6 +1,8 @@
 # 실습 환경 기대 결과 (통합 테스트 기준: tests/lab/test_lab_scan.py)
 #
-# lab/README.md의 기대 결과표를 기계가 읽을 수 있게 옮긴 것이다. 표를 바꾸면 이 파일도 바꾼다.
+# 실습 기대값의 정본이다. 룰을 더하거나 실습 리소스를 바꾸면 이 파일을 고친다.
+# 주석에는 그 결과가 나오는 이유와 실습 계정에서 확인한 AWS 동작을 적는다.
+#
 # resource는 배포마다 바뀌는 ID 대신 이름표로 적는다.
 #   - 보안그룹: 그룹 이름. 기본 보안그룹은 default@<VPC Name 태그>
 #   - VPC: Name 태그 / 네트워크 인터페이스: 설명(Description)
@@ -8,7 +10,9 @@
 #   - IAM: 사용자 이름(+ #access_key_N), 그 외 ARN의 리소스 부분 / 계정 단위: account
 # status NONE은 "finding이 없어야 한다"는 뜻이다.
 # when: 선택 변수 값이 맞을 때만 대조한다 (lab/terraform.tfvars, 없으면 기본값).
-# 기본 변수값(terraform.tfvars.example)으로 배포한 실습 전용 계정 기준.
+# 기본 변수값(terraform.tfvars.example)으로 배포한 실습 전용 계정 기준이며, 계정에 비밀번호 정책과
+# 계정 수준 S3 차단 설정이 원래 없는 상태를 가정한다. 이름이 kompass-lab-으로 시작하지 않는
+# 기존 리소스(리전 기본 VPC와 기본 보안그룹 등)의 결과는 대조하지 않는다.
 
 profile: kompass-lab-audit
 regions: [ap-northeast-2]
@@ -16,9 +20,10 @@ regions: [ap-northeast-2]
 expectations:
   # CloudTrail
   - {rule: CT-001, resource: account, status: PASS}
+  # logs 버킷에 cloudtrail/AWSLogs/ 경로 30일 삭제 규칙
   - {rule: CT-002, resource: kompass-lab-logs, status: FAIL}
 
-  # CloudWatch Logs
+  # CloudWatch Logs (보존 기간 30일 / 400일)
   - {rule: LOG-001, resource: /aws/rds/instance/kompass-lab-short/error, status: FAIL}
   - {rule: LOG-001, resource: /aws/rds/instance/kompass-lab-long/error, status: PASS}
 
@@ -32,64 +37,80 @@ expectations:
   - {rule: SG-002, resource: kompass-lab-open-ssh, status: PASS}
   - {rule: SG-002, resource: kompass-lab-open-db, status: PASS}
   - {rule: SG-002, resource: kompass-lab-restricted, status: PASS}
+  # open-db는 IPv6 ::/0으로 DB 포트를 연다
   - {rule: SG-003, resource: kompass-lab-open-db, status: FAIL}
   - {rule: SG-003, resource: kompass-lab-open-all, status: FAIL}
   - {rule: SG-003, resource: kompass-lab-open-ssh, status: PASS}
   - {rule: SG-003, resource: kompass-lab-restricted, status: PASS}
+  # mixed VPC 기본 SG: ENI 연결, 기본 규칙 유지 / public-only VPC 기본 SG: 규칙 제거
   - {rule: SG-004, resource: default@kompass-lab-mixed, status: FAIL}
   - {rule: SG-004, resource: default@kompass-lab-public-only, status: PASS}
 
   # VPC
+  # mixed는 프라이빗 서브넷에 ENI가 있고, public-only는 퍼블릭 서브넷에만 ENI가 있다
   - {rule: VPC-001, resource: kompass-lab-mixed, status: PASS}
   - {rule: VPC-001, resource: kompass-lab-public-only, status: FAIL}
+  # EIP가 연결된 ENI. enable_public_rds = true이면 공개 RDS의 ENI(RequesterId: amazon-rds)도
+  # REVIEW로 나온다 (2026-10-16 확인, 이름표가 없어 대조하지 않음)
   - {rule: VPC-002, resource: "kompass lab: workload in public-only VPC", status: REVIEW}
   - {rule: VPC-002, resource: "kompass lab: workload in private subnet", status: NONE}
+  # mixed VPC에는 REJECT만 기록하는 흐름 로그가 있다 (트래픽 유형은 판정하지 않음)
   - {rule: VPC-003, resource: kompass-lab-mixed, status: PASS}
   - {rule: VPC-003, resource: kompass-lab-public-only, status: FAIL}
 
-  # GuardDuty
+  # GuardDuty. 실습 리전에 다른 경로로 만든 탐지기가 있으면 기본값에서도 GD-001이 PASS
   - {rule: GD-001, resource: account, status: FAIL, when: {enable_guardduty: false}}
   - {rule: GD-002, resource: account, status: N/A, when: {enable_guardduty: false}}
+  # 탐지기 + 결과 알림 규칙(EventBridge → SNS)
   - {rule: GD-001, resource: account, status: PASS, when: {enable_guardduty: true}}
   - {rule: GD-002, resource: account, status: PASS, when: {enable_guardduty: true}}
 
-  # AWS Backup (기본값 enable_backup = false: 계획 없음)
+  # AWS Backup (기본값 enable_backup = false: 계획 없음 → 다른 백업 수단 확인)
   - {rule: BKP-001, resource: account, status: REVIEW, when: {enable_backup: false}}
   - {rule: BKP-002, resource: account, status: N/A, when: {enable_backup: false}}
   - {rule: BKP-003, resource: account, status: N/A, when: {enable_backup: false}}
   - {rule: BKP-001, resource: account, status: PASS, when: {enable_backup: true}}
+  # daily: 매시 백업·보존 35일 / short: 보존 1일·선택 없음
   - {rule: BKP-002, resource: backup-plan:kompass-lab-daily, status: PASS, when: {enable_backup: true}}
   - {rule: BKP-002, resource: backup-plan:kompass-lab-short, status: FAIL, when: {enable_backup: true}}
   # 첫 백업(apply 뒤 다음 정각부터 60분 안) 이후 기준. 그 전에는 리전 FAIL
+  # ("백업 대상이 지정된 계획은 있으나 백업된 리소스가 없음")
   - {rule: BKP-003, resource: table/kompass-lab-backup, status: PASS, when: {enable_backup: true}}
 
-  # RDS
-  # ELB (기본값 enable_elb = false: 대상 없음)
+  # ELB (기본값 enable_elb = false: 대상 없음). 실습 리전에 다른 로드 밸런서가 있으면 그 결과도 나온다
   - {rule: ELB-001, resource: account, status: N/A, when: {enable_elb: false}}
   - {rule: ELB-002, resource: account, status: N/A, when: {enable_elb: false}}
+  # internal ALB 2개, 공인 IP 없음. weak: HTTP:80 → 대상 그룹 전달, ELBSecurityPolicy-2016-08
   - {rule: ELB-001, resource: kompass-lab-weak, status: FAIL, when: {enable_elb: true}}
   - {rule: ELB-002, resource: kompass-lab-weak, status: FAIL, when: {enable_elb: true}}
+  # strict: HTTP:80 → HTTPS 리디렉션, ELBSecurityPolicy-TLS13-1-2-2021-06
   - {rule: ELB-001, resource: kompass-lab-strict, status: PASS, when: {enable_elb: true}}
   - {rule: ELB-002, resource: kompass-lab-strict, status: PASS, when: {enable_elb: true}}
 
+  # RDS (기본값 enable_public_rds = false: 대상 없음)
   - {rule: RDS-001, resource: account, status: N/A, when: {enable_public_rds: false}}
   - {rule: RDS-002, resource: account, status: N/A, when: {enable_public_rds: false}}
   - {rule: RDS-003, resource: account, status: N/A, when: {enable_public_rds: false}}
   - {rule: RDS-004, resource: account, status: N/A, when: {enable_public_rds: false}}
   - {rule: RDS-005, resource: account, status: N/A, when: {enable_public_rds: false}}
   - {rule: RDS-006, resource: account, status: N/A, when: {enable_public_rds: false}}
+  # public: 암호화 없음, 공개, 로그 내보내기 없음(EnabledCloudwatchLogsExports 키 생략), 백업 0일,
+  # rds.force_ssl=0 파라미터 그룹
   - {rule: RDS-001, resource: kompass-lab-public, status: FAIL, when: {enable_public_rds: true}}
   - {rule: RDS-002, resource: kompass-lab-public, status: FAIL, when: {enable_public_rds: true}}
   - {rule: RDS-003, resource: kompass-lab-public, status: FAIL, when: {enable_public_rds: true}}
   - {rule: RDS-004, resource: kompass-lab-public, status: FAIL, when: {enable_public_rds: true}}
   - {rule: RDS-005, resource: kompass-lab-public, status: FAIL, when: {enable_public_rds: true}}
+  # private: 백업 7일, 기본 파라미터 그룹(default.postgres18은 rds.force_ssl 값 1, Source: system)
   - {rule: RDS-001, resource: kompass-lab-private, status: PASS, when: {enable_public_rds: true}}
   - {rule: RDS-002, resource: kompass-lab-private, status: PASS, when: {enable_public_rds: true}}
   - {rule: RDS-003, resource: kompass-lab-private, status: PASS, when: {enable_public_rds: true}}
   - {rule: RDS-004, resource: kompass-lab-private, status: PASS, when: {enable_public_rds: true}}
   - {rule: RDS-005, resource: kompass-lab-private, status: PASS, when: {enable_public_rds: true}}
+  # 모든 계정에 공개한 스냅샷 / 공유하지 않은 스냅샷(restore 속성을 빈 목록으로 돌려줌)
   - {rule: RDS-006, resource: kompass-lab-public-snapshot, status: FAIL, when: {enable_public_rds: true}}
   - {rule: RDS-006, resource: kompass-lab-private-snapshot, status: PASS, when: {enable_public_rds: true}}
+  # RDS 로그 그룹 보존 1일
   - {rule: LOG-001, resource: /aws/rds/instance/kompass-lab-private/postgresql, status: FAIL, when: {enable_public_rds: true}}
 
   # S3
@@ -100,25 +121,30 @@ expectations:
   - {rule: S3-002, resource: kompass-lab-restricted-policy, status: FAIL}
   - {rule: S3-002, resource: kompass-lab-public-acl, status: FAIL}
   - {rule: S3-003, resource: kompass-lab-public-policy, status: FAIL}
+  # RestrictPublicBuckets: true로 실제 공개가 막혀 있어도 IsPublic은 true (evidence에 차단 설정)
   - {rule: S3-003, resource: kompass-lab-restricted-policy, status: FAIL}
   - {rule: S3-003, resource: kompass-lab-logs, status: PASS}
   - {rule: S3-003, resource: kompass-lab-private, status: PASS}
   - {rule: S3-003, resource: kompass-lab-public-acl, status: PASS}
+  # SSE-S3 기본 암호화
   - {rule: S3-004, resource: kompass-lab-logs, status: PASS}
   - {rule: S3-004, resource: kompass-lab-private, status: PASS}
   - {rule: S3-004, resource: kompass-lab-public-policy, status: PASS}
   - {rule: S3-004, resource: kompass-lab-restricted-policy, status: PASS}
   - {rule: S3-004, resource: kompass-lab-public-acl, status: PASS}
   - {rule: S3-005, resource: kompass-lab-private, status: PASS}
+  # 로그 버킷. s3.exclude_log_target_buckets를 켜면 N/A
   - {rule: S3-005, resource: kompass-lab-logs, status: FAIL}
   - {rule: S3-005, resource: kompass-lab-public-policy, status: FAIL}
   - {rule: S3-005, resource: kompass-lab-restricted-policy, status: FAIL}
   - {rule: S3-005, resource: kompass-lab-public-acl, status: FAIL}
+  # public-acl 외에는 BucketOwnerEnforced (ACL 비활성화)
   - {rule: S3-006, resource: kompass-lab-public-acl, status: FAIL}
   - {rule: S3-006, resource: kompass-lab-logs, status: PASS}
   - {rule: S3-006, resource: kompass-lab-private, status: PASS}
   - {rule: S3-006, resource: kompass-lab-public-policy, status: PASS}
   - {rule: S3-006, resource: kompass-lab-restricted-policy, status: PASS}
+  # private에만 HTTP 요청 거부 문장이 있다
   - {rule: S3-007, resource: kompass-lab-private, status: PASS}
   - {rule: S3-007, resource: kompass-lab-logs, status: FAIL}
   - {rule: S3-007, resource: kompass-lab-public-policy, status: FAIL}
@@ -126,19 +152,27 @@ expectations:
   - {rule: S3-007, resource: kompass-lab-public-acl, status: FAIL}
 
   # IAM
+  # 루트 계정은 Terraform으로 관리할 수 없어 계정 상태에 따른다. 실습 계정은 루트 MFA 설정, 루트 액세스 키 없음
   - {rule: IAM-001, resource: account, status: PASS}
   - {rule: IAM-002, resource: account, status: PASS}
   - {rule: IAM-003, resource: kompass-lab-console-no-mfa, status: FAIL}
+  # 비밀번호 정책 없음 (NoSuchEntity)
   - {rule: IAM-004, resource: account, status: FAIL}
+  # 최근 설정된 비밀번호
   - {rule: IAM-005, resource: kompass-lab-console-no-mfa, status: PASS}
+  # 배포·점검용 사용자의 키. 90일 안에 만들었다
   - {rule: IAM-006, resource: "kompass-lab-admin#access_key_1", status: PASS}
   - {rule: IAM-006, resource: "security_manager#access_key_1", status: PASS}
+  # direct-admin: AdministratorAccess 직접 / wildcard-admin: */* 고객 관리형 정책 직접
   - {rule: IAM-007, resource: kompass-lab-direct-admin, status: FAIL}
   - {rule: IAM-007, resource: kompass-lab-wildcard-admin, status: FAIL}
+  # group-admin: 그룹 경유 / notaction: Allow + NotAction / admin: 배포용, admin 그룹 경유
   - {rule: IAM-007, resource: kompass-lab-group-admin, status: REVIEW}
   - {rule: IAM-007, resource: kompass-lab-notaction, status: REVIEW}
   - {rule: IAM-007, resource: kompass-lab-admin, status: REVIEW}
   - {rule: IAM-007, resource: kompass-lab-readonly, status: NONE}
+  # 관리자 권한 사용자 4명 + 배포용 admin (*, NotAction 포함). readonly는 조회 작업뿐이라 finding 없음.
+  # 점검용 security_manager(SecurityAudit)도 finding 없음
   - {rule: IAM-010, resource: kompass-lab-direct-admin, status: REVIEW}
   - {rule: IAM-010, resource: kompass-lab-wildcard-admin, status: REVIEW}
   - {rule: IAM-010, resource: kompass-lab-group-admin, status: REVIEW}
@@ -154,5 +188,7 @@ expectations:
   # AWS Backup 서비스 역할: 관리형 정책 AWSBackupServiceRolePolicyForBackup에 ssm:SendCommand가 있다
   - {rule: IAM-010, resource: role/kompass-lab-backup, status: REVIEW, when: {enable_backup: true}}
   - {rule: IAM-011, resource: role/kompass-lab-backup, status: NONE, when: {enable_backup: true}}
+  # 루트 password_last_used가 no_information이라 사용 이력 확인 불가 (최근 사용일이 있어도 REVIEW)
   - {rule: IAM-008, resource: account, status: REVIEW}
+  # GitHub Actions OIDC 공급자
   - {rule: IAM-009, resource: oidc-provider/token.actions.githubusercontent.com, status: REVIEW}

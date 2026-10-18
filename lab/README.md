@@ -1,6 +1,6 @@
 # kompass 실습 환경
 
-kompass 룰이 기대한 FAIL/PASS/REVIEW를 내는지 확인하기 위한 **의도적으로 취약한** AWS 환경이다. 1단계 통합 테스트는 아래 [기대 결과표](#기대-결과표)와 실제 결과를 비교한다.
+kompass 룰이 기대한 FAIL/PASS/REVIEW를 내는지 확인하기 위한 **의도적으로 취약한** AWS 환경이다. 통합 테스트는 아래 [기대 결과표](#기대-결과표)와 실제 결과를 비교한다.
 
 > **경고**
 > - 퍼블릭 버킷과 관리자 권한 IAM 사용자를 만든다. 가능하면 실습 전용 AWS 계정에 배포한다.
@@ -52,146 +52,12 @@ terraform apply
 
 ## 기대 결과표
 
-통합 테스트(`uv run pytest -m lab`)는 이 표를 옮긴 [expected.yaml](expected.yaml)을 기준으로 실제 스캔 결과를 대조한다. 표를 바꾸면 `expected.yaml`도 함께 바꾼다.
+룰별 기대 결과는 [expected.yaml](expected.yaml)에 있다. 통합 테스트(`uv run pytest -m lab`)가 이 파일을 기준으로 실제 스캔 결과를 대조하며, 결과가 그렇게 나오는 이유와 실습 계정에서 확인한 AWS 동작은 파일 안 주석에 적는다.
 
-기본 변수값, 점검 리전 `ap-northeast-2`, 계정에 비밀번호 정책과 계정 수준 S3 차단 설정이 원래 없는 상태 기준. "계정 상태"는 Terraform이 만들지 않는 루트 계정 상태에 따라 달라진다. 실습 리소스가 아닌 기존 리소스의 결과는 이 표의 비교 대상이 아니다.
-
-### IAM
-
-실습 계정에서 기대값과 일치 확인 (2026-10-14). 배포·점검용 사용자(`kompass-lab-admin`, `security_manager`)의 결과도 함께 적는다.
-
-| 룰 | 대상 | 기대 결과 |
-|---|---|---|
-| IAM-001 | 루트 계정 | 계정 상태 (루트 MFA를 설정해 두면 PASS) |
-| IAM-002 | 루트 계정 | 계정 상태 (루트 액세스 키가 없으면 PASS) |
-| IAM-003 | `kompass-lab-console-no-mfa` | FAIL |
-| IAM-004 | 계정 비밀번호 정책 (없음) | FAIL (`NoSuchEntity`) |
-| IAM-005 | 콘솔 사용자 (최근 설정된 비밀번호) | PASS |
-| IAM-006 | `kompass-lab-admin`, `security_manager`의 액세스 키 | PASS (90일 안에 생성) |
-| IAM-007 | `kompass-lab-direct-admin` (AdministratorAccess 직접) | FAIL |
-| IAM-007 | `kompass-lab-wildcard-admin` (`*`/`*` 고객 관리형 정책 직접) | FAIL |
-| IAM-007 | `kompass-lab-group-admin` (그룹 경유) | REVIEW |
-| IAM-007 | `kompass-lab-notaction` (Allow + NotAction) | REVIEW |
-| IAM-007 | `kompass-lab-readonly` | finding 없음 |
-| IAM-007 | `kompass-lab-admin` (배포용, `admin` 그룹 경유) | REVIEW |
-| IAM-010·011 | 관리자 권한 사용자 4명 + `kompass-lab-admin` (`*`, NotAction 포함) | REVIEW |
-| IAM-010·011 | `kompass-lab-readonly` (ReadOnlyAccess: 조회 작업뿐), 점검용 `security_manager` (SecurityAudit) | finding 없음 |
-| IAM-010 | `kompass-lab-backup` 역할 (`enable_backup = true`일 때, AWS Backup 서비스 역할) | REVIEW (관리형 정책 `AWSBackupServiceRolePolicyForBackup`의 `ssm:SendCommand`). IAM-011은 finding 없음 |
-| IAM-008 | 루트 계정 | REVIEW. 루트 `password_last_used`가 `no_information`이라 사용 이력 확인 불가 (최근 90일 안의 사용일이 보고서에 있어도 REVIEW) |
-| IAM-009 | GitHub Actions OIDC 공급자 | REVIEW |
-
-### S3
-
-실습 계정에서 기대값과 일치 확인 (2026-10-14). S3-005의 `logs`는 제외 옵션을 켜면 N/A 확인.
-
-| 룰 | 대상 | 기대 결과 |
-|---|---|---|
-| S3-001 | 계정 (계정 수준 차단 설정 없음) | FAIL |
-| S3-002 | `logs`, `private` | PASS |
-| S3-002 | `public-policy`, `restricted-policy`, `public-acl` | FAIL |
-| S3-003 | `public-policy` | FAIL |
-| S3-003 | `restricted-policy` | FAIL (evidence에 `RestrictPublicBuckets: true`). `IsPublic=true` 확인됨 |
-| S3-003 | 나머지 | PASS |
-| S3-004 | 전체 | PASS (SSE-S3 기본 암호화) |
-| S3-005 | `private` | PASS |
-| S3-005 | `logs` | 제외 옵션을 켜면 제외, 아니면 FAIL |
-| S3-005 | `public-policy`, `restricted-policy`, `public-acl` | FAIL |
-| S3-006 | `public-acl` | FAIL |
-| S3-006 | 나머지 | PASS (`BucketOwnerEnforced`) |
-| S3-007 | `private` (HTTP 요청 거부 문장) | PASS |
-| S3-007 | 나머지 (정책 없음 또는 거부 문장 없음) | FAIL |
-
-### EC2
-
-실습 계정에서 기대값과 일치 확인 (2026-10-13, VPC-002의 RDS 케이스 제외).
-
-| 룰 | 대상 | 기대 결과 |
-|---|---|---|
-| SG-001 | `open-ssh`, `open-all` | FAIL |
-| SG-001 | `open-db`, `restricted`, `public-only-workload`, 기본 SG들 | PASS |
-| SG-002 | `open-all` | FAIL |
-| SG-003 | `open-db` (IPv6 ::/0), `open-all` | FAIL |
-| SG-004 | `mixed` VPC 기본 SG (ENI 연결, 기본 규칙 유지) | FAIL |
-| SG-004 | `public-only` VPC 기본 SG (규칙 제거) | PASS |
-| SG-004 | 리전 기본 VPC의 기본 SG | 실습 비교 대상 아님 |
-| VPC-001 | `mixed` (프라이빗 서브넷에 ENI) | PASS |
-| VPC-001 | `public-only` (퍼블릭 서브넷에만 ENI) | FAIL |
-| VPC-001 | 리전 기본 VPC | 실습 비교 대상 아님 (기존 리소스가 있으면 결과가 달라진다) |
-| VPC-002 | `public-only` ENI (EIP 연결) | REVIEW |
-| VPC-003 | `mixed` (VPC 흐름 로그, REJECT만 기록) | PASS |
-| VPC-003 | `public-only` (흐름 로그 없음) | FAIL |
-| VPC-002 | 공개 RDS ENI (`enable_public_rds = true`일 때) | REVIEW (2026-10-16 확인, `RequesterId: amazon-rds`) |
-
-### GuardDuty
-
-| 룰 | `enable_guardduty = false` (기본) | `enable_guardduty = true` |
-|---|---|---|
-| GD-001 | FAIL (탐지기 없음) | PASS |
-| GD-002 | N/A (GuardDuty 꺼짐) | PASS (EventBridge 규칙 → SNS 주제) |
-
-기본값 결과는 실습 계정에서 확인했다 (2026-10-16). 실습 리전에 다른 경로로 만든 탐지기가 있으면 기본값에서도 GD-001이 PASS가 된다.
-
-### AWS Backup
-
-| 룰 | 리소스 | `enable_backup = false` (기본) | `enable_backup = true` |
-|---|---|---|---|
-| BKP-001 | 리전 | REVIEW (계획 없음, 다른 백업 수단 확인) | PASS (`daily`에 규칙과 선택이 있음) |
-| BKP-002 | `backup-plan:kompass-lab-daily` | N/A (계획 없음) | PASS (보존 35일) |
-| BKP-002 | `backup-plan:kompass-lab-short` | | FAIL (보존 1일) |
-| BKP-003 | `table/kompass-lab-backup` | N/A (백업된 리소스 없음) | PASS (첫 백업 뒤) |
-
-첫 백업은 apply 뒤 다음 정각부터 시작 창 60분 안에 돈다. 첫 백업 전에 점검하면 BKP-003이 리전 FAIL("백업 대상이 지정된 계획은 있으나 백업된 리소스가 없음")이다. 실습 계정에서 기대값과 일치 확인 (2026-10-18, `true`는 첫 백업 뒤, `false`는 destroy 뒤). `SecurityAudit`으로 backup 조회에 실패하지 않았다.
-
-### RDS
-
-`enable_public_rds = false`(기본)이면 RDS 룰은 리전 단위 해당 없음(N/A)이다. 아래 표는 실습 계정에서 확인했다 (2026-10-16).
-
-| 룰 | 대상 (`enable_public_rds = true`일 때) | 기대 결과 |
-|---|---|---|
-| RDS-001 | `kompass-lab-public` / `kompass-lab-private` | FAIL / PASS |
-| RDS-002 | `kompass-lab-public` / `kompass-lab-private` | FAIL / PASS |
-| RDS-003 | `kompass-lab-public` / `kompass-lab-private` | FAIL / PASS (로그 내보내기가 없으면 `EnabledCloudwatchLogsExports` 키가 생략됨) |
-| RDS-004 | `kompass-lab-public` (백업 0일) / `kompass-lab-private` (7일) | FAIL / PASS |
-| RDS-005 | `kompass-lab-public` (`rds.force_ssl=0` 그룹) / `kompass-lab-private` (기본 그룹) | FAIL / PASS (2026-10-17 확인, 기본 그룹 `default.postgres18`의 `rds.force_ssl`은 `1`) |
-| RDS-006 | `kompass-lab-public-snapshot` (모든 계정에 공개) / `kompass-lab-private-snapshot` (공유 안 함) | FAIL / PASS (2026-10-17 확인, 공유하지 않은 스냅샷도 `restore` 속성을 빈 목록으로 돌려줌) |
-
-### ELB
-
-`enable_elb = false`(기본)이면 ELB 룰은 리전 단위 해당 없음(N/A)이다. 실습 리전에 다른 로드 밸런서가 있으면 그 결과도 나온다. 아래 표는 실습 계정에서 확인했다 (2026-10-17).
-
-| 룰 | 대상 (`enable_elb = true`일 때) | 기대 결과 |
-|---|---|---|
-| ELB-001 | `kompass-lab-weak` (HTTP:80 → 대상 그룹 전달) / `kompass-lab-strict` (HTTP:80 → HTTPS 리디렉션) | FAIL / PASS |
-| ELB-002 | `kompass-lab-weak` (`ELBSecurityPolicy-2016-08`) / `kompass-lab-strict` (`ELBSecurityPolicy-TLS13-1-2-2021-06`) | FAIL / PASS |
-
-두 ALB 모두 internal이라 공인 IP가 없고, 보안그룹(`kompass-lab-elb`)에 인바운드 규칙이 없다.
-
-### CloudTrail
-
-| 룰 | 대상 | 기대 결과 |
-|---|---|---|
-| CT-001 | `kompass-lab-trail` | PASS |
-| CT-002 | `logs` 버킷 (`cloudtrail/AWSLogs/` 30일 삭제) | FAIL |
-| LOG-001 | `/aws/rds/instance/kompass-lab-short/error` (30일) | FAIL |
-| LOG-001 | `/aws/rds/instance/kompass-lab-long/error` (400일) | PASS |
-| LOG-001 | RDS 로그 그룹 (`enable_public_rds = true`일 때, 1일) | FAIL |
-
-### KISA 항목 단위 (집계 후)
-
-실습 리소스와 계정 단위 룰만으로 집계한 값이다. 같은 계정의 기존 리소스까지 포함한 실제 항목 결과는 이보다 나쁠 수 있다 (FAIL이 하나라도 있으면 취약).
-
-| 항목 | 분류 | 기대 결과 | 이유 |
-|---|---|---|---|
-| CA-01 | partial | 검토 필요 | IAM-005 PASS → partial 상한 |
-| CA-02 | partial | 취약 | IAM-007 FAIL |
-| CA-03 | full | 취약 | IAM-003 FAIL |
-| CA-04 | partial | 취약 | IAM-004 FAIL |
-| CA-07 | partial | 취약 | VPC-001 FAIL |
-| CA-08 | partial | 검토 필요 | VPC-002 REVIEW |
-| CA-09 | partial | 취약 | SG-001~003 FAIL |
-| CA-10 | partial | 취약 | S3-001~003, S3-006 FAIL |
-| CA-13 | full | 양호 | CT-001 PASS |
-| CA-16 | full | 취약 | S3-005 FAIL |
+- 대조 대상은 이름이 `kompass-lab-`으로 시작하는 리소스와 계정 단위 룰이다. 리전 기본 VPC 같은 기존 리소스의 결과는 대조하지 않는다.
+- 루트 계정 룰(IAM-001·002·008)은 Terraform으로 만들 수 없어 계정 상태에 따른다.
+- 선택 변수(`enable_*`)에 따라 달라지는 기대값은 `when`으로 구분한다. 테스트는 `terraform.tfvars`의 값을 읽는다.
+- KISA 항목 단위 결과는 대조하지 않는다. 항목 집계 규칙은 단위 테스트(`tests/mappings/`)가 검사한다.
 
 ## 다른 서비스와 같은 계정에 배포할 때
 
