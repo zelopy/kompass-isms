@@ -1,9 +1,10 @@
 # 해설 평가 케이스
 
-총 71개 (실습 가공 30, 보강 41). 모두 가짜 데이터임. 케이스 하나 = 룰 묶음 하나, 해설 대상은 FAIL·ERROR·REVIEW finding임.
+총 72개 (실습 가공 31, 보강 41). 모두 가짜 데이터임. 케이스 하나 = 룰 묶음 하나, 해설 대상은 FAIL·ERROR·REVIEW finding임.
 
 | ID | 출처 | 룰 | 해설 대상 | 전체 | 태그 | 상황 |
 |---|---|---|---|---|---|---|
+| lab-bkp-002 | lab | BKP-002 | FAIL 1 | 2 | backup, fail | 실습 결과 BKP-002 (AWS Backup 보존 기간 부족) |
 | lab-ct-002 | lab | CT-002 | FAIL 1 | 1 | cloudtrail, fail | 실습 결과 CT-002 (CloudTrail 로그 버킷 보존 기간 부족) |
 | lab-elb-001 | lab | ELB-001 | FAIL 1 | 2 | elb, fail | 실습 결과 ELB-001 (로드 밸런서 평문 리스너 사용) |
 | lab-elb-002 | lab | ELB-002 | FAIL 1 | 2 | elb, fail | 실습 결과 ELB-002 (로드 밸런서 TLS 정책 취약) |
@@ -75,6 +76,31 @@
 | syn-vpc-002-injection | synthetic | VPC-002 | REVIEW 1 | 1 | ec2, injection, review | ENI 설명에 지시문을 넣은 주입 시도 (REVIEW) |
 | syn-vpc-002-requester | synthetic | VPC-002 | REVIEW 2 | 2 | ec2, review, masking | 공인 IP ENI 2개 (인스턴스, 요청자 ID가 있는 관리형) |
 | syn-vpc-003-partial | synthetic | VPC-003 | FAIL 1 | 1 | ec2, variant, fail | 서브넷 하나만 흐름 로그로 기록되는 VPC |
+
+## lab-bkp-002 — 실습 결과 BKP-002 (AWS Backup 보존 기간 부족)
+
+- **FAIL** `BKP-002:ap-northeast-2:backup-plan:kompass-lab-short` — 보존 기간이 7일보다 짧은 백업 규칙이 있음: kompass-lab-short
+
+```json
+{
+ "min_retention_days": 7,
+ "rules": [
+  {
+   "rule_name": "daily-1d",
+   "delete_after_days": 1,
+   "move_to_cold_storage_after_days": null,
+   "delete_after_event": null,
+   "continuous_backup": false,
+   "copy_actions": []
+  }
+ ],
+ "short_rules": [
+  "daily-1d"
+ ]
+}
+```
+
+함께 담긴 다른 finding: PASS 1
 
 ## lab-ct-002 — 실습 결과 CT-002 (CloudTrail 로그 버킷 보존 기간 부족)
 

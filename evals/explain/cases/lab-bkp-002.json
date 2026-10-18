@@ -1,0 +1,62 @@
+{
+ "id": "lab-bkp-002",
+ "title": "실습 결과 BKP-002 (AWS Backup 보존 기간 부족)",
+ "source": "lab",
+ "rule_id": "BKP-002",
+ "tags": [
+  "backup",
+  "fail"
+ ],
+ "findings": [
+  {
+   "rule_id": "BKP-002",
+   "resource": "backup-plan:kompass-lab-daily",
+   "region": "ap-northeast-2",
+   "status": "PASS",
+   "severity": "medium",
+   "message": "백업 보존 기간이 7일 이상임: kompass-lab-daily",
+   "evidence": {
+    "min_retention_days": 7,
+    "rules": [
+     {
+      "rule_name": "hourly-35d",
+      "delete_after_days": 35,
+      "move_to_cold_storage_after_days": null,
+      "delete_after_event": null,
+      "continuous_backup": false,
+      "copy_actions": []
+     }
+    ],
+    "short_rules": []
+   },
+   "collected_at": "2026-10-18T12:58:53.124088Z",
+   "mappings": null
+  },
+  {
+   "rule_id": "BKP-002",
+   "resource": "backup-plan:kompass-lab-short",
+   "region": "ap-northeast-2",
+   "status": "FAIL",
+   "severity": "medium",
+   "message": "보존 기간이 7일보다 짧은 백업 규칙이 있음: kompass-lab-short",
+   "evidence": {
+    "min_retention_days": 7,
+    "rules": [
+     {
+      "rule_name": "daily-1d",
+      "delete_after_days": 1,
+      "move_to_cold_storage_after_days": null,
+      "delete_after_event": null,
+      "continuous_backup": false,
+      "copy_actions": []
+     }
+    ],
+    "short_rules": [
+     "daily-1d"
+    ]
+   },
+   "collected_at": "2026-10-18T12:58:53.124088Z",
+   "mappings": null
+  }
+ ]
+}
