@@ -525,7 +525,7 @@
 - 매핑 확정 (사용자 결정, 2026-10-17): ELB-001은 직접. 로드 밸런서 리스너는 클라우드 리소스의 통신 구간 그 자체이며, 점검 내용 "클라우드 시스템 간 암호화 통신 여부"와 판단 기준에 바로 해당한다. 외부 이용자 구간이 섞이는 점은 RDS-005보다 크지만 internal 로드 밸런서를 포함해 같은 판단 기준으로 본다. ELB-002는 해석. TLS 1.2 기준이 판단 기준이 아니라 "리소스 관리 접근 시" 통신 채널 예시에 있으므로, 서비스 통신에 쓰는 것은 해석으로 두고 기준 버전은 `elb.min_tls_version`으로 기관이 조정한다.
 
 ## ADR-053 RDS 공개 스냅샷 (RDS-006)
-- 상태: 채택 (사용자 결정, 2026-10-17). ADR-039에서 미룬 후보를 다음 작업으로 선정. KISA 매핑은 확인 전 (`kisa_verified: false`).
+- 상태: 채택 (사용자 결정, 2026-10-17). ADR-039에서 미룬 후보를 다음 작업으로 선정. KISA 매핑은 사용자 확인으로 확정 (2026-10-18, `kisa_verified: true`).
 - 결정:
   - RDS collector가 점검 리전마다 계정이 소유한 수동 스냅샷을 `rds:DescribeDBSnapshots`·`rds:DescribeDBClusterSnapshots`(`SnapshotType=manual`)로, 스냅샷마다 공유 속성을 `rds:DescribeDBSnapshotAttributes`·`rds:DescribeDBClusterSnapshotAttributes`로 조회한다. 모두 Describe 호출이라 가드 허용 목록은 바뀌지 않고, `SecurityAudit`의 `rds:Describe*`에 포함된다. 자동 스냅샷은 공유할 수 없어 수집하지 않는다.
   - RDS-006은 스냅샷마다 finding 하나. `restore` 값에 `all`이 있으면 FAIL, 없으면 PASS. 클러스터 스냅샷 resource는 `cluster-snapshot:<식별자>`.
@@ -536,3 +536,4 @@
 - 이유: 이미 수집하는 RDS에 Describe 호출만 더해 CA-10 자동화 범위를 S3 밖으로 넓힌다. 공개 스냅샷은 데이터 전체가 유출되는 설정이라 심각도 high.
 - moto 차이: 없음. 수동·자동 스냅샷 구분과 `restore` 속성(공유하지 않으면 빈 목록)을 실제 API와 같이 돌려준다. 실제 AWS가 공유하지 않은 스냅샷에도 `restore` 속성을 돌려주는지는 실습 계정에서 확인한다 (없으면 ERROR로 드러난다).
 - 실습 계정 확인 (2026-10-17, `enable_public_rds = true`): `kompass-lab-public-snapshot` FAIL(`restore: ["all"]`), `kompass-lab-private-snapshot` PASS(`restore: []`). 실제 AWS도 공유하지 않은 스냅샷에 `restore` 속성을 빈 목록으로 돌려준다.
+- 매핑 확정 (사용자 결정, 2026-10-18): CA-10, 근거 수준 해석. 공개 스냅샷은 모든 AWS 계정이 복원할 수 있어 점검 내용 "모든 인터넷 사용자 접근권한"에 해당한다. 원문의 "스토리지 리소스"가 DB 스냅샷을 명시하지 않으므로 해석으로 둔다.
