@@ -84,7 +84,7 @@ KISA 항목코드는 2026 주요정보통신기반시설 상세가이드 XII. �
 - 애매한 정책: `Allow` + `NotAction`/`NotResource`처럼 정적 분석으로 관리자 여부를 확정하기 어려운 문이 있거나, 연결된 고객 관리형 정책의 본문이 응답에 없으면 해당 사용자는 `REVIEW`.
 - `Deny` 문으로 일부 권한을 막은 경우도 보수적으로 관리자로 판정한다. 권한 경계(permissions boundary)는 evidence에 남기고 판정은 바꾸지 않는다.
 - 확인됨 (실습 계정, 2026-10-14): `GetAccountAuthorizationDetails`는 여러 페이지로 나뉘며(`IsTruncated`), 정책 문서는 dict로 풀려서 온다. collector는 관리형 정책의 기본 버전 본문만 보관하고, 룰은 정책을 ARN으로 찾는다.
-- 범위 밖: 역할(role)의 관리자 권한은 1단계에서 판정하지 않는다. 같은 API 응답에 들어 있으므로 evidence 수집만 해 두고 이후 룰로 추가한다.
+- 범위 밖: 역할(role)의 관리자 권한은 판정하지 않는다. 역할 정보는 같은 API 응답으로 수집되며, 인스턴스·네트워크 변경 권한은 IAM-010~011이 역할까지 본다.
 - 비고: 관리자 수의 적정성은 사람이 판단할 영역이므로, 현황 증적 제공이 주목적이다.
 - ISMS-P(초안): 2.5.5 특수 계정 및 권한 관리, 2.5.6 접근권한 검토, 2.10.2 클라우드 보안
 - KISA: CA-02 사용자 정책 관리 (중, 855쪽) — 근거 수준: 직접 ("사용자/그룹의 목적에 맞게 역할/권한이 할당")
@@ -176,7 +176,7 @@ KISA 항목코드는 2026 주요정보통신기반시설 상세가이드 XII. �
 - 심각도: low
 - API: `s3:GetBucketLogging`
 - 판정: `LoggingEnabled`가 있으면 PASS. 로그 저장 버킷 자신은 제외 옵션 제공: `s3.exclude_log_target_buckets`(기본 false)를 켜면 다른 버킷의 로그를 받는 버킷은 `NOT_APPLICABLE`.
-- 비고: CloudTrail S3 데이터 이벤트로 버킷 접근을 기록하는 경우도 이 룰에서는 FAIL이다. 룰은 `s3` 스냅샷만 보기 때문이다. 그런 경우의 재판단은 4단계 에이전트의 추가 조사로 다룬다 (ADR-015).
+- 비고: CloudTrail S3 데이터 이벤트로 버킷 접근을 기록하는 경우도 이 룰에서는 FAIL이다. 룰은 `s3` 스냅샷만 보기 때문이다. 그런 경우의 재판단은 에이전트 추가 조사(`kompass investigate`)로 다룬다 (ADR-015).
 - ISMS-P(초안): 2.9.4 로그 및 접속기록 관리, 2.10.2 클라우드 보안
 - KISA: CA-16 오브젝트 스토리지 버킷 로깅 설정 (중, 869쪽) — 근거 수준: 직접 ("Object 스토리지 버킷 로깅 설정")
 
@@ -338,7 +338,7 @@ finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 
 
 ## RDS
 
-5단계에서 추가한 룰이다 (ADR-039). 점검 리전(`ScanContext.regions`)마다 `rds:DescribeDBInstances`와 `rds:DescribeDBClusters`로 수집한다. RDS-005(ADR-051)를 위해 인스턴스·클러스터가 쓰는 파라미터 그룹을 `rds:DescribeDBParameters`·`rds:DescribeDBClusterParameters`로 조회하고 SSL 강제 파라미터만 저장한다. RDS-006(ADR-053)을 위해 수동 스냅샷 목록을 `rds:DescribeDBSnapshots`·`rds:DescribeDBClusterSnapshots`로, 스냅샷마다 공유 속성을 `rds:DescribeDBSnapshotAttributes`·`rds:DescribeDBClusterSnapshotAttributes`로 조회한다.
+ADR-039. 점검 리전(`ScanContext.regions`)마다 `rds:DescribeDBInstances`와 `rds:DescribeDBClusters`로 수집한다. RDS-005(ADR-051)를 위해 인스턴스·클러스터가 쓰는 파라미터 그룹을 `rds:DescribeDBParameters`·`rds:DescribeDBClusterParameters`로 조회하고 SSL 강제 파라미터만 저장한다. RDS-006(ADR-053)을 위해 수동 스냅샷 목록을 `rds:DescribeDBSnapshots`·`rds:DescribeDBClusterSnapshots`로, 스냅샷마다 공유 속성을 `rds:DescribeDBSnapshotAttributes`·`rds:DescribeDBClusterSnapshotAttributes`로 조회한다.
 
 - **대상 엔진.** 관계형 데이터베이스만 본다. `docdb`(DocumentDB)·`neptune`(Neptune)은 같은 API로 조회되지만 대상에서 빼고, 리전 finding의 evidence에 제외한 식별자를 남긴다.
 - **클러스터 단위 판정.** `DBClusterIdentifier`가 있는 인스턴스(Aurora, Multi-AZ DB 클러스터)는 암호화·로그·백업이 클러스터 설정이므로 클러스터로 판정한다. 클러스터 finding의 resource는 `cluster:<클러스터 식별자>`로 써서 같은 이름의 인스턴스와 구분한다. 퍼블릭 접근(`PubliclyAccessible`)은 인스턴스 설정이라 RDS-002는 클러스터 소속 인스턴스도 인스턴스 단위로 판정한다.
@@ -409,7 +409,7 @@ finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 
 
 ## ELB
 
-5단계에서 추가한 룰이다 (ADR-052). 점검 리전마다 ALB·NLB는 `elbv2:DescribeLoadBalancers`·`DescribeListeners`·`DescribeRules`(HTTP 리스너만)·`DescribeSSLPolicies`(사용 중인 정책만)로, Classic Load Balancer는 `elb:DescribeLoadBalancers`·`DescribeLoadBalancerPolicies`(HTTPS·SSL 리스너가 있는 것만)로 수집한다. IAM 작업 이름은 둘 다 `elasticloadbalancing:` 접두어다.
+ADR-052. 점검 리전마다 ALB·NLB는 `elbv2:DescribeLoadBalancers`·`DescribeListeners`·`DescribeRules`(HTTP 리스너만)·`DescribeSSLPolicies`(사용 중인 정책만)로, Classic Load Balancer는 `elb:DescribeLoadBalancers`·`DescribeLoadBalancerPolicies`(HTTPS·SSL 리스너가 있는 것만)로 수집한다. IAM 작업 이름은 둘 다 `elasticloadbalancing:` 접두어다.
 
 - **대상.** ALB·NLB·Classic. Gateway Load Balancer는 트래픽을 보안 장비로 그대로 넘기는 용도라 대상에서 빼고, 리전 finding의 evidence에 이름을 남긴다. 내부용(`internal`) 로드 밸런서도 판정한다 (리소스 간 통신 구간). evidence에 `Scheme`을 남긴다.
 - **resource.** 로드 밸런서 이름. Classic은 `classic:<이름>`으로 써서 같은 이름의 ALB·NLB와 구분한다.
@@ -445,7 +445,7 @@ finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 
 
 ## GuardDuty
 
-5단계에서 추가한 룰이다 (ADR-041). 점검 리전마다 `guardduty:ListDetectors`·`guardduty:GetDetector`와, GuardDuty 결과의 알림 경로를 보기 위해 `events:ListRules`·`events:ListTargetsByRule`(기본 이벤트 버스)을 같은 스냅샷에 수집한다 (룰은 스냅샷 하나만 본다, ADR-015).
+ADR-041. 점검 리전마다 `guardduty:ListDetectors`·`guardduty:GetDetector`와, GuardDuty 결과의 알림 경로를 보기 위해 `events:ListRules`·`events:ListTargetsByRule`(기본 이벤트 버스)을 같은 스냅샷에 수집한다 (룰은 스냅샷 하나만 본다, ADR-015).
 
 ### GD-001 GuardDuty 미활성화
 - 심각도: medium
@@ -469,7 +469,7 @@ finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 
 
 ## AWS Backup
 
-5단계에서 추가한 룰이다 (ADR-054). 점검 리전마다 `backup:ListBackupPlans`·`backup:GetBackupPlan`(규칙의 일정·보존 기간), 계획마다 `backup:ListBackupSelections`·`backup:GetBackupSelection`(보호 대상 지정), 리전의 `backup:ListProtectedResources`(마지막 백업 시각)를 수집한다.
+ADR-054. 점검 리전마다 `backup:ListBackupPlans`·`backup:GetBackupPlan`(규칙의 일정·보존 기간), 계획마다 `backup:ListBackupSelections`·`backup:GetBackupSelection`(보호 대상 지정), 리전의 `backup:ListProtectedResources`(마지막 백업 시각)를 수집한다.
 
 - **다른 백업 수단.** RDS 자동 백업(RDS-004), EBS 스냅샷 수명주기(DLM), 직접 만든 스냅샷 등 AWS Backup 밖의 백업은 이 룰들이 보지 않는다. 그래서 계획이 아예 없는 리전은 FAIL이 아니라 REVIEW다 (ADR-013).
 - **오류.** 리전의 계획 목록이나 보호 리소스 목록 중 판정에 필요한 것을 수집하지 못하면 그 리전은 ERROR 하나다. 계획 상세·선택을 수집하지 못한 계획은 그 계획을 판정하지 못한 것으로 본다.
