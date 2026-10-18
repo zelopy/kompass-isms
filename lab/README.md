@@ -140,7 +140,7 @@ terraform apply
 | BKP-002 | `backup-plan:kompass-lab-short` | | FAIL (보존 1일) |
 | BKP-003 | `table/kompass-lab-backup` | N/A (백업된 리소스 없음) | PASS (첫 백업 뒤) |
 
-첫 백업은 apply 뒤 다음 정각부터 시작 창 60분 안에 돈다. 첫 백업 전에 점검하면 BKP-003이 리전 FAIL("백업 대상이 지정된 계획은 있으나 백업된 리소스가 없음")이다. 실습 계정에서 기대값과 일치 확인 (2026-10-18, 첫 백업 뒤). `SecurityAudit`으로 backup 조회에 실패하지 않았다.
+첫 백업은 apply 뒤 다음 정각부터 시작 창 60분 안에 돈다. 첫 백업 전에 점검하면 BKP-003이 리전 FAIL("백업 대상이 지정된 계획은 있으나 백업된 리소스가 없음")이다. 실습 계정에서 기대값과 일치 확인 (2026-10-18, `true`는 첫 백업 뒤, `false`는 destroy 뒤). `SecurityAudit`으로 backup 조회에 실패하지 않았다.
 
 ### RDS
 
