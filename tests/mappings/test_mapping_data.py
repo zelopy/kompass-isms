@@ -73,6 +73,15 @@ def test_rules_md_kisa_matches() -> None:
         assert tuple(documented) == mapping.kisa, rule_id
 
 
+def test_rules_md_isms_p_matches() -> None:
+    sections = _rule_sections((DOCS / "RULES.md").read_text(encoding="utf-8"))
+    for rule_id, mapping in DATA.rules.items():
+        line = re.search(r"^- ISMS-P\(초안\): (.+)$", sections[rule_id], re.M)
+        assert line is not None, rule_id
+        documented = set(re.findall(r"\b\d\.\d{1,2}\.\d{1,2}\b", line.group(1)))
+        assert documented == set(mapping.isms_p), rule_id
+
+
 def _expand(cell: str) -> set[str]:
     """COVERAGE.md 룰 칸의 "SG-001~003, S3-006" 같은 표기를 펼친다."""
     rules: set[str] = set()

@@ -1,6 +1,8 @@
 # 점검 룰 카탈로그
 
-1단계에서 구현할 초기 룰 목록이다. KISA 항목코드는 2026 주요정보통신기반시설 상세가이드 XII. 클라우드 원문과 대조해 채웠다 (쪽번호는 PDF 기준). KISA 매핑은 사용자가 원문 근거를 확인했다 (2026-10-13). **ISMS-P 매핑은 초안**이며 KISA 항목별 후보와 근거는 [COVERAGE.md](COVERAGE.md)에 있다. ISMS-P 매핑을 확인하기 전까지 `rules.yaml`의 `verified`는 false로 둔다. KISA와 ISMS-P의 확인 상태를 따로 기록할 수 있도록 2단계에서 매핑 스키마를 정한다.
+kompass의 점검 룰 목록이다. 룰 ID·제목은 룰 레지스트리와, "KISA"·"ISMS-P(초안)" 줄은 매핑 데이터(`kompass/mappings/rules.yaml`)와 테스트로 대조한다.
+
+KISA 항목코드는 2026 주요정보통신기반시설 상세가이드 XII. 클라우드 원문과 대조해 채웠고, 모든 룰의 매핑을 사용자가 원문 근거로 확인했다 (`kisa_verified: true`, 쪽번호는 PDF 기준). **ISMS-P 매핑은 초안**이며(`isms_p_verified: false`) 근거와 협의 쟁점은 [ISMS_P_MAPPING_REVIEW.md](ISMS_P_MAPPING_REVIEW.md)에 있다.
 
 판정 기준값(일수, 길이 등)은 `kompass.yaml` 설정을 따르며, 아래 값은 기본값이다.
 
@@ -48,7 +50,7 @@
   - 3종이면 `MinimumPasswordLength >= 8`, 2종이면 `>= 10`일 때 PASS. 1종 이하는 FAIL.
 - 주의: `NoSuchEntity`는 ERROR가 아니라 FAIL이다. 정책이 없을 때 적용되는 AWS 기본 정책은 대문자·소문자·숫자·특수문자 중 3종 8자라서, 영문자+숫자 2종 8자 비밀번호를 허용한다. KISA 기준을 보장하지 못한다.
 - 범위 밖: KISA 기준의 로그인 시도 제한은 IAM 비밀번호 정책에 설정 항목이 없다. evidence에 이 사실을 남기고, 항목 결과는 `partial` 상한에 따라 "검토 필요"가 된다.
-- ISMS-P(초안): 2.5.4 비밀번호 관리
+- ISMS-P(초안): 2.5.4 비밀번호 관리, 2.10.2 클라우드 보안
 - KISA: CA-04 클라우드 계정 비밀번호 정책 관리 (중, 857쪽) — 근거 수준: 직접
 
 ### IAM-005 장기 미사용 자격증명
@@ -122,14 +124,14 @@
 - 심각도: medium
 - API: `iam:GetAccountAuthorizationDetails`
 - 대상 작업: `iam.instance_actions` (기본: `ec2:RunInstances`, `ec2:TerminateInstances`, `ec2:StartInstances`, `ec2:StopInstances`, `ec2:ModifyInstanceAttribute`, `ssm:StartSession`, `ssm:SendCommand`, `ec2-instance-connect:SendSSHPublicKey`, `ec2-instance-connect:SendSerialConsoleSSHPublicKey`)
-- ISMS-P(초안): 2.6.2 정보시스템 접근, 2.10.2 클라우드 보안
+- ISMS-P(초안): 2.5.5 특수 계정 및 권한 관리, 2.6.2 정보시스템 접근, 2.10.2 클라우드 보안
 - KISA: CA-05 인스턴스 서비스 정책 관리 (상, 858쪽) — 근거 수준: 직접 ("인스턴스 생성, 삭제, 수정 등에 대한 접근 권한을 설정")
 
 ### IAM-011 네트워크 리소스 변경 권한 보유 주체 현황
 - 심각도: medium
 - API: `iam:GetAccountAuthorizationDetails`
 - 대상 작업: `iam.network_actions` (기본: 보안그룹 생성·삭제·규칙 변경, 네트워크 ACL 항목, VPC·서브넷·라우팅·인터넷/NAT 게이트웨이·피어링·탄력적 IP 연결, ELB 생성·삭제·리스너, Route 53 호스팅 영역·레코드 변경)
-- ISMS-P(초안): 2.6.1 네트워크 접근, 2.10.2 클라우드 보안
+- ISMS-P(초안): 2.5.5 특수 계정 및 권한 관리, 2.10.2 클라우드 보안
 - KISA: CA-06 네트워크 서비스 정책 관리 (상, 859쪽) — 근거 수준: 직접 ("네트워크 리소스 생성, 삭제, 수정 등에 대한 접근 권한을 설정")
 
 ## S3
@@ -173,7 +175,7 @@
 - API: `s3:GetBucketLogging`
 - 판정: `LoggingEnabled`가 있으면 PASS. 로그 저장 버킷 자신은 제외 옵션 제공: `s3.exclude_log_target_buckets`(기본 false)를 켜면 다른 버킷의 로그를 받는 버킷은 `NOT_APPLICABLE`.
 - 비고: CloudTrail S3 데이터 이벤트로 버킷 접근을 기록하는 경우도 이 룰에서는 FAIL이다. 룰은 `s3` 스냅샷만 보기 때문이다. 그런 경우의 재판단은 4단계 에이전트의 추가 조사로 다룬다 (ADR-015).
-- ISMS-P(초안): 2.9.4 로그 및 접속기록 관리
+- ISMS-P(초안): 2.9.4 로그 및 접속기록 관리, 2.10.2 클라우드 보안
 - KISA: CA-16 오브젝트 스토리지 버킷 로깅 설정 (중, 869쪽) — 근거 수준: 직접
 
 ### S3-006 버킷 ACL에 의한 전체 공개
@@ -220,21 +222,21 @@ finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 
 - 심각도: critical
 - API: `ec2:DescribeSecurityGroups`
 - 판정: `ec2.admin_ports`(기본 22, 3389)를 포함하는 인바운드 규칙이 0.0.0.0/0 또는 ::/0에 열려 있으면 FAIL.
-- ISMS-P(초안): 2.6.1 네트워크 접근, 2.6.6 원격접근 통제, 2.10.1 보안시스템 운영
+- ISMS-P(초안): 2.6.1 네트워크 접근, 2.6.6 원격접근 통제, 2.10.1 보안시스템 운영, 2.10.2 클라우드 보안
 - KISA: CA-09 접근 제어 설정 관리 (상, 862쪽) — 근거 수준: 직접
 
 ### SG-002 전체 포트·프로토콜 개방
 - 심각도: critical
 - API: `ec2:DescribeSecurityGroups`
 - 판정: `IpProtocol == "-1"` 또는 0~65535 범위 인바운드 규칙이 0.0.0.0/0 또는 ::/0에 열려 있으면 FAIL. 시작 포트가 1인 `1~65535`도 사실상 전체 개방이므로 포함한다.
-- ISMS-P(초안): 2.6.1 네트워크 접근, 2.10.1 보안시스템 운영
+- ISMS-P(초안): 2.6.1 네트워크 접근, 2.10.1 보안시스템 운영, 2.10.2 클라우드 보안
 - KISA: CA-09 접근 제어 설정 관리 (상, 862쪽) — 근거 수준: 직접
 
 ### SG-003 데이터베이스 포트 전체 개방
 - 심각도: high
 - API: `ec2:DescribeSecurityGroups`
 - 판정: `ec2.db_ports` 중 하나라도 포함하는 인바운드 규칙이 0.0.0.0/0 또는 ::/0에 열려 있으면 FAIL
-- ISMS-P(초안): 2.6.1 네트워크 접근, 2.6.4 데이터베이스 접근, 2.10.1 보안시스템 운영
+- ISMS-P(초안): 2.6.1 네트워크 접근, 2.6.4 데이터베이스 접근, 2.10.1 보안시스템 운영, 2.10.2 클라우드 보안
 - KISA: CA-09 접근 제어 설정 관리 (상, 862쪽) — 근거 수준: 직접
 
 ### SG-004 사용 중인 기본 보안그룹에 규칙 존재
@@ -279,7 +281,7 @@ finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 
 - 해당 없음: 네트워크 인터페이스가 하나도 없는 VPC는 `NOT_APPLICABLE` (VPC-001과 같다).
 - evidence: VPC에 적용되는 흐름 로그(트래픽 유형 `ACCEPT`/`REJECT`/`ALL`, 저장 대상 유형, `DeliverLogsStatus`)와 기록되지 않는 인터페이스 수를 남긴다. 트래픽 유형과 전달 상태는 판정하지 않는다 (기관 정책).
 - 비고: 흐름 로그는 네트워크 수준 기록이다. KISA CA-14의 인스턴스 OS·애플리케이션 로그는 API로 확인할 수 없으므로 사람이 판단한다 (CA-14 `partial`).
-- ISMS-P(초안): 2.9.4 로그 및 접속기록 관리
+- ISMS-P(초안): 2.9.4 로그 및 접속기록 관리, 2.11.3 이상행위 분석 및 모니터링, 2.10.2 클라우드 보안
 - KISA: CA-14 인스턴스 로깅 설정 (중, 867쪽) — 근거 수준: 해석 ("인스턴스 로깅 설정 적용 및 활동 로그 기록 여부 확인". 흐름 로그를 인스턴스 네트워크 활동 기록으로 해석)
 
 ## CloudTrail
@@ -313,7 +315,7 @@ finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 
 - 해당 없음: S3로 로그를 보내는 추적이 없으면 `NOT_APPLICABLE`.
 - 오류: 추적 목록이나 버킷의 수명주기 설정을 수집하지 못하면 ERROR. 조직 추적처럼 버킷이 다른 계정에 있으면 보통 조회가 거부되어 ERROR가 된다.
 - 비고: 이전 버전 삭제(`NoncurrentVersionExpiration`)와 저장 등급 전환(Glacier 등)은 보존을 해치지 않으므로 보지 않는다. 로그 백업·주기적 검토는 사람이 확인한다 (CA-17 `partial`).
-- ISMS-P(초안): 2.9.4 로그 및 접속기록 관리
+- ISMS-P(초안): 2.9.4 로그 및 접속기록 관리, 2.10.2 클라우드 보안
 - KISA: CA-17 로그 보관 기간 설정 (중, 870쪽) — 근거 수준: 직접 ("클라우드 서비스 로그 보관 기간을 기관 정책에 맞게 수립된 경우")
 
 ## CloudWatch Logs
@@ -329,7 +331,7 @@ finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 
 - 해당 없음: 리전에 보안 로그 그룹이 없으면 리전 단위 `NOT_APPLICABLE` (evidence에 전체 로그 그룹 수).
 - 오류: 로그 그룹 목록, 흐름 로그 목록, 추적 목록 중 하나라도 수집하지 못하면 그 리전은 ERROR (보안 로그 그룹을 빠뜨릴 수 있으므로).
 - 비고: Lambda 실행 로그 등 보안 로그로 확인되지 않는 그룹은 판정하지 않는다. 기관이 보안 로그로 쓰는 그룹이 더 있으면 접두사를 설정에 더한다.
-- ISMS-P(초안): 2.9.4 로그 및 접속기록 관리
+- ISMS-P(초안): 2.9.4 로그 및 접속기록 관리, 2.10.2 클라우드 보안
 - KISA: CA-17 로그 보관 기간 설정 (중, 870쪽) — 근거 수준: 직접 ("클라우드 서비스 로그 보관 기간을 기관 정책에 맞게 수립된 경우")
 
 ## RDS
@@ -347,7 +349,7 @@ finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 
 - API: `rds:DescribeDBInstances`, `rds:DescribeDBClusters`
 - 판정: 클러스터에 속하지 않은 인스턴스와 클러스터마다 `StorageEncrypted == true`이면 PASS, `false`이면 FAIL. evidence에 엔진과 `KmsKeyId`를 남긴다.
 - 비고: 클라우드 암호화는 스토리지·백업·스냅샷 암호화이며 테이블·컬럼 단위 암호화가 아니다 (KISA 864쪽 주석). 중요정보 암호화는 증적 요청 목록으로 확인한다.
-- ISMS-P(초안): 2.7.1 암호정책 적용
+- ISMS-P(초안): 2.7.1 암호정책 적용, 2.10.2 클라우드 보안
 - KISA: CA-11 관계형 데이터베이스 암호화 설정 (중, 864쪽) — 근거 수준: 직접 ("데이터 스토리지 암호화 적용 여부 확인")
 
 ### RDS-002 데이터베이스 퍼블릭 접근 허용
@@ -363,7 +365,7 @@ finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 
 - API: `rds:DescribeDBInstances`, `rds:DescribeDBClusters`
 - 판정: 클러스터에 속하지 않은 인스턴스와 클러스터마다 `EnabledCloudwatchLogsExports`가 비어 있으면 FAIL, 하나 이상이면 PASS. evidence에 내보내는 로그 종류를 남긴다.
 - 비고: 필요한 로그 종류(감사·오류·느린 쿼리 등)는 엔진과 기관 정책에 따라 다르므로 종류는 판정하지 않는다. 항목이 `partial`이라 결과는 "검토 필요"가 상한이다.
-- ISMS-P(초안): 2.9.4 로그 및 접속기록 관리
+- ISMS-P(초안): 2.9.4 로그 및 접속기록 관리, 2.10.2 클라우드 보안
 - KISA: CA-15 관계형 데이터베이스 로깅 설정 (중, 868쪽) — 근거 수준: 직접 ("관계형 데이터베이스 로깅 설정 적용 및 활동 로그 기록 여부 확인")
 
 ### RDS-004 자동 백업 보존 기간 부족
@@ -371,8 +373,8 @@ finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 
 - API: `rds:DescribeDBInstances`, `rds:DescribeDBClusters`
 - 판정: 클러스터에 속하지 않은 인스턴스와 클러스터마다 `BackupRetentionPeriod`가 `rds.min_backup_retention_days`(기본 7일) 이상이면 PASS, 미만이면 FAIL. 0은 자동 백업 꺼짐이다.
 - 제외: 읽기 전용 복제본(`ReadReplicaSourceDBInstanceIdentifier`가 있는 인스턴스)은 원본의 백업을 따르고 엔진에 따라 자동 백업을 켤 수 없으므로 `NOT_APPLICABLE`.
-- 비고: AWS Backup 계획으로 백업하는 경우는 이 룰에서 인정하지 않는다 (AWS Backup collector 이후). 백업·복구 절차는 증적 요청 목록으로 확인한다.
-- ISMS-P(초안): 2.9.3 백업 및 복구관리
+- 비고: RDS 자동 백업만 본다. AWS Backup 계획으로 백업하는 경우는 BKP-001~003이 따로 판정한다 (룰은 스냅샷 하나만 본다, ADR-015). 백업·복구 절차는 증적 요청 목록으로 확인한다.
+- ISMS-P(초안): 2.9.3 백업 및 복구관리, 2.10.2 클라우드 보안
 - KISA: CA-18 백업 사용 여부 (중, 871쪽) — 근거 수준: 직접 ("클라우드 리소스를 기관 정책에 따라 주기적으로 백업이 수행된 경우"). 보존 기간 0일(자동 백업 꺼짐)은 원문에 직접 해당하고, 7일 기준은 보존 기간을 "기관 정책"의 일부로 보는 해석이다 (BKP-002와 같은 성격, 2026-10-18 비고 추가).
 
 ### RDS-005 데이터베이스 SSL 연결 미강제
