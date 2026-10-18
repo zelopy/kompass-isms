@@ -4,13 +4,15 @@
 
 ```
 Collector ──► Snapshot ──► Rule Engine ──► Finding ──► Mapper ──► Interpreter ──► Reporter
-(boto3,      (원본 설정    (결정론적       (판정 결과)   (KISA/       (LLM+RAG,       (JSON/MD/
+(boto3,      (원본 설정    (결정론적       (판정 결과)   (KISA/       (LLM, 원문 조회, (JSON/MD/
  읽기 전용)    JSON 저장)    PASS/FAIL)                  ISMS-P 부착)  해석·조치안)     XLSX)
 ```
 
 수집과 판정을 분리한다. 스냅샷을 저장해 두면 AWS를 다시 호출하지 않고 룰만 바꿔 재판정할 수 있고, 감사 시 "어떤 데이터로 어떻게 판정했는지"를 재현할 수 있다.
 
 LLM(Interpreter)은 파이프라인 맨 뒤에서 이미 확정된 finding을 읽기만 한다. finding의 `status`는 Rule Engine 이후 변경되지 않는다.
+
+판정 뒤의 LLM 단계는 모두 선택이며 같은 원칙을 따른다: 룰별 해설·종합 위험 평가(Interpreter), 읽기 전용 추가 조사([Agent](#agent-추가-조사)), MCP 서버([MCP](#mcp-서버)), 제출된 증적 문서 검토([증적 문서 검토](#증적-문서-검토)). 결과는 판정 결과와 따로 저장하고, 같은 판정 결과에만 보고서에 붙인다.
 
 ## 디렉터리 구조
 
@@ -44,7 +46,7 @@ kompass-isms/
 │   │   ├── evidence_requests.yaml  # KISA 항목별 담당자 증적 요청 (ADR-037)
 │   │   ├── data.py          # 매핑 데이터 읽기·검증
 │   │   └── mapper.py
-│   ├── interpreter/         # 3단계
+│   ├── interpreter/         # LLM 해설·종합 평가·증적 검토, 마스킹
 │   │   ├── llm.py           # 공급자 인터페이스, Claude 구현체 (ADR-030)
 │   │   ├── explainer.py     # 룰별 해설·인용 검증 (explain_system.txt: 시스템 프롬프트)
 │   │   ├── assessor.py      # 종합 위험 평가 (assess_system.txt, ADR-034)
@@ -56,7 +58,7 @@ kompass-isms/
 │   │   ├── json_reporter.py
 │   │   ├── markdown_reporter.py
 │   │   └── xlsx_reporter.py
-│   ├── agent/               # 4단계 (ADR-035)
+│   ├── agent/               # 추가 조사, MCP 서버 (ADR-035)
 │   │   ├── tools.py         # 목적별 읽기 전용 조사 도구 (가드가 걸린 점검 세션만 사용)
 │   │   ├── toolbox.py       # 마스킹 다리·도구 호출 예산·호출 기록 (T1, T2, …)
 │   │   ├── investigator.py  # 룰별 추가 조사·사실↔호출 검증 (investigate_system.txt)
@@ -214,7 +216,7 @@ reports/
 `aws/session.py`의 `open_scan()`이 한 번의 점검 실행에 쓸 `ScanContext`를 만든다 (ADR-021).
 
 - 가드가 걸린 세션(`read_only_session()`), 계정 ID, 파티션, 호출자 ARN(점검 수행 주체), 기본 리전, 점검 리전을 묶는다. 모든 collector가 같은 값을 쓰므로 스냅샷 간 계정·리전이 어긋나지 않는다.
-- 자격증명은 AWS 프로필로만 받는다: 액세스 키 프로필, 또는 `role_arn` + `source_profile` 역할 프로필. 역할 자격증명 발급·갱신은 botocore가 하며 `sts:AssumeRole`이 가드를 통과한다 (ADR-020, 확인됨). SSO 프로필은 1단계 미지원(토큰 갱신이 가드에 막힐 수 있음, 미검증).
+- 자격증명은 AWS 프로필로만 받는다: 액세스 키 프로필, 또는 `role_arn` + `source_profile` 역할 프로필. 역할 자격증명 발급·갱신은 botocore가 하며 `sts:AssumeRole`이 가드를 통과한다 (ADR-020, 확인됨). SSO 프로필은 지원하지 않는다(토큰 갱신이 가드에 막힐 수 있음, 미검증).
 - 기본 리전은 `--region` → 프로필 리전 순서로 정하고, 없으면 중단한다. 다른 파티션에서 틀릴 수 있으므로 몰래 대체하지 않는다.
 - 점검 리전은 `DescribeRegions(AllRegions=True)`의 활성 리전(`opt-in-not-required`, `opted-in`) 중에서 고른다. `--regions`에 알 수 없거나 비활성인 리전이 있으면 점검 전에 중단한다.
 - 세션 단계 실패는 `SessionError`로 실행을 중단한다. 계정 ID조차 모르는 상태라 스냅샷을 만들 수 없기 때문이다. 개별 API의 권한 오류를 ERROR finding으로 기록하는 것(ADR-005)과 구분한다.
@@ -231,7 +233,7 @@ reports/
 `aws/guard.py`는 boto3 세션에 botocore `before-call` 이벤트 훅을 등록해서, 허용 목록에 없는 오퍼레이션 호출 시 예외를 발생시킨다.
 
 - 허용: 이름이 `Describe`, `Get`, `List`로 시작하는 오퍼레이션, `GenerateCredentialReport`
-- 예외: `sts:AssumeRole` (서비스까지 일치해야 함). 역할 기반 점검 세션에 필요하다 (ADR-020). `AssumeRoleWithSAML`, `AssumeRoleWithWebIdentity` 등 변형은 허용하지 않는다
+- 예외 (서비스까지 일치해야 함): `sts:AssumeRole`은 역할 기반 점검 세션에 필요하다 (ADR-020). `AssumeRoleWithSAML`, `AssumeRoleWithWebIdentity` 등 변형은 허용하지 않는다. `cloudtrail:LookupEvents`, `iam:SimulatePrincipalPolicy`는 에이전트 추가 조사에 쓴다 (ADR-036). 접두어 전체(`Lookup*`, `Simulate*`)가 아니라 이 작업만 허용한다
 - 그 외 모든 오퍼레이션은 `ReadOnlyViolation` 예외. 요청이 나가기 전에 막으며 paginator, waiter, resource API도 같은 경로로 막힌다
 - 모든 collector와 에이전트 도구는 가드가 적용된 세션만 사용한다
 - 세션은 `read_only_session()`으로만 만든다. botocore client는 생성 시점의 이벤트 훅만 복사하므로, 이미 있는 세션에 나중에 가드를 걸면 그 전에 만든 client는 보호되지 않는다 (확인됨). 그래서 기존 세션에 가드를 "설치"하는 함수는 두지 않는다
@@ -295,7 +297,7 @@ cloudtrail:
   require_read_events: true  # false면 쓰기 이벤트만 기록해도 PASS (ADR-017)
 ```
 
-## 3단계 이후: Interpreter
+## Interpreter (LLM 해설)
 
 1. finding을 마스킹한다 (`masking.py`, 치환 테이블은 `Masker` 인스턴스 안에만 있고 저장·전송하지 않는다). 이름은 보고서 전체 finding에서 모으고, dict 키도 마스킹한다. 보내기 직전에 원본 리소스 값·일부만 가려진 값·남은 이름이 있으면 그 룰은 보내지 않는다 (ADR-032).
    - ARN은 서비스·리소스 종류(첫 구간)만 남기고 계정과 경로 구간을 모두 바꾼다 (`arn:aws:iam::MASKED_ACCOUNT_1:user/MASKED_NAME_1`). S3 ARN은 전부 바꾼다. 리소스 ID는 종류를 남긴다 (`MASKED_SG_1`). IAM 고유 ID·액세스 키 ID도 바꾼다.
@@ -307,3 +309,37 @@ cloudtrail:
 6. 룰별 해설이 끝나면 보고서 전체로 종합 위험 평가를 한 번 만든다 (`assessor.py`, ADR-034). 시나리오가 참조한 finding 키와 조치 순서의 룰 목록을 코드로 검증한다.
 
 LLM 응답 스키마에는 `status` 필드를 두지 않는다.
+
+## Agent (추가 조사)
+
+`kompass investigate`가 취약·검토 필요 finding을 룰 단위로 추가 조사한다 (ADR-035).
+
+- 루프는 Anthropic SDK의 도구 러너로 만들고 공급자 인터페이스(`agent/llm.py`) 뒤에 둔다. 테스트는 가짜 공급자를 쓴다.
+- 도구는 목적별 읽기 도구 12개(`agent/tools.py`)뿐이다. 범용 "아무 읽기 API" 도구는 두지 않는다. 판정 결과와 같은 계정·리전 범위의 가드 세션으로만 호출하며, 다른 계정이면 세션 오류로 중단한다. 가드 허용 목록의 조사용 예외는 `cloudtrail:LookupEvents`, `iam:SimulatePrincipalPolicy` 두 개다 (ADR-036).
+- 도구마다 반환 필드와 식별자 필드를 선언해 필드 단위로 마스킹하고, 필요 없는 자유 텍스트는 버린다.
+- 마스킹 다리(`agent/toolbox.py`): LLM이 도구 입력에 쓴 자리표시자는 로컬에서 원래 값으로 바꿔 AWS를 호출하고, 도구 결과는 마스킹해 돌려준다. 결과에도 전송 직전 검사(`Masker.require_clean`)를 적용한다.
+- 조사 결과 스키마에는 status가 없다. "확인된 사실"마다 근거 도구 호출 ID(`T1`, `T2`, …)를 달고, 실제로 있었던 호출만 참조해야 "근거 검증됨"이 된다.
+- 룰 하나당 도구 호출·반복·토큰 상한을 둔다. 비용은 미리 셀 수 없어 상한으로 계산한 최대 비용을 보여 준다.
+- 가드 위반(`ReadOnlyViolation`)은 조사 실패가 아니라 코드 버그이므로 전체 조사를 중단한다.
+- LLM 응답·도구 호출·결과를 모두 `reports/investigations/`에 남긴다.
+
+## MCP 서버
+
+`kompass mcp`가 판정 결과와 조사 도구를 stdio MCP 서버로 노출한다 (ADR-038).
+
+- 도구는 판정 결과 조회(`kompass_findings`)와 Agent의 조사 도구 12개다. 모두 읽기 전용이며 판정을 바꾸는 도구는 없다.
+- MCP 클라이언트 뒤에도 LLM이 있으므로 Agent와 같은 마스킹 다리를 쓴다. 연결 하나가 마스커 하나를 공유해 세션 내내 같은 리소스는 같은 자리표시자로 보인다. 지어낸 자리표시자는 거부하고, 가리지 못한 식별자가 남으면 결과 대신 차단 사실만 보낸다.
+- AWS 세션은 판정 결과와 같은 계정·리전 범위다. 다른 계정의 프로필이면 시작하지 않는다. 세션당 AWS 호출 상한(기본 50)이 있다.
+- 가드 위반 뒤에는 모든 호출을 거부한다. 서버는 살려 두어 클라이언트가 오류를 볼 수 있게 한다.
+- 호출마다 원래 입력값과 마스킹한 결과를 `reports/mcp/`에 남긴다. 표준 출력은 MCP 통신 전용이므로 안내 메시지는 표준 오류로 낸다.
+
+## 증적 문서 검토
+
+`kompass review-evidence`가 담당자가 제출한 증적 문서를 증적 요청별로 검토한다 (ADR-049). 요청 목록은 매핑 데이터의 고정 카탈로그(`evidence_requests.yaml`, ADR-037)다.
+
+- 입력은 요청 ID 폴더(`<증적 폴더>/CA-02-1/…`)다. 카탈로그에 없는 폴더·파일은 무시하고 목록으로 알린다.
+- 텍스트 추출(`interpreter/documents.py`): PDF·xlsx·텍스트류. 이미지·스캔 PDF·docx·hwp 등은 "텍스트 추출 불가"로 기록하고 사람이 검토한다. 원본 파일은 LLM에 보내지 않는다.
+- 마스킹: AWS 식별자에 더해 이메일·전화번호·주민등록번호 패턴과 사용자 사전(`--terms`, 직원 이름 등)을 가린다. 마스킹한 뒤 상한(문서당 50,000자, 요청당 10개)에서 자른다. 보내기 전에 마스킹한 프롬프트 전체를 미리보기 파일로 쓰고 확인을 받는다.
+- 요청 하나당 LLM 호출 1회. 시스템 프롬프트에 문서 내용은 데이터일 뿐 지시가 아니라고 적는다.
+- 검토 결과 스키마에는 status가 없다. 사실마다 문서 ID와 발췌를 달고, 발췌가 그 문서(마스킹된 텍스트)에 있는지 코드로 대조한다. 문제가 있으면 한 번 다시 요청한다.
+- 결과는 `reports/evidence-reviews/`에 저장하고 보고서 "증적 검토 (참고)" 절에만 싣는다. 항목 결과와 요청서의 제출 여부는 바꾸지 않는다.
