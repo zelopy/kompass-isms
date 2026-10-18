@@ -2,15 +2,16 @@
 
 KISA 클라우드 취약점 점검 가이드와 ISMS-P 인증기준으로 AWS 환경을 자동 진단하는 AI 에이전트.
 
-> 🚧 개발 중 (2단계: 매핑과 보고서). 진행 상황은 [docs/PLAN.md](docs/PLAN.md) 참고.
+> 🚧 개발 중 (5단계: 확장). 진행 상황은 [docs/PLAN.md](docs/PLAN.md) 참고.
 
 ## 무엇을 하나
 
-- AWS 계정을 **읽기 전용**으로 스캔해서 IAM, S3, EC2(보안그룹·VPC), CloudTrail 설정을 수집합니다.
+- AWS 계정을 **읽기 전용**으로 스캔해서 IAM, S3, EC2(보안그룹·VPC), CloudTrail, CloudWatch Logs, RDS, ELB, GuardDuty, AWS Backup 설정을 수집합니다.
 - 결정론적 룰로 양호/취약을 판정하고, 판정 근거가 된 원본 설정을 증적으로 남깁니다.
 - 결과를 KISA 점검 항목과 ISMS-P 통제항목에 매핑해 점검표(Markdown, Excel)로 출력합니다.
 - LLM(Claude)이 조치가 필요한 결과를 룰별로 해설합니다: KISA·ISMS-P 원문 인용(원문 대조 검증), 위험, 우선순위 의견, 조치 방안(AWS CLI·Terraform). 식별정보는 가린 뒤 보냅니다. 룰을 엮은 종합 위험 평가(위험 시나리오, 조치 순서)도 만듭니다.
-- (예정) 에이전트가 1차 결과를 바탕으로 추가 조사를 스스로 수행합니다.
+- 에이전트가 취약·검토 필요 결과를 읽기 전용 도구로 추가 조사합니다. 같은 도구를 MCP 서버로도 제공합니다.
+- 자동 점검으로 확인할 수 없는 항목은 담당자 증적 요청서를 만들고, 제출된 증적 문서를 LLM이 검토합니다.
 
 ## 설계 원칙
 
@@ -60,7 +61,7 @@ uv run python scripts/run_explain_eval.py --variant v1                          
 |---|---|
 | `--regions` | EC2·VPC를 점검할 리전 (쉼표 구분). 없으면 활성 리전 전체. S3 버킷·IAM은 항상 전체 |
 | `--account-id` | 실제 계정이 다르면 중단 (엉뚱한 프로필로 점검하는 실수 방지) |
-| `--service` | 수집할 서비스 (`cloudtrail`, `ec2`, `iam`, `s3`). 없으면 전체 |
+| `--service` | 수집할 서비스 (`backup`, `cloudtrail`, `ec2`, `elb`, `guardduty`, `iam`, `logs`, `rds`, `s3`). 여러 번 지정. 없으면 전체 |
 | `--config` | 판정 기준값 파일. 없으면 현재 디렉터리의 `kompass.yaml` |
 | `--fail-on` | `fail`·`error`·`review` 이상의 결과가 있으면 종료 코드 1 (CI용) |
 | `--report` / `--format` | 보고서 형식: `md`(Markdown), `xlsx`(Excel 점검표), `json`(전체 데이터), `evidence`(담당자 증적 요청서) |
@@ -70,6 +71,7 @@ uv run python scripts/run_explain_eval.py --variant v1                          
 - 판정 결과: `reports/findings/<계정>/<점검 ID>.findings.json`
 - 해설: `reports/explanations/<계정>/<점검 ID>.explanations.json` (원본 식별정보가 복원된 상태)
 - 추가 조사: `reports/investigations/<계정>/<점검 ID>.investigation.json` (도구 호출 기록 포함)
+- 증적 검토: `reports/evidence-reviews/<계정>/<점검 ID>.evidence-review.json` (문서 원문 구절 포함), 전송 전 미리보기 `.evidence-preview.md`
 - MCP 호출 로그: `reports/mcp/<계정>/<점검 ID>.<시작 시각>.mcp.jsonl` (원래 입력값과 마스킹한 결과)
 - 스냅샷: `reports/snapshots/<계정>/<점검 ID>/` (파일별 SHA-256 기록)
 
@@ -91,7 +93,7 @@ uv run python scripts/run_explain_eval.py --variant v1                          
 |---|---|---|---|---|---|---|
 | CA-01 | 사용자 계정 관리 | 상 | partial | 검토 필요 | IAM-005 | PASS 3 |
 | CA-03 | MFA(Multi-Factor Authentication) 설정 | 상 | full | 취약 | IAM-001, IAM-003, IAM-009 | FAIL 1, PASS 1, REVIEW 1 |
-| CA-05 | 인스턴스 서비스 정책 관리 | 상 | partial | 수동 점검 (미구현) | - | - |
+| CA-05 | 인스턴스 서비스 정책 관리 | 상 | partial | 검토 필요 | IAM-010 | REVIEW 5 |
 | CA-09 | 접근 제어 설정 관리 | 상 | partial | 취약 | SG-001, SG-002, SG-003 | FAIL 5, PASS 19 |
 | CA-13 | 클라우드 서비스 사용자 계정 로깅 설정 | 상 | full | 양호 | CT-001 | PASS 1 |
 

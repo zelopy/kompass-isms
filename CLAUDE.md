@@ -29,7 +29,8 @@ AWS 계정을 **읽기 전용**으로 스캔해서 KISA 클라우드 취약점 �
 - boto3, pydantic v2, typer, PyYAML
 - 테스트: pytest, moto
 - 린트/포맷/타입: ruff, mypy (strict)
-- 이후 단계: Chroma(RAG), LLM 공급자 추상화(Claude API / 로컬 LLM), MCP Python SDK
+- LLM: anthropic (Claude API, 공급자 인터페이스 뒤. 로컬 LLM은 자리만 둠), MCP: mcp
+- 보고서·문서: openpyxl (Excel), pypdf (원문 색인, 증적 문서 추출)
 
 ## 자주 쓰는 명령
 

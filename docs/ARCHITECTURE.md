@@ -22,26 +22,27 @@ kompass-isms/
 │   ├── aws/
 │   │   ├── session.py       # 세션, 리전
 │   │   └── guard.py         # 읽기 전용 가드
-│   ├── collectors/
+│   ├── collectors/          # 서비스마다 하나 (아래는 수집 대상)
 │   │   ├── base.py
 │   │   ├── iam.py
 │   │   ├── s3.py
-│   │   ├── ec2.py           # 보안그룹, VPC·서브넷·라우팅 테이블·ENI
-│   │   ├── rds.py           # DB 인스턴스·클러스터 (ADR-039)
+│   │   ├── ec2.py           # 보안그룹, VPC·서브넷·라우팅 테이블·ENI, 흐름 로그
+│   │   ├── cloudtrail.py    # 추적, 추적 버킷 수명주기
+│   │   ├── logs.py          # CloudWatch Logs 로그 그룹 (ADR-043)
+│   │   ├── rds.py           # DB 인스턴스·클러스터·파라미터·스냅샷 (ADR-039)
 │   │   ├── elb.py           # ALB·NLB·Classic 리스너·보안 정책 (ADR-052)
-│   │   └── cloudtrail.py
+│   │   ├── guardduty.py     # 탐지기, GuardDuty 알림 규칙 (ADR-041)
+│   │   └── backup.py        # AWS Backup 계획·선택·보호 리소스 (ADR-054)
 │   ├── rules/
 │   │   ├── base.py
 │   │   ├── registry.py
-│   │   ├── iam/
-│   │   ├── s3/
-│   │   ├── ec2/
-│   │   ├── rds/
-│   │   ├── elb/
-│   │   └── cloudtrail/
+│   │   └── <서비스>/         # collector와 같은 이름, 룰 하나 = 파일 하나
 │   ├── mappings/
-│   │   ├── rules.yaml       # 룰 → KISA → ISMS-P
+│   │   ├── kisa_items.yaml  # KISA 항목 속성 (중요도, 분류, ISMS-P 후보)
+│   │   ├── rules.yaml       # 룰 → KISA 항목, 룰별 ISMS-P 후보
+│   │   ├── isms_p_controls.yaml  # 별표 7 통제항목 101개
 │   │   ├── evidence_requests.yaml  # KISA 항목별 담당자 증적 요청 (ADR-037)
+│   │   ├── data.py          # 매핑 데이터 읽기·검증
 │   │   └── mapper.py
 │   ├── interpreter/         # 3단계
 │   │   ├── llm.py           # 공급자 인터페이스, Claude 구현체 (ADR-030)
@@ -55,19 +56,18 @@ kompass-isms/
 │   │   ├── json_reporter.py
 │   │   ├── markdown_reporter.py
 │   │   └── xlsx_reporter.py
-│   └── agent/               # 4단계 (ADR-035)
-│       ├── tools.py         # 목적별 읽기 전용 조사 도구 (가드가 걸린 점검 세션만 사용)
-│       ├── toolbox.py       # 마스킹 다리·도구 호출 예산·호출 기록 (T1, T2, …)
-│       ├── investigator.py  # 룰별 추가 조사·사실↔호출 검증 (investigate_system.txt)
-│       ├── mcp_server.py    # 판정 결과·조사 도구를 MCP 서버(stdio)로 노출 (ADR-038)
-│       └── llm.py           # 에이전트 공급자 인터페이스, Claude 구현(SDK 도구 러너)
+│   ├── agent/               # 4단계 (ADR-035)
+│   │   ├── tools.py         # 목적별 읽기 전용 조사 도구 (가드가 걸린 점검 세션만 사용)
+│   │   ├── toolbox.py       # 마스킹 다리·도구 호출 예산·호출 기록 (T1, T2, …)
+│   │   ├── investigator.py  # 룰별 추가 조사·사실↔호출 검증 (investigate_system.txt)
+│   │   ├── mcp_server.py    # 판정 결과·조사 도구를 MCP 서버(stdio)로 노출 (ADR-038)
+│   │   └── llm.py           # 에이전트 공급자 인터페이스, Claude 구현(SDK 도구 러너)
+│   └── evals/               # 평가셋 케이스 로더·채점기·실행기 (ADR-033, ADR-049)
 ├── knowledge/               # 기준 문서 원문 (커밋 안 함), SOURCES.md, index.json(생성물, 커밋 안 함)
-├── scripts/                 # build_source_index.py (원문 색인 생성)
-├── lab/                     # 취약 실습 환경 Terraform
-├── tests/
-│   ├── collectors/
-│   ├── rules/
-│   └── fixtures/
+├── evals/                   # 평가 케이스·정답 (evals/README.md)
+├── scripts/                 # 원문 색인 생성, 평가 케이스 생성, 평가 실행
+├── lab/                     # 취약 실습 환경 Terraform, 기대 결과(expected.yaml)
+├── tests/                   # kompass/ 구조를 따름. 실습 계정 통합 테스트는 tests/lab/
 └── docs/
 ```
 
@@ -91,7 +91,7 @@ class Severity(StrEnum):
     INFO = "info"
 
 class Snapshot(BaseModel):
-    service: str                  # "iam" | "s3" | "ec2" | "cloudtrail"
+    service: str                  # collector 이름 ("iam", "s3", "ec2", ...)
     account_id: str
     regions: tuple[str, ...]
     collected_at: datetime        # UTC

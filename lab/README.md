@@ -20,7 +20,7 @@ kompass 룰이 기대한 FAIL/PASS/REVIEW를 내는지 확인하기 위한 **의
 | ALB 2개 (`enable_elb = true`일 때만) | ALB 2대 시간당 과금(LCU 포함). 확인 후 바로 끈다 |
 | RDS 2개와 수동 스냅샷 2개 (`enable_public_rds = true`일 때만) | db.t4g.micro 2대 시간당 과금 + Secrets Manager 시크릿 2개 + 스냅샷 저장(빈 DB라 매우 적음). 확인 후 바로 끈다 |
 
-EC2 인스턴스, NAT 게이트웨이, 로드 밸런서는 만들지 않는다. 리소스 존재는 연결되지 않은 네트워크 인터페이스로 흉내 낸다.
+EC2 인스턴스와 NAT 게이트웨이는 만들지 않는다. 리소스 존재는 연결되지 않은 네트워크 인터페이스로 흉내 낸다. 로드 밸런서·RDS·GuardDuty·AWS Backup은 해당 `enable_*` 변수를 켰을 때만 만든다.
 
 ## 사용법
 
