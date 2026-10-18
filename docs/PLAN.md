@@ -153,10 +153,10 @@
   - [x] 평가 케이스 추가 (실습 가공·보강, ADR-033)
     - [x] 실습 가공 1개(`lab-rds-006`), 보강 2개: Aurora 클러스터 스냅샷 공개 FAIL·특정 계정 공유 PASS, 공개 MySQL 스냅샷 FAIL·공유 속성 조회 거부 ERROR. 오라클 3개 모든 지표 100%
     - [x] 실제 모델 실행 (3개 × 2회, $0.40): 채점기 오판 1종 수정 후 모든 지표 100% (ADR-033 기록)
-- [ ] 룰: AWS Backup 계획·보존 기간·최근 백업 BKP-001~003 (CA-18, ADR-054) — 새 collector `backup`, 계획 없음은 REVIEW. 실습 `enable_backup`으로 계획 2개·빈 DynamoDB 테이블
+- [x] 룰: AWS Backup 계획·보존 기간·최근 백업 BKP-001~003 (CA-18, ADR-054) — 새 collector `backup`, 계획 없음은 REVIEW. 실습 `enable_backup`으로 계획 2개·빈 DynamoDB 테이블
   - [x] 룰·collector·테스트, 매핑 `kisa_verified: false`, 실습 Terraform·기대값, ISMS-P 검토표·Prowler 비교(`backup_plans_exist` 2.9.3·2.12.1)
   - [x] 실습 통합 테스트 결함 수정: `LAB_FLAGS`에 `enable_elb`가 없어 ELB 기대값 6개가 대조에서 빠지던 문제 (기본 실행 검사 `tests/test_lab_expected.py` 추가)
-  - [ ] 사용자 확인: KISA CA-18 매핑 원문 근거 (BKP-001·003 직접, BKP-002 해석)
+  - [x] 사용자 확인: KISA CA-18 매핑 원문 근거 (BKP-001·003 직접, BKP-002 해석) (2026-10-18). RDS-004에 7일 기준은 해석이라는 비고 추가
   - [x] 실습 계정 확인 (2026-10-18, `enable_backup`·`enable_elb` 켬, 첫 백업 뒤): `pytest -m lab` 통과. `SecurityAudit`으로 backup 조회 실패 없음, BKP-001 PASS·BKP-002 `daily` PASS·`short` FAIL·BKP-003 PASS. ELB 기대값 6개 처음으로 실제 대조해 일치. 백업 서비스 역할이 IAM-010 REVIEW(`ssm:SendCommand`)라 기대값에 추가. 끈 뒤(`enable_backup`·`enable_elb` false)에도 통과: BKP-001 REVIEW, BKP-002·003 N/A
   - [x] 평가 케이스 추가 (실습 가공·보강, ADR-033)
     - [x] 실습 가공 1개 생성 (2026-10-18, `lab-bkp-002`: `short` FAIL·`daily` PASS). BKP-001·003은 실습에서 PASS라 실습 케이스 없음

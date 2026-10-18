@@ -553,9 +553,11 @@
   - BKP-003 (보호 리소스): `LastBackupTime`이 수집 시각 기준 `backup.max_backup_age_days`(기본 7일)보다 오래되면 FAIL. 백업된 리소스가 없는데 선택이 있는 계획이 있으면 리전 FAIL (계획만 있고 백업이 수행되지 않음). KISA 판단 기준의 "백업이 수행된 경우"를 직접 보는 룰이다.
   - 일정(`ScheduleExpression`)의 주기는 판정하지 않고 evidence에 남긴다. 기관 정책의 주기를 cron 식과 비교하는 규칙을 정하지 않았다. 백업 작업 실패 내역(`ListBackupJobs`), 저장소 잠금·접근 정책, 복구 시험은 판정하지 않는다 (CA-18 `partial` 유지).
   - RDS-004는 그대로 RDS 자동 백업만 본다. 룰은 스냅샷 하나만 본다 (ADR-015). 두 수단을 함께 보는 해석은 에이전트·사람 몫이다.
-  - KISA CA-18. BKP-001·003은 직접, BKP-002는 해석(보존 기간을 "기관 정책"의 일부로 봄). 사용자 확인 전이라 `kisa_verified: false`. ISMS-P 초안은 RDS-004와 같은 2.9.3·2.10.2.
+  - KISA CA-18. BKP-001·003은 직접, BKP-002는 해석(보존 기간을 "기관 정책"의 일부로 봄). 사용자 확인으로 확정 (2026-10-18, `kisa_verified: true`). ISMS-P 초안은 RDS-004와 같은 2.9.3·2.10.2.
   - 마스킹: 계획 이름(`backup_plan`)·선택 이름(`selection`)·저장소 이름(`vault`)을 이름 키로 더한다. 리소스·저장소 ARN은 ARN 단계에서 바뀐다.
   - 실습 환경: `enable_backup`(기본 false)이면 빈 DynamoDB 테이블(온디맨드) 하나, 저장소 하나, 계획 2개(`daily`: 보존 35일·테이블 선택, `short`: 보존 1일·선택 없음)를 만든다. 첫 백업이 돈 뒤에 점검해야 BKP-003이 PASS로 나온다.
 - 이유: CA-18에서 RDS만 보던 자동화 범위를 AWS Backup이 보호하는 모든 리소스로 넓힌다. 계획 존재만으로는 "백업이 수행된" 것을 보여 주지 못하므로 마지막 백업 시각까지 본다.
 - moto 차이: moto 5.2.4는 계획·저장소만 지원하고 `ListBackupSelections`·`GetBackupSelection`·`ListProtectedResources`가 없다. collector 테스트는 backup client를 모두 Stubber로 만든다. 실제 응답 형식은 실습 계정에서 확인한다.
 - 실습 계정 확인 (2026-10-18, `enable_backup = true`, 첫 백업 뒤): 기대값 일치. `SecurityAudit`으로 5개 호출 모두 성공. 실제 응답은 Stubber 형식과 같고, 선택의 `ListOfTags`·`NotResources`·`Conditions`는 비어 있어도 빈 목록으로 온다. `LastBackupTime`은 시간대가 붙은 시각으로 저장된다. 실습 백업 서비스 역할은 관리형 정책 `AWSBackupServiceRolePolicyForBackup`의 `ssm:SendCommand`(Windows VSS 백업용) 때문에 IAM-010 REVIEW다. 룰은 의도대로 동작하며(서비스 연결 역할이 아니므로 현황에 포함), 실제 계정에서도 백업 역할이 현황에 나올 수 있다.
+- 매핑 확정 (사용자 결정, 2026-10-18): CA-18. BKP-003은 직접(판단 기준 "주기적으로 백업이 수행된 경우", 사례 "주기적 백업 수행 여부 및 검토 진행"). BKP-001은 직접(조치 방법 "클라우드 리소스를 주기적으로 백업 설정", 사례 "백업 설정 기능 확인"). 계획이 없을 때 REVIEW로 두는 것은 "기관 정책에 따라"와 맞다. BKP-002는 해석. 원문에 보존 기간이 없고, 보존 기간이 짧아도 백업은 수행되므로 "백업 및 복구 절차를 기관의 정책에 맞게 수립 적용"의 일부로 읽어야 연결된다.
+  - RDS-004 비고: 근거 수준 직접은 그대로 두고, 보존 기간 0일(자동 백업 꺼짐)은 직접, 7일 기준은 BKP-002와 같은 해석이라는 비고를 RULES.md·COVERAGE.md에 더했다 (사용자 결정). 확정한 근거 수준을 바꾸지 않으면서 같은 성격의 두 룰의 차이를 드러낸다.
