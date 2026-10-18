@@ -76,6 +76,7 @@ terraform apply
 | IAM-007 | `kompass-lab-admin` (배포용, `admin` 그룹 경유) | REVIEW |
 | IAM-010·011 | 관리자 권한 사용자 4명 + `kompass-lab-admin` (`*`, NotAction 포함) | REVIEW |
 | IAM-010·011 | `kompass-lab-readonly` (ReadOnlyAccess: 조회 작업뿐), 점검용 `security_manager` (SecurityAudit) | finding 없음 |
+| IAM-010 | `kompass-lab-backup` 역할 (`enable_backup = true`일 때, AWS Backup 서비스 역할) | REVIEW (관리형 정책 `AWSBackupServiceRolePolicyForBackup`의 `ssm:SendCommand`). IAM-011은 finding 없음 |
 | IAM-008 | 루트 계정 | REVIEW. 루트 `password_last_used`가 `no_information`이라 사용 이력 확인 불가 (최근 90일 안의 사용일이 보고서에 있어도 REVIEW) |
 | IAM-009 | GitHub Actions OIDC 공급자 | REVIEW |
 
@@ -139,7 +140,7 @@ terraform apply
 | BKP-002 | `backup-plan:kompass-lab-short` | | FAIL (보존 1일) |
 | BKP-003 | `table/kompass-lab-backup` | N/A (백업된 리소스 없음) | PASS (첫 백업 뒤) |
 
-첫 백업은 apply 뒤 다음 정각부터 시작 창 60분 안에 돈다. 첫 백업 전에 점검하면 BKP-003이 리전 FAIL("백업 대상이 지정된 계획은 있으나 백업된 리소스가 없음")이다. 실습 계정 확인 전이다.
+첫 백업은 apply 뒤 다음 정각부터 시작 창 60분 안에 돈다. 첫 백업 전에 점검하면 BKP-003이 리전 FAIL("백업 대상이 지정된 계획은 있으나 백업된 리소스가 없음")이다. 실습 계정에서 기대값과 일치 확인 (2026-10-18, 첫 백업 뒤). `SecurityAudit`으로 backup 조회에 실패하지 않았다.
 
 ### RDS
 

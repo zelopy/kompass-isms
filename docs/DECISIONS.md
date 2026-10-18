@@ -555,3 +555,4 @@
   - 실습 환경: `enable_backup`(기본 false)이면 빈 DynamoDB 테이블(온디맨드) 하나, 저장소 하나, 계획 2개(`daily`: 보존 35일·테이블 선택, `short`: 보존 1일·선택 없음)를 만든다. 첫 백업이 돈 뒤에 점검해야 BKP-003이 PASS로 나온다.
 - 이유: CA-18에서 RDS만 보던 자동화 범위를 AWS Backup이 보호하는 모든 리소스로 넓힌다. 계획 존재만으로는 "백업이 수행된" 것을 보여 주지 못하므로 마지막 백업 시각까지 본다.
 - moto 차이: moto 5.2.4는 계획·저장소만 지원하고 `ListBackupSelections`·`GetBackupSelection`·`ListProtectedResources`가 없다. collector 테스트는 backup client를 모두 Stubber로 만든다. 실제 응답 형식은 실습 계정에서 확인한다.
+- 실습 계정 확인 (2026-10-18, `enable_backup = true`, 첫 백업 뒤): 기대값 일치. `SecurityAudit`으로 5개 호출 모두 성공. 실제 응답은 Stubber 형식과 같고, 선택의 `ListOfTags`·`NotResources`·`Conditions`는 비어 있어도 빈 목록으로 온다. `LastBackupTime`은 시간대가 붙은 시각으로 저장된다. 실습 백업 서비스 역할은 관리형 정책 `AWSBackupServiceRolePolicyForBackup`의 `ssm:SendCommand`(Windows VSS 백업용) 때문에 IAM-010 REVIEW다. 룰은 의도대로 동작하며(서비스 연결 역할이 아니므로 현황에 포함), 실제 계정에서도 백업 역할이 현황에 나올 수 있다.

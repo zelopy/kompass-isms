@@ -157,7 +157,7 @@
   - [x] 룰·collector·테스트, 매핑 `kisa_verified: false`, 실습 Terraform·기대값, ISMS-P 검토표·Prowler 비교(`backup_plans_exist` 2.9.3·2.12.1)
   - [x] 실습 통합 테스트 결함 수정: `LAB_FLAGS`에 `enable_elb`가 없어 ELB 기대값 6개가 대조에서 빠지던 문제 (기본 실행 검사 `tests/test_lab_expected.py` 추가)
   - [ ] 사용자 확인: KISA CA-18 매핑 원문 근거 (BKP-001·003 직접, BKP-002 해석)
-  - [ ] 실습 계정 확인 (`enable_backup = true`, 첫 백업 뒤): `SecurityAudit`으로 backup 조회 가능 여부, 실제 응답 형식, `kompass-lab-backup` IAM 역할의 IAM-010~011 영향, `enable_elb` 기대값 재대조
+  - [x] 실습 계정 확인 (2026-10-18, `enable_backup`·`enable_elb` 켬, 첫 백업 뒤): `pytest -m lab` 통과. `SecurityAudit`으로 backup 조회 실패 없음, BKP-001 PASS·BKP-002 `daily` PASS·`short` FAIL·BKP-003 PASS. ELB 기대값 6개 처음으로 실제 대조해 일치. 백업 서비스 역할이 IAM-010 REVIEW(`ssm:SendCommand`)라 기대값에 추가
   - [ ] 평가 케이스 추가 (실습 가공·보강, ADR-033)
 - [x] Prowler OCSF 출력 어댑터 필요성 검토 — 보류, 후보로 내림 (2026-10-17, ADR-050). 대신 Prowler ISMS-P 대응표를 매핑 협의 참고 자료로 비교
   - [x] Prowler `kisa_isms_p_2023_aws` 대응표와 ISMS-P 매핑 초안 비교표 (`docs/ISMS_P_MAPPING_REVIEW.md` 참고 절) — 같음 10·다름 21·대응 없음 4, 협의 쟁점 4건에 참고 의견. RDS-005 추가 후 같음 11 (Prowler `rds_instance_transport_encrypted`도 2.7.1·2.10.2)

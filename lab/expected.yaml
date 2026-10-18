@@ -151,5 +151,8 @@ expectations:
   - {rule: IAM-011, resource: kompass-lab-notaction, status: REVIEW}
   - {rule: IAM-011, resource: kompass-lab-admin, status: REVIEW}
   - {rule: IAM-011, resource: kompass-lab-readonly, status: NONE}
+  # AWS Backup 서비스 역할: 관리형 정책 AWSBackupServiceRolePolicyForBackup에 ssm:SendCommand가 있다
+  - {rule: IAM-010, resource: role/kompass-lab-backup, status: REVIEW, when: {enable_backup: true}}
+  - {rule: IAM-011, resource: role/kompass-lab-backup, status: NONE, when: {enable_backup: true}}
   - {rule: IAM-008, resource: account, status: REVIEW}
   - {rule: IAM-009, resource: oidc-provider/token.actions.githubusercontent.com, status: REVIEW}
