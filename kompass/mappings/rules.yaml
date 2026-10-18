@@ -1,6 +1,6 @@
 # 룰 → KISA 항목 → ISMS-P 통제항목 매핑 (ADR-002, ADR-025)
 #
-# docs/RULES.md의 각 룰 "KISA"·"ISMS-P(초안)" 칸과 같아야 한다 (KISA는 테스트로 검사).
+# docs/RULES.md의 각 룰 "KISA"·"ISMS-P(초안)" 칸과 같아야 한다 (테스트로 검사).
 #   kisa: 이 룰이 판정에 기여하는 KISA 항목. 대응 항목이 없으면 빈 목록
 #   isms_p: 이 룰의 ISMS-P 통제항목 후보 (RULES.md의 룰별 초안)
 #   kisa_verified: 원문 근거를 사용자가 확인했다 (2026-10-13)
@@ -23,7 +23,7 @@ rules:
   GD-001: {kisa: [CA-19], isms_p: ["2.11.3", "2.10.2"], kisa_verified: true, isms_p_verified: false}
   GD-002: {kisa: [CA-19], isms_p: ["2.11.3", "2.10.2"], kisa_verified: true, isms_p_verified: false}
 
-  # RDS (ADR-039). KISA 근거는 COVERAGE.md
+  # RDS (ADR-039). KISA 근거는 docs/RULES.md
   RDS-001: {kisa: [CA-11], isms_p: ["2.7.1", "2.10.2"], kisa_verified: true, isms_p_verified: false}
   RDS-002: {kisa: [CA-08], isms_p: ["2.6.1", "2.10.2"], kisa_verified: true, isms_p_verified: false}
   RDS-003: {kisa: [CA-15], isms_p: ["2.9.4", "2.10.2"], kisa_verified: true, isms_p_verified: false}
@@ -31,7 +31,7 @@ rules:
   RDS-005: {kisa: [CA-12], isms_p: ["2.7.1", "2.10.2"], kisa_verified: true, isms_p_verified: false}
   RDS-006: {kisa: [CA-10], isms_p: ["2.10.2"], kisa_verified: true, isms_p_verified: false}
 
-  # AWS Backup (ADR-054). KISA 근거는 COVERAGE.md. 사용자 확인 전
+  # AWS Backup (ADR-054). KISA 근거는 docs/RULES.md
   BKP-001: {kisa: [CA-18], isms_p: ["2.9.3", "2.10.2"], kisa_verified: true, isms_p_verified: false}
   BKP-002: {kisa: [CA-18], isms_p: ["2.9.3", "2.10.2"], kisa_verified: true, isms_p_verified: false}
   BKP-003: {kisa: [CA-18], isms_p: ["2.9.3", "2.10.2"], kisa_verified: true, isms_p_verified: false}
