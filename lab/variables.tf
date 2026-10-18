@@ -70,6 +70,12 @@ variable "enable_guardduty" {
   default     = false
 }
 
+variable "enable_backup" {
+  description = "AWS Backup 계획 2개, 저장소, 빈 DynamoDB 테이블 생성 (BKP-001~003 확인용). 빈 테이블 백업이라 비용은 사실상 0."
+  type        = bool
+  default     = false
+}
+
 variable "enable_elb" {
   description = "internal ALB 2개와 자체 서명 인증서 생성 (ELB-001~002 확인용). ALB는 시간당 과금."
   type        = bool

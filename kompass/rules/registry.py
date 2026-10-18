@@ -5,6 +5,9 @@ from dataclasses import dataclass
 
 from kompass.config import Settings
 from kompass.models import Finding, Snapshot
+from kompass.rules.backup.bkp_001_backup_plan import Bkp001BackupPlan
+from kompass.rules.backup.bkp_002_retention import Bkp002Retention
+from kompass.rules.backup.bkp_003_recent_backup import Bkp003RecentBackup
 from kompass.rules.base import BaseRule
 from kompass.rules.cloudtrail.ct_001_multi_region_trail import Ct001MultiRegionTrail
 from kompass.rules.cloudtrail.ct_002_log_bucket_retention import Ct002LogBucketRetention
@@ -84,6 +87,9 @@ RULES: tuple[BaseRule, ...] = (
     Gd001DetectorEnabled(),
     Gd002FindingAlerts(),
     Log001SecurityLogRetention(),
+    Bkp001BackupPlan(),
+    Bkp002Retention(),
+    Bkp003RecentBackup(),
 )
 
 

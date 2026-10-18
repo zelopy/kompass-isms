@@ -24,7 +24,12 @@ from kompass.snapshots import SnapshotStore, load_scan
 LAB = Path(__file__).parents[2] / "lab"
 EXPECTED = LAB / "expected.yaml"
 # expected.yaml의 when에 쓰는 선택 변수와 기본값 (lab/variables.tf)
-LAB_FLAGS = {"enable_public_rds": False, "enable_guardduty": False}
+LAB_FLAGS = {
+    "enable_public_rds": False,
+    "enable_guardduty": False,
+    "enable_elb": False,
+    "enable_backup": False,
+}
 _TFVAR = re.compile(r"^\s*(\w+)\s*=\s*(true|false)\b", re.M)
 _BUCKET_SUFFIX = re.compile(r"-[0-9a-f]{8}$")
 NONE = "NONE"

@@ -16,6 +16,7 @@ kompass 룰이 기대한 FAIL/PASS/REVIEW를 내는지 확인하기 위한 **의
 | CloudTrail 첫 관리 이벤트 추적 | 추적 요금 없음, S3 저장 비용만 발생 |
 | S3 버킷, VPC, 서브넷, 보안그룹, 연결되지 않은 ENI, IAM | 무료 또는 사실상 0 |
 | GuardDuty (`enable_guardduty = true`일 때만) | 30일 무료 체험 뒤 분석한 이벤트량에 따라 과금. 확인 후 끈다 |
+| AWS Backup 계획 2개·저장소·빈 DynamoDB 테이블 (`enable_backup = true`일 때만) | 온디맨드 테이블과 빈 테이블 백업이라 사실상 0. 매시 백업이 쌓이므로 확인 후 끈다 |
 | ALB 2개 (`enable_elb = true`일 때만) | ALB 2대 시간당 과금(LCU 포함). 확인 후 바로 끈다 |
 | RDS 2개와 수동 스냅샷 2개 (`enable_public_rds = true`일 때만) | db.t4g.micro 2대 시간당 과금 + Secrets Manager 시크릿 2개 + 스냅샷 저장(빈 DB라 매우 적음). 확인 후 바로 끈다 |
 
@@ -46,6 +47,7 @@ terraform apply
 | `cloudtrail_read_write_type` | `All` | `WriteOnly` → CT-001 FAIL (`require_read_events: true`일 때) |
 | `enable_guardduty` | `false` | `true` → GuardDuty 탐지기 + 결과 알림 규칙(EventBridge → SNS) 생성: GD-001·GD-002 PASS |
 | `enable_elb` | `false` | `true` → internal ALB 2개 생성 (`weak`: ELB-001·002 FAIL, `strict`: ELB-001·002 PASS). `tls` provider로 만든 자체 서명 인증서를 ACM으로 가져옴 |
+| `enable_backup` | `false` | `true` → AWS Backup 계획 2개 생성 (`daily`: 매시 백업·보존 35일·테이블 선택, `short`: 보존 1일·선택 없음). BKP-001 PASS, BKP-002 `daily` PASS·`short` FAIL, 첫 백업 뒤 BKP-003 PASS |
 | `enable_public_rds` | `false` | `true` → RDS 2개와 수동 스냅샷 2개 생성 (`public`: RDS-001~005 FAIL·VPC-002 REVIEW, 공개 스냅샷 RDS-006 FAIL, `private`: RDS-001~006 PASS) |
 
 ## 기대 결과표
@@ -127,6 +129,17 @@ terraform apply
 | GD-002 | N/A (GuardDuty 꺼짐) | PASS (EventBridge 규칙 → SNS 주제) |
 
 기본값 결과는 실습 계정에서 확인했다 (2026-10-16). 실습 리전에 다른 경로로 만든 탐지기가 있으면 기본값에서도 GD-001이 PASS가 된다.
+
+### AWS Backup
+
+| 룰 | 리소스 | `enable_backup = false` (기본) | `enable_backup = true` |
+|---|---|---|---|
+| BKP-001 | 리전 | REVIEW (계획 없음, 다른 백업 수단 확인) | PASS (`daily`에 규칙과 선택이 있음) |
+| BKP-002 | `backup-plan:kompass-lab-daily` | N/A (계획 없음) | PASS (보존 35일) |
+| BKP-002 | `backup-plan:kompass-lab-short` | | FAIL (보존 1일) |
+| BKP-003 | `table/kompass-lab-backup` | N/A (백업된 리소스 없음) | PASS (첫 백업 뒤) |
+
+첫 백업은 apply 뒤 다음 정각부터 시작 창 60분 안에 돈다. 첫 백업 전에 점검하면 BKP-003이 리전 FAIL("백업 대상이 지정된 계획은 있으나 백업된 리소스가 없음")이다. 실습 계정 확인 전이다.
 
 ### RDS
 

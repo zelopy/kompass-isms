@@ -540,3 +540,18 @@
 - moto 차이: 없음. 수동·자동 스냅샷 구분과 `restore` 속성(공유하지 않으면 빈 목록)을 실제 API와 같이 돌려준다. 실제 AWS가 공유하지 않은 스냅샷에도 `restore` 속성을 돌려주는지는 실습 계정에서 확인한다 (없으면 ERROR로 드러난다).
 - 실습 계정 확인 (2026-10-17, `enable_public_rds = true`): `kompass-lab-public-snapshot` FAIL(`restore: ["all"]`), `kompass-lab-private-snapshot` PASS(`restore: []`). 실제 AWS도 공유하지 않은 스냅샷에 `restore` 속성을 빈 목록으로 돌려준다.
 - 매핑 확정 (사용자 결정, 2026-10-18): CA-10, 근거 수준 해석. 공개 스냅샷은 모든 AWS 계정이 복원할 수 있어 점검 내용 "모든 인터넷 사용자 접근권한"에 해당한다. 원문의 "스토리지 리소스"가 DB 스냅샷을 명시하지 않으므로 해석으로 둔다.
+
+## ADR-054 AWS Backup 계획·보존 기간·최근 백업 (BKP-001~003)
+- 상태: 채택 (사용자 결정, 2026-10-18). 후보 룰 중 다음 작업으로 선정. S3 최소 TLS 버전은 이날 다시 검토했으나 ADR-051의 이유(AWS 엔드포인트의 TLS 1.2 강제로 기본 기준에서는 정책 검사가 오탐만 냄)로 후보에 그대로 둔다 (사용자 결정).
+- 결정:
+  - 새 collector `backup`이 점검 리전마다 `backup:ListBackupPlans`·`GetBackupPlan`, 계획마다 `ListBackupSelections`·`GetBackupSelection`, 리전의 `ListProtectedResources`를 호출한다. 모두 List·Get 호출이라 가드 허용 목록은 바뀌지 않는다. `SecurityAudit`에 포함되는지는 실습 계정에서 확인한다 (빠져 있으면 ERROR로 드러난다).
+  - BKP-001 (리전): 규칙과 리소스 선택을 모두 가진 계획이 있으면 PASS. 계획이 없으면 REVIEW (사용자 결정). RDS 자동 백업·EBS 스냅샷 수명주기 등 다른 수단으로 백업할 수 있어 명백한 위반이 아니다 (ADR-013). 계획은 있으나 백업할 대상이 없는 설정만 FAIL.
+  - BKP-002 (계획): 규칙의 `Lifecycle.DeleteAfterDays`가 `backup.min_retention_days`(기본 7일, RDS-004 기준과 같음)보다 짧으면 FAIL. 값이 없으면 무기한 보관이라 충족.
+  - BKP-003 (보호 리소스): `LastBackupTime`이 수집 시각 기준 `backup.max_backup_age_days`(기본 7일)보다 오래되면 FAIL. 백업된 리소스가 없는데 선택이 있는 계획이 있으면 리전 FAIL (계획만 있고 백업이 수행되지 않음). KISA 판단 기준의 "백업이 수행된 경우"를 직접 보는 룰이다.
+  - 일정(`ScheduleExpression`)의 주기는 판정하지 않고 evidence에 남긴다. 기관 정책의 주기를 cron 식과 비교하는 규칙을 정하지 않았다. 백업 작업 실패 내역(`ListBackupJobs`), 저장소 잠금·접근 정책, 복구 시험은 판정하지 않는다 (CA-18 `partial` 유지).
+  - RDS-004는 그대로 RDS 자동 백업만 본다. 룰은 스냅샷 하나만 본다 (ADR-015). 두 수단을 함께 보는 해석은 에이전트·사람 몫이다.
+  - KISA CA-18. BKP-001·003은 직접, BKP-002는 해석(보존 기간을 "기관 정책"의 일부로 봄). 사용자 확인 전이라 `kisa_verified: false`. ISMS-P 초안은 RDS-004와 같은 2.9.3·2.10.2.
+  - 마스킹: 계획 이름(`backup_plan`)·선택 이름(`selection`)·저장소 이름(`vault`)을 이름 키로 더한다. 리소스·저장소 ARN은 ARN 단계에서 바뀐다.
+  - 실습 환경: `enable_backup`(기본 false)이면 빈 DynamoDB 테이블(온디맨드) 하나, 저장소 하나, 계획 2개(`daily`: 보존 35일·테이블 선택, `short`: 보존 1일·선택 없음)를 만든다. 첫 백업이 돈 뒤에 점검해야 BKP-003이 PASS로 나온다.
+- 이유: CA-18에서 RDS만 보던 자동화 범위를 AWS Backup이 보호하는 모든 리소스로 넓힌다. 계획 존재만으로는 "백업이 수행된" 것을 보여 주지 못하므로 마지막 백업 시각까지 본다.
+- moto 차이: moto 5.2.4는 계획·저장소만 지원하고 `ListBackupSelections`·`GetBackupSelection`·`ListProtectedResources`가 없다. collector 테스트는 backup client를 모두 Stubber로 만든다. 실제 응답 형식은 실습 계정에서 확인한다.

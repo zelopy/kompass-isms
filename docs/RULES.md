@@ -463,6 +463,48 @@ finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 
 - ISMS-P(초안): 2.11.3 이상행위 분석 및 모니터링, 2.10.2 클라우드 보안
 - KISA: CA-19 가상 리소스 이상징후 알림 설정 (중, 872쪽) — 근거 수준: 직접 ("가상 리소스 이상징후 알림 설정이 적용된 경우")
 
+## AWS Backup
+
+5단계에서 추가한 룰이다 (ADR-054). 점검 리전마다 `backup:ListBackupPlans`·`backup:GetBackupPlan`(규칙의 일정·보존 기간), 계획마다 `backup:ListBackupSelections`·`backup:GetBackupSelection`(보호 대상 지정), 리전의 `backup:ListProtectedResources`(마지막 백업 시각)를 수집한다.
+
+- **다른 백업 수단.** RDS 자동 백업(RDS-004), EBS 스냅샷 수명주기(DLM), 직접 만든 스냅샷 등 AWS Backup 밖의 백업은 이 룰들이 보지 않는다. 그래서 계획이 아예 없는 리전은 FAIL이 아니라 REVIEW다 (ADR-013).
+- **오류.** 리전의 계획 목록이나 보호 리소스 목록 중 판정에 필요한 것을 수집하지 못하면 그 리전은 ERROR 하나다. 계획 상세·선택을 수집하지 못한 계획은 그 계획을 판정하지 못한 것으로 본다.
+- **보존 기간 표기.** 규칙의 `Lifecycle.DeleteAfterDays`가 없으면 복구 지점을 무기한 보관한다.
+
+### BKP-001 AWS Backup 백업 계획 미설정
+- 심각도: medium
+- API: `backup:ListBackupPlans`, `backup:GetBackupPlan`, `backup:ListBackupSelections`, `backup:GetBackupSelection`
+- 판정: 리전마다 규칙이 하나 이상이고 리소스 선택이 하나 이상인 계획이 있으면 PASS. 리전 단위 finding 하나.
+- 계획 없음: 리전에 계획이 없으면 REVIEW. 다른 수단으로 백업하는지 사람이 확인한다.
+- FAIL: 계획은 있으나 모든 계획에 규칙이나 리소스 선택이 없어 실제로 백업할 대상이 없으면 FAIL.
+- 오류: 계획 목록을 수집하지 못했거나, 조건을 만족하는 계획이 없는데 상세나 선택을 수집하지 못한 계획이 있으면 ERROR.
+- evidence: 계획별 이름, 규칙(이름·일정 `ScheduleExpression`·대상 저장소·보존 일수), 선택 이름과 지정 방식(리소스 ARN 수·태그 조건 수).
+- 비고: 선택이 실제 리소스와 일치하는지와 백업 대상이 기관 정책에 맞는지는 판정하지 않는다. 실제 백업 수행은 BKP-003이 본다.
+- ISMS-P(초안): 2.9.3 백업 및 복구관리, 2.10.2 클라우드 보안
+- KISA: CA-18 백업 사용 여부 (중, 871쪽) — 근거 수준: 직접 ("클라우드 리소스를 기관 정책에 따라 주기적으로 백업이 수행된 경우", 조치 방법 "클라우드 리소스를 주기적으로 백업 설정")
+
+### BKP-002 AWS Backup 보존 기간 부족
+- 심각도: medium
+- API: `backup:ListBackupPlans`, `backup:GetBackupPlan`
+- 판정: 계획마다 규칙의 `Lifecycle.DeleteAfterDays`를 `backup.min_retention_days`(기본 7일, RDS-004와 같은 기준)와 비교한다. 기준보다 짧은 규칙이 하나라도 있으면 FAIL, 없으면 PASS. `DeleteAfterDays`가 없으면 무기한 보관이라 충족이다. 계획별 finding, resource는 `backup-plan:<계획 이름>`.
+- 이벤트 기준 삭제: 기준보다 짧은 규칙은 없지만 `Lifecycle.DeleteAfterEvent`(`DELETE_AFTER_COPY`, 복사 뒤 원본 삭제)가 있는 규칙이 있으면 REVIEW. 남는 복사본의 보존 기간은 다른 저장소의 설정이다.
+- 해당 없음: 계획이 없는 리전, 규칙이 없는 계획은 `NOT_APPLICABLE`.
+- 오류: 계획 목록을 수집하지 못하면 리전 ERROR. 계획 상세를 수집하지 못하면 그 계획 ERROR.
+- evidence: 규칙별 이름·보존 일수·콜드 스토리지 이동 일수, 적용한 기준값. 다른 저장소·리전으로 보내는 복사본(`CopyActions`)의 보존 기간은 evidence에만 남긴다.
+- ISMS-P(초안): 2.9.3 백업 및 복구관리, 2.10.2 클라우드 보안
+- KISA: CA-18 백업 사용 여부 (중, 871쪽) — 근거 수준: 해석 ("클라우드 리소스를 기관 정책에 따라 주기적으로 백업이 수행된 경우". 보존 기간을 "기관 정책"의 일부로 해석)
+
+### BKP-003 AWS Backup 최근 백업 없음
+- 심각도: medium
+- API: `backup:ListProtectedResources` (BKP-001과 같은 계획 데이터)
+- 판정: AWS Backup으로 백업된 리소스마다 `LastBackupTime`이 수집 시각 기준 `backup.max_backup_age_days`(기본 7일) 이내이면 PASS, 더 오래되었으면 FAIL. resource는 리소스 ARN.
+- 백업된 리소스 없음: 리전에 리소스 선택이 있는 계획이 있으면 FAIL("계획은 있으나 백업이 수행되지 않음"), 계획이 없거나 선택이 없는 계획뿐이면 `NOT_APPLICABLE` (BKP-001이 판정). 선택을 수집하지 못한 계획이 있으면 ERROR.
+- 오류: 보호 리소스 목록을 수집하지 못하면 리전 ERROR. `LastBackupTime`이 없으면 그 리소스 ERROR. 시간대 없는 값 등 해석할 수 없는 날짜는 실행을 멈춘다 (ADR-023).
+- evidence: 리소스 종류, 마지막 백업 시각, 경과 일수, 적용한 기준값, 마지막 백업 저장소.
+- 한계: 리소스를 지운 뒤에도 복구 지점이 남아 있으면 목록에 나올 수 있어 FAIL로 판정된다. 이때는 복구 지점 정리 여부를 사람이 확인한다 (실습 계정에서 확인 예정). 백업 작업 실패 내역(`ListBackupJobs`)은 수집하지 않는다.
+- ISMS-P(초안): 2.9.3 백업 및 복구관리, 2.10.2 클라우드 보안
+- KISA: CA-18 백업 사용 여부 (중, 871쪽) — 근거 수준: 직접 ("주기적으로 백업이 수행된 경우", 점검 및 조치 사례 "주기적 백업 수행 여부 및 검토 진행")
+
 ## 룰 추가 절차
 
 1. 이 문서에 룰 항목을 먼저 추가한다 (ID, 심각도, API, 판정 기준, 매핑).

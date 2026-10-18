@@ -94,6 +94,13 @@ class RdsSettings(_Section):
     min_backup_retention_days: int = Field(default=7, ge=1)
 
 
+class BackupSettings(_Section):
+    # BKP-002 (KISA CA-18): 백업 계획 규칙의 최소 보존 일수. RDS-004 기본값과 같다
+    min_retention_days: int = Field(default=7, ge=1)
+    # BKP-003 (KISA CA-18): 마지막 백업 뒤 허용하는 최대 경과 일수
+    max_backup_age_days: int = Field(default=7, ge=1)
+
+
 class ElbSettings(_Section):
     # ELB-002 (KISA CA-12): 리스너 보안 정책이 허용해도 되는 최소 TLS 버전
     min_tls_version: Literal["TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"] = "TLSv1.2"
@@ -123,6 +130,7 @@ class Settings(_Section):
     s3: S3Settings = S3Settings()
     iam: IamSettings = IamSettings()
     rds: RdsSettings = RdsSettings()
+    backup: BackupSettings = BackupSettings()
     elb: ElbSettings = ElbSettings()
     logs: LogsSettings = LogsSettings()
     llm: LlmSettings = LlmSettings()

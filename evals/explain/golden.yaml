@@ -21,6 +21,32 @@ error_example: >-
   --policy-arn arn:aws:iam::aws:policy/SecurityAudit
 
 rules:
+  BKP-001:
+    fail: [backup:CreateBackupPlan, backup:UpdateBackupPlan, backup:CreateBackupSelection]
+    # REVIEW는 계획이 없는 리전. 다른 백업 수단을 확인하거나 계획을 만든다
+    review:
+      - backup:CreateBackupPlan
+      - backup:CreateBackupSelection
+      - dlm:GetLifecyclePolicies
+      - rds:DescribeDBInstances
+      - ec2:DescribeSnapshots
+    example: aws backup create-backup-plan --backup-plan file://daily-backup-35-days.json
+  BKP-002:
+    fail: [backup:UpdateBackupPlan]
+    # REVIEW는 복사 뒤 원본 삭제. 복사 대상 저장소의 복구 지점 보존 기간을 확인한다
+    review: [backup:UpdateBackupPlan, backup:GetBackupPlan, backup:ListRecoveryPointsByBackupVault]
+    example: >-
+      aws backup update-backup-plan --backup-plan-id 11111111-2222-3333-4444-555555555555
+      --backup-plan file://daily-backup-35-days.json
+  BKP-003:
+    # 백업 작업 실패 원인을 확인하고 다시 백업하거나, 지운 리소스의 복구 지점을 정리한다
+    fail:
+      - backup:ListBackupJobs
+      - backup:StartBackupJob
+      - backup:UpdateBackupPlan
+      - backup:CreateBackupSelection
+      - backup:DeleteRecoveryPoint
+    example: aws backup list-backup-jobs --by-state FAILED
   CT-001:
     fail: [cloudtrail:CreateTrail, cloudtrail:UpdateTrail, cloudtrail:StartLogging, cloudtrail:PutEventSelectors]
     example: >-

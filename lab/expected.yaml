@@ -53,6 +53,16 @@ expectations:
   - {rule: GD-001, resource: account, status: PASS, when: {enable_guardduty: true}}
   - {rule: GD-002, resource: account, status: PASS, when: {enable_guardduty: true}}
 
+  # AWS Backup (기본값 enable_backup = false: 계획 없음)
+  - {rule: BKP-001, resource: account, status: REVIEW, when: {enable_backup: false}}
+  - {rule: BKP-002, resource: account, status: N/A, when: {enable_backup: false}}
+  - {rule: BKP-003, resource: account, status: N/A, when: {enable_backup: false}}
+  - {rule: BKP-001, resource: account, status: PASS, when: {enable_backup: true}}
+  - {rule: BKP-002, resource: backup-plan:kompass-lab-daily, status: PASS, when: {enable_backup: true}}
+  - {rule: BKP-002, resource: backup-plan:kompass-lab-short, status: FAIL, when: {enable_backup: true}}
+  # 첫 백업(apply 뒤 다음 정각부터 60분 안) 이후 기준. 그 전에는 리전 FAIL
+  - {rule: BKP-003, resource: table/kompass-lab-backup, status: PASS, when: {enable_backup: true}}
+
   # RDS
   # ELB (기본값 enable_elb = false: 대상 없음)
   - {rule: ELB-001, resource: account, status: N/A, when: {enable_elb: false}}

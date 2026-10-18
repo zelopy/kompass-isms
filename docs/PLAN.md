@@ -153,6 +153,12 @@
   - [x] 평가 케이스 추가 (실습 가공·보강, ADR-033)
     - [x] 실습 가공 1개(`lab-rds-006`), 보강 2개: Aurora 클러스터 스냅샷 공개 FAIL·특정 계정 공유 PASS, 공개 MySQL 스냅샷 FAIL·공유 속성 조회 거부 ERROR. 오라클 3개 모든 지표 100%
     - [x] 실제 모델 실행 (3개 × 2회, $0.40): 채점기 오판 1종 수정 후 모든 지표 100% (ADR-033 기록)
+- [ ] 룰: AWS Backup 계획·보존 기간·최근 백업 BKP-001~003 (CA-18, ADR-054) — 새 collector `backup`, 계획 없음은 REVIEW. 실습 `enable_backup`으로 계획 2개·빈 DynamoDB 테이블
+  - [x] 룰·collector·테스트, 매핑 `kisa_verified: false`, 실습 Terraform·기대값, ISMS-P 검토표·Prowler 비교(`backup_plans_exist` 2.9.3·2.12.1)
+  - [x] 실습 통합 테스트 결함 수정: `LAB_FLAGS`에 `enable_elb`가 없어 ELB 기대값 6개가 대조에서 빠지던 문제 (기본 실행 검사 `tests/test_lab_expected.py` 추가)
+  - [ ] 사용자 확인: KISA CA-18 매핑 원문 근거 (BKP-001·003 직접, BKP-002 해석)
+  - [ ] 실습 계정 확인 (`enable_backup = true`, 첫 백업 뒤): `SecurityAudit`으로 backup 조회 가능 여부, 실제 응답 형식, `kompass-lab-backup` IAM 역할의 IAM-010~011 영향, `enable_elb` 기대값 재대조
+  - [ ] 평가 케이스 추가 (실습 가공·보강, ADR-033)
 - [x] Prowler OCSF 출력 어댑터 필요성 검토 — 보류, 후보로 내림 (2026-10-17, ADR-050). 대신 Prowler ISMS-P 대응표를 매핑 협의 참고 자료로 비교
   - [x] Prowler `kisa_isms_p_2023_aws` 대응표와 ISMS-P 매핑 초안 비교표 (`docs/ISMS_P_MAPPING_REVIEW.md` 참고 절) — 같음 10·다름 21·대응 없음 4, 협의 쟁점 4건에 참고 의견. RDS-005 추가 후 같음 11 (Prowler `rds_instance_transport_encrypted`도 2.7.1·2.10.2)
 - [ ] Azure 지원
@@ -160,6 +166,6 @@
 
 ### 후보 (결정 기록에서 미룬 것, 우선순위 미정)
 
-- 룰: S3 최소 TLS 버전 (CA-12, ADR-042·051), AWS Backup 계획 (CA-18), CloudWatch 경보 (CA-19, ADR-041), KMS 고객 관리형 키 자동 교체 (KISA 대응 항목 없음, ISMS-P 2.7.2 후보)
+- 룰: S3 최소 TLS 버전 (CA-12, ADR-042·051. 2026-10-18 재검토 후 보류 유지, ADR-054), CloudWatch 경보 (CA-19, ADR-041), KMS 고객 관리형 키 자동 교체 (KISA 대응 항목 없음, ISMS-P 2.7.2 후보)
 - 연동: Prowler OCSF 출력 어댑터 (ADR-050에서 보류. KISA 축 밖의 점검이 필요해지거나 다른 기준을 더할 때 다시 검토)
 - LLM: 로컬 LLM 공급자 구현체 (ADR-007·029에서 자리만 둠), 종합 위험 평가의 평가 (ADR-034), 평가셋 난이도 보강과 LLM 판정자 지표 (ADR-033)

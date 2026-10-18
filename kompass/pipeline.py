@@ -14,6 +14,7 @@ from pathlib import Path
 from pydantic import BaseModel, ValidationError
 
 from kompass.aws.session import ScanContext
+from kompass.collectors.backup import BackupCollector
 from kompass.collectors.base import Collector
 from kompass.collectors.cloudtrail import CloudTrailCollector
 from kompass.collectors.ec2 import Ec2Collector
@@ -43,6 +44,7 @@ from kompass.rules.registry import evaluate
 from kompass.snapshots import SnapshotStore, load_scan
 
 COLLECTORS: dict[str, Callable[[], Collector]] = {
+    "backup": BackupCollector,
     "cloudtrail": CloudTrailCollector,
     "ec2": Ec2Collector,
     "elb": ElbCollector,

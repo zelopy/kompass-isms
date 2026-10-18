@@ -93,6 +93,11 @@ RULE_HINTS: dict[str, str] = {
     "TCP 리스너의 대상 그룹 프로토콜·포트",
     "ELB-002": "리스너 보안 정책 변경 이력(ModifyListener·"
     "SetLoadBalancerPoliciesOfListener 이벤트)",
+    "BKP-001": "백업 계획·선택 변경 이력(CreateBackupPlan·DeleteBackupPlan·CreateBackupSelection·"
+    "DeleteBackupSelection 이벤트), RDS 자동 백업·EBS 스냅샷 수명주기 등 다른 백업 수단",
+    "BKP-002": "백업 계획 변경 이력(UpdateBackupPlan 이벤트), 복사 대상 저장소의 보존 기간",
+    "BKP-003": "백업 선택 변경 이력(DeleteBackupSelection 이벤트), 원본 리소스 삭제 여부, "
+    "백업 작업 실패 여부",
 }
 
 

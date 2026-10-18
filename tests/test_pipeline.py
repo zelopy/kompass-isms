@@ -79,6 +79,7 @@ def test_collect_all_services_by_default(
     result = collect(_scan(), store)
     _, report = evaluate_scan(result.scan_path, Settings())
     assert set(result.errors_by_service) == {
+        "backup",
         "cloudtrail",
         "ec2",
         "elb",

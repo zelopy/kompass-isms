@@ -17,3 +17,4 @@ cloudtrail_read_write_type = "All" # All | WriteOnly
 enable_public_rds = false
 enable_guardduty  = false
 enable_elb        = false
+enable_backup     = false

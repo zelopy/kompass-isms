@@ -369,6 +369,31 @@ def test_rds_snapshot_identifiers_are_masked() -> None:
         assert raw not in text, raw
 
 
+def test_backup_plan_and_resource_names_are_masked() -> None:
+    finding = {
+        "resource": "arn:aws:dynamodb:ap-northeast-2:123456789012:table/ledger-orders",
+        "message": "마지막 백업이 17일 전임: ledger-orders",
+        "evidence": {
+            "resource_name": "ledger-orders",
+            "last_backup_vault": (
+                "arn:aws:backup:ap-northeast-2:123456789012:backup-vault:fin-vault"
+            ),
+            "plans": [
+                {
+                    "backup_plan": "fin-daily",
+                    "rules": [{"rule_name": "fin-35d", "vault": "fin-vault"}],
+                    "selections": [{"selection": "fin-tables"}],
+                }
+            ],
+            "plans_with_selections": ["fin-daily"],
+        },
+    }
+    masker = Masker.for_values([finding])
+    text = json.dumps(masker.mask(finding), ensure_ascii=False)
+    for raw in ("ledger-orders", "fin-vault", "fin-daily", "fin-35d", "fin-tables", "123456789012"):
+        assert raw not in text, raw
+
+
 # --- 증적 문서의 개인정보 (ADR-049) ---
 
 
