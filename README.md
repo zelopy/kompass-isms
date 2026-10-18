@@ -6,29 +6,29 @@ KISA 클라우드 취약점 점검 가이드와 ISMS-P 인증기준으로 AWS �
 
 ## 무엇을 하나
 
-- AWS 계정을 **읽기 전용**으로 스캔해서 IAM, S3, EC2(보안그룹·VPC), CloudTrail, CloudWatch Logs, RDS, ELB, GuardDuty, AWS Backup 설정을 수집합니다.
-- 결정론적 룰로 양호/취약을 판정하고, 판정 근거가 된 원본 설정을 증적으로 남깁니다.
-- 결과를 KISA 점검 항목과 ISMS-P 통제항목에 매핑해 점검표(Markdown, Excel)로 출력합니다.
-- LLM(Claude)이 조치가 필요한 결과를 룰별로 해설합니다: KISA·ISMS-P 원문 인용(원문 대조 검증), 위험, 우선순위 의견, 조치 방안(AWS CLI·Terraform). 식별정보는 가린 뒤 보냅니다. 룰을 엮은 종합 위험 평가(위험 시나리오, 조치 순서)도 만듭니다.
-- 에이전트가 취약·검토 필요 결과를 읽기 전용 도구로 추가 조사합니다. 같은 도구를 MCP 서버로도 제공합니다.
-- 자동 점검으로 확인할 수 없는 항목은 담당자 증적 요청서를 만들고, 제출된 증적 문서를 LLM이 검토합니다.
+- AWS 계정을 **읽기 전용**으로 스캔해서 IAM, S3, EC2(보안그룹·VPC), CloudTrail, CloudWatch Logs, RDS, ELB, GuardDuty, AWS Backup 설정을 수집한다.
+- 결정론적 룰로 양호/취약을 판정하고, 판정 근거가 된 원본 설정을 증적으로 남긴다.
+- 결과를 KISA 점검 항목과 ISMS-P 통제항목에 매핑해 점검표(Markdown, Excel)로 출력한다.
+- LLM(Claude)이 조치가 필요한 결과를 룰별로 해설한다: KISA·ISMS-P 원문 인용(원문 대조 검증), 위험, 우선순위 의견, 조치 방안(AWS CLI·Terraform). 식별정보는 가린 뒤 보낸다. 룰을 엮은 종합 위험 평가(위험 시나리오, 조치 순서)도 만든다.
+- 에이전트가 취약·검토 필요 결과를 읽기 전용 도구로 추가 조사한다. 같은 도구를 MCP 서버로도 제공한다.
+- 자동 점검으로 확인할 수 없는 항목은 담당자 증적 요청서를 만들고, 제출된 증적 문서를 LLM이 검토한다.
 
 ## 설계 원칙
 
-- **판정은 코드, 해석은 LLM.** 양호/취약 판정은 재현 가능한 룰이 내리고, LLM은 판정을 바꾸지 않습니다.
-- **읽기 전용 이중 보장.** IAM 정책(`SecurityAudit`)과 코드 레벨 가드로 대상 환경 변경을 막습니다.
-- **확인하지 못한 것은 양호가 아니다.** 권한 오류나 수집 실패는 `ERROR`로 보고합니다.
+- **판정은 코드, 해석은 LLM.** 양호/취약 판정은 재현 가능한 룰이 내리고, LLM은 판정을 바꾸지 않는다.
+- **읽기 전용 이중 보장.** IAM 정책(`SecurityAudit`)과 코드 레벨 가드로 대상 환경 변경을 막는다.
+- **확인하지 못한 것은 양호가 아니다.** 권한 오류나 수집 실패는 `ERROR`로 보고한다.
 
 ## 빠른 시작
 
-점검용 AWS 프로필에는 `SecurityAudit` 관리형 정책만 부여합니다.
+점검용 AWS 프로필에는 `SecurityAudit` 관리형 정책만 부여한다.
 
 ```bash
 uv sync
 uv run kompass scan --profile <점검 프로필> --account-id <대상 계정 ID> --report md --report xlsx
 ```
 
-보고서는 `reports/<계정 ID>/`에 생깁니다. 설치, 자격증명, 명령별 사용법, 결과물 구조, 문제 해결은 **[사용 매뉴얼](docs/MANUAL.md)**을 보세요.
+보고서는 `reports/<계정 ID>/`에 생긴다. 설치, 자격증명, 명령별 사용법, 결과물 구조, 문제 해결은 **[사용 매뉴얼](docs/MANUAL.md)**에 있다.
 
 ## 출력 예시
 
@@ -42,7 +42,7 @@ uv run kompass scan --profile <점검 프로필> --account-id <대상 계정 ID>
 | CA-09 | 접근 제어 설정 관리 | 상 | partial | 취약 | SG-001, SG-002, SG-003 | FAIL 5, PASS 19 |
 | CA-13 | 클라우드 서비스 사용자 계정 로깅 설정 | 상 | full | 양호 | CT-001 | PASS 1 |
 
-보고서 구성은 [매뉴얼 6.2](docs/MANUAL.md#62-보고서-읽는-법)를 보세요.
+보고서 구성은 [매뉴얼 6.2](docs/MANUAL.md#62-보고서-읽는-법)에 있다.
 
 ## 문서
 
@@ -60,7 +60,7 @@ uv run kompass scan --profile <점검 프로필> --account-id <대상 계정 ID>
 
 ## 개발
 
-개발 규칙은 [CLAUDE.md](CLAUDE.md)에 있습니다.
+개발 규칙은 [CLAUDE.md](CLAUDE.md)에 있다.
 
 ```bash
 uv run pytest                                  # 테스트
@@ -69,8 +69,8 @@ uv run ruff check . && uv run ruff format .    # 린트·포맷
 uv run mypy kompass                            # 타입 검사
 ```
 
-평가셋 실행은 [evals/README.md](evals/README.md)를 보세요.
+평가셋 실행 방법은 [evals/README.md](evals/README.md)에 있다.
 
 ## 주의
 
-이 도구의 결과는 점검 보조 자료이며, ISMS-P 인증 심사 결과를 보장하지 않습니다. 매핑 정보는 원문 검증 여부(`verified`)를 함께 확인하세요.
+이 도구의 결과는 점검 보조 자료이며, ISMS-P 인증 심사 결과를 보장하지 않는다. ISMS-P 매핑은 담당자 협의 전의 초안이므로 원문 검증 여부(`verified`)를 함께 확인한다.
