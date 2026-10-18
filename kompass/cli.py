@@ -4,11 +4,14 @@
 - `evaluate`: 저장된 스냅샷을 룰로 판정해 결과 파일(`*.findings.json`)을 쓴다
 - `scan`: collect와 evaluate를 이어서 실행한다 (`--report`로 보고서까지)
 - `report`: 판정 결과에 KISA·ISMS-P 매핑을 붙여 보고서(Markdown, Excel, JSON)를 만든다
+- `evidence`: 자동 점검으로 확인할 수 없는 항목의 담당자 증적 요청서를 만든다 (ADR-037)
 - `explain`: 조치가 필요한 결과를 룰별로 LLM이 해설한다 (참고 자료, 판정은 바꾸지 않는다)
+- `investigate`: 취약·검토 필요 결과를 에이전트가 읽기 전용 도구로 추가 조사한다 (ADR-035)
 - `review-evidence`: 담당자가 제출한 증적 문서를 요청별로 LLM이 검토한다 (참고, ADR-049)
+- `mcp`: 판정 결과와 조사 도구를 MCP 서버로 노출한다 (ADR-038)
 
-종료 코드: 0 완료(FAIL이 있어도 0), 1 `--fail-on` 기준 해당, 2 사용법·설정 오류,
-3 세션 오류, 4 스냅샷 오류, 5 LLM 해설 전부 실패.
+종료 코드 (docs/MANUAL.md 13장): 0 완료(FAIL이 있어도 0), 1 `--fail-on` 기준 해당,
+2 사용법·설정 오류, 3 세션 오류, 4 스냅샷 오류, 5 LLM 해설·추가 조사·증적 검토 전부 실패.
 """
 
 import sys

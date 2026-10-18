@@ -188,21 +188,7 @@ class Rule(Protocol):
 
 `snapshots.py`가 점검 결과를 파일로 남긴다 (ADR-003, ADR-022, ADR-027).
 
-저장 위치는 `--store` → `KOMPASS_STORE` 환경 변수 → 현재 폴더에서 위로 찾은 kompass 저장소 최상위의 `reports/` → (저장소 밖이면) 현재 폴더의 `reports/` 순서로 정한다. 어느 폴더에서 실행해도 결과가 한곳에 모인다.
-
-```
-reports/
-├── .gitignore                 # "*" (자동 생성, 실제 계정 데이터 커밋 방지)
-├── <account_id>/<scan_id>.md, .xlsx, .report.json   # 사람이 보는 보고서
-├── findings/<account_id>/<scan_id>.findings.json     # 판정 결과
-├── explanations/<account_id>/<scan_id>.explanations.json  # LLM 해설 (같은 판정 결과에만 보고서에 붙음)
-├── investigations/<account_id>/<scan_id>.investigation.json  # 에이전트 추가 조사 (ADR-035)
-├── evidence-reviews/<account_id>/<scan_id>.evidence-review.json  # 증적 문서 검토 (ADR-049, 문서 원문 구절 포함)
-│                    <scan_id>.evidence-preview.md   # 전송 전 미리보기 (마스킹한 프롬프트)
-└── snapshots/<account_id>/<scan_id>/   # scan_id = 20261013T120000Z-a1b2
-    ├── iam.json, s3.json, ...  # 서비스별 Snapshot
-    └── scan.json               # ScanManifest: 계정, 호출자, 리전, kompass 버전, 시작·종료 시각, 파일별 SHA-256
-```
+저장 위치와 결과 파일 경로는 [MANUAL.md 12장](MANUAL.md#12-결과물-구조)이 정본이다. 어느 폴더에서 실행해도 결과가 저장소 최상위의 `reports/` 한곳에 모인다 (ADR-027). 스냅샷은 `reports/snapshots/<account_id>/<scan_id>/`에 서비스별 JSON과 `scan.json`(ScanManifest: 계정, 호출자, 리전, kompass 버전, 시작·종료 시각, 파일별 SHA-256)으로 저장한다.
 
 - `scan.json`은 맨 마지막에 쓴다. 이 파일이 없는 폴더는 중단된 점검이므로 불러오지 않는다.
 - 불러올 때 파일별 SHA-256을 `scan.json`과 대조해 손상·수정을 찾는다. 증적 신뢰성을 위한 장치이며, `scan.json` 자체까지 바꾸는 의도적 위조는 막지 못한다.
@@ -280,22 +266,12 @@ items:
 
 ## 설정
 
-`kompass.yaml`(선택)로 조직별 기준을 조정한다. 예: 비밀번호 정책 기준, 미사용 자격증명 기간, 액세스 키 교체 주기, 위험 포트 목록.
+`config.py`의 `Settings`가 `kompass.yaml`을 읽는다. 키와 기본값은 [MANUAL.md 부록 B](MANUAL.md#b-kompassyaml-전체-키)가 정본이며, 테스트(`tests/test_config.py`)가 `Settings`의 기본값과 대조한다.
 
-```yaml
-iam:
-  unused_credential_days: 90
-  access_key_rotation_days: 90
-  root_recent_use_days: 90
-  password_policy:            # KISA CA-04 기준 (ADR-014)
-    min_length_two_types: 10
-    min_length_three_types: 8
-ec2:
-  admin_ports: [22, 3389]
-  db_ports: [3306, 5432, 1433, 1521, 27017, 6379]
-cloudtrail:
-  require_read_events: true  # false면 쓰기 이벤트만 기록해도 PASS (ADR-017)
-```
+- 섹션마다 pydantic 모델이고 정의되지 않은 키를 거부한다 (ADR-023). 오타가 조용히 기본값으로 판정되는 것을 막는다.
+- 기본값은 일반적인 권고 수준이다. "기관 정책에 따라"가 설정값으로 표현되는 기준은 여기서 받아 판정한다 (ADR-017).
+- 판정 결과 파일과 보고서에는 판정 기준값(`Settings.judgment_criteria()`)만 남긴다. `llm` 섹션은 판정과 무관하므로 뺀다 (ADR-030).
+- 키는 그 값을 쓰는 룰을 구현할 때 더한다.
 
 ## Interpreter (LLM 해설)
 

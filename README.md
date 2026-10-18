@@ -19,68 +19,16 @@ KISA 클라우드 취약점 점검 가이드와 ISMS-P 인증기준으로 AWS �
 - **읽기 전용 이중 보장.** IAM 정책(`SecurityAudit`)과 코드 레벨 가드로 대상 환경 변경을 막습니다.
 - **확인하지 못한 것은 양호가 아니다.** 권한 오류나 수집 실패는 `ERROR`로 보고합니다.
 
-자세한 내용은 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/DECISIONS.md](docs/DECISIONS.md)를 참고하세요.
+## 빠른 시작
 
-## 사용법
-
-점검용 AWS 프로필에는 `SecurityAudit` 관리형 정책만 부여한다. 코드에도 읽기 전용 가드가 있어 조회 외의 호출은 요청 전에 차단된다.
+점검용 AWS 프로필에는 `SecurityAudit` 관리형 정책만 부여합니다.
 
 ```bash
 uv sync
-
-# 수집 + 판정 + 보고서
-uv run kompass scan --profile <aws-profile> --regions ap-northeast-2 --report md --report xlsx
-
-# 따로 실행
-uv run kompass collect --profile <aws-profile> --account-id <예상 계정 ID>
-uv run kompass evaluate --config kompass.yaml --fail-on fail
-uv run kompass report --format md --format xlsx
-
-# LLM 해설 (선택, 비용 발생. ANTHROPIC_API_KEY 필요, 원문 색인을 먼저 만든다: knowledge/SOURCES.md)
-uv run kompass explain --dry-run          # 대상과 예상 비용만 확인
-uv run kompass explain --report md --report xlsx
-uv run kompass explain --assessment-only --report md   # 종합 위험 평가만 다시 만들기
-
-# 담당자 증적 요청서 (자동 점검으로 확인할 수 없는 항목, LLM·AWS 호출 없음)
-uv run kompass evidence
-
-# MCP 서버 (Claude Code 등 MCP 클라이언트에서 판정 결과 조회·읽기 전용 추가 조사)
-claude mcp add kompass -- uv --directory <저장소 경로> run kompass mcp --profile <aws-profile>
-
-# 에이전트 추가 조사 (선택, 비용 발생. 취약·검토 필요 결과를 읽기 전용 도구로 더 조회)
-uv run kompass investigate --dry-run      # 대상과 최대 비용만 확인
-uv run kompass investigate --profile <aws-profile> --report md --report xlsx
-
-# 평가셋 실행 (개발용): evals/README.md
+uv run kompass scan --profile <점검 프로필> --account-id <대상 계정 ID> --report md --report xlsx
 ```
 
-| 옵션 | 설명 |
-|---|---|
-| `--regions` | EC2·VPC를 점검할 리전 (쉼표 구분). 없으면 활성 리전 전체. S3 버킷·IAM은 항상 전체 |
-| `--account-id` | 실제 계정이 다르면 중단 (엉뚱한 프로필로 점검하는 실수 방지) |
-| `--service` | 수집할 서비스 (`backup`, `cloudtrail`, `ec2`, `elb`, `guardduty`, `iam`, `logs`, `rds`, `s3`). 여러 번 지정. 없으면 전체 |
-| `--config` | 판정 기준값 파일. 없으면 현재 디렉터리의 `kompass.yaml` |
-| `--fail-on` | `fail`·`error`·`review` 이상의 결과가 있으면 종료 코드 1 (CI용) |
-| `--report` / `--format` | 보고서 형식: `md`(Markdown), `xlsx`(Excel 점검표), `json`(전체 데이터), `evidence`(담당자 증적 요청서) |
-
-결과는 어느 폴더에서 실행하든 저장소 최상위의 `reports/` 아래에 저장된다. 다른 위치를 쓰려면 `--store` 옵션이나 `KOMPASS_STORE` 환경 변수를 지정한다. 실제 계정 데이터이므로 `reports/`는 `.gitignore` 대상이며, 폴더 안에도 `.gitignore`가 자동으로 만들어진다.
-- 보고서: `reports/<계정>/<점검 ID>.md`, `.xlsx`, `.report.json`, `.evidence.xlsx`(증적 요청서)
-- 판정 결과: `reports/findings/<계정>/<점검 ID>.findings.json`
-- 해설: `reports/explanations/<계정>/<점검 ID>.explanations.json` (원본 식별정보가 복원된 상태)
-- 추가 조사: `reports/investigations/<계정>/<점검 ID>.investigation.json` (도구 호출 기록 포함)
-- 증적 검토: `reports/evidence-reviews/<계정>/<점검 ID>.evidence-review.json` (문서 원문 구절 포함), 전송 전 미리보기 `.evidence-preview.md`
-- MCP 호출 로그: `reports/mcp/<계정>/<점검 ID>.<시작 시각>.mcp.jsonl` (원래 입력값과 마스킹한 결과)
-- 스냅샷: `reports/snapshots/<계정>/<점검 ID>/` (파일별 SHA-256 기록)
-
-종료 코드: 0 완료(취약 결과가 있어도 0), 1 `--fail-on` 해당, 2 사용법·설정 오류, 3 세션 오류, 4 스냅샷 오류, 5 LLM 해설·추가 조사 전부 실패.
-
-보고서는 판정 결과에 KISA·ISMS-P 매핑을 붙여 만든다. 매핑을 고쳐도 다시 판정할 필요 없이 `kompass report`만 다시 실행하면 된다. 보고서를 만들 때 스냅샷 해시를 다시 대조하므로, 판정 후 증적이 바뀌었으면 보고서를 만들지 않는다.
-
-`kompass explain`은 판정을 바꾸지 않는 참고 해설이다. LLM에는 계정 ID·IP·ARN·리소스 이름을 자리표시자로 바꾼 값만 보내고, 응답을 받은 뒤 로컬에서 되돌린다. 인용 구절은 원문 색인과 대조해 "검증됨"/"검증되지 않음"을 표시한다. 해설은 같은 판정 결과에만 붙으며, 다시 판정하면 해설을 다시 만들어야 보고서에 들어간다. 모델·effort는 `kompass.yaml`의 `llm:` 섹션에서 바꾼다.
-
-`kompass investigate`는 취약·검토 필요 결과를 룰 단위로 에이전트가 추가 조사하는 참고 기능이다. 판정과 같은 계정·리전 범위의 읽기 전용 세션으로 정해진 조회 도구 12개만 쓰고, 도구 결과도 마스킹한 뒤 LLM에 보낸다. 조사 결과의 사실마다 근거가 된 도구 호출 ID를 달고, 실제 호출과 대조해 "근거 검증됨"을 표시한다. 룰당 도구 호출 수(`--max-calls`)와 토큰(`--max-tokens`)에 상한이 있으며, 판정은 바꾸지 않는다.
-
-`kompass mcp`는 같은 도구를 MCP 서버로 노출한다. MCP 클라이언트 뒤의 LLM에도 식별정보를 가린 값만 보내며, 세션 동안 같은 리소스는 같은 자리표시자로 보인다. 도구 입력에 자리표시자를 쓰면 서버가 원래 값으로 바꿔 조회한다. 도구는 판정 결과 조회(`kompass_findings`)와 읽기 전용 조사 도구 12개뿐이고, 세션당 AWS 호출 상한(`--max-calls`, 기본 50)이 있다. 판정 결과와 다른 계정의 프로필이면 시작하지 않는다.
+보고서는 `reports/<계정 ID>/`에 생깁니다. 설치, 자격증명, 명령별 사용법, 결과물 구조, 문제 해결은 **[사용 매뉴얼](docs/MANUAL.md)**을 보세요.
 
 ## 출력 예시
 
@@ -94,14 +42,34 @@ uv run kompass investigate --profile <aws-profile> --report md --report xlsx
 | CA-09 | 접근 제어 설정 관리 | 상 | partial | 취약 | SG-001, SG-002, SG-003 | FAIL 5, PASS 19 |
 | CA-13 | 클라우드 서비스 사용자 계정 로깅 설정 | 상 | full | 양호 | CT-001 | PASS 1 |
 
-보고서 구성:
-- **Markdown**: 점검 정보(수행 주체, 시각, 적용 기준값, 매핑 데이터 해시), KISA 19개 항목 결과, 조치가 필요한 결과(항목별 핵심 증적), ISMS-P 통제항목(초안), 건너뛴 룰
-- **Excel 점검표**: 요약 / KISA 항목 / 점검 결과(finding 전체, 증적) / ISMS-P (초안) 시트. 결과별 색상과 필터
-- **JSON**: 매핑을 붙인 finding과 전체 증적
+보고서 구성은 [매뉴얼 6.2](docs/MANUAL.md#62-보고서-읽는-법)를 보세요.
 
-## 점검 항목
+## 문서
 
-[docs/RULES.md](docs/RULES.md) 참고.
+| 문서 | 내용 |
+|---|---|
+| [docs/MANUAL.md](docs/MANUAL.md) | 사용 매뉴얼 |
+| [docs/RULES.md](docs/RULES.md) | 점검 룰 41개의 판정 기준과 KISA·ISMS-P 매핑 |
+| [docs/COVERAGE.md](docs/COVERAGE.md) | KISA 19개 항목별 자동화 범위 |
+| [docs/ISMS_P_MAPPING_REVIEW.md](docs/ISMS_P_MAPPING_REVIEW.md) | ISMS-P 매핑 근거와 협의용 검토표 |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 내부 구조 |
+| [docs/DECISIONS.md](docs/DECISIONS.md) | 설계 결정 기록 |
+| [docs/PLAN.md](docs/PLAN.md) | 진행 상황 |
+| [lab/README.md](lab/README.md) | 취약 실습 환경 |
+| [evals/README.md](evals/README.md) | LLM 평가셋 |
+
+## 개발
+
+개발 규칙은 [CLAUDE.md](CLAUDE.md)에 있습니다.
+
+```bash
+uv run pytest                                  # 테스트
+uv run pytest -m lab                           # 실습 계정 통합 테스트 (실제 AWS, 읽기 전용)
+uv run ruff check . && uv run ruff format .    # 린트·포맷
+uv run mypy kompass                            # 타입 검사
+```
+
+평가셋 실행은 [evals/README.md](evals/README.md)를 보세요.
 
 ## 주의
 
