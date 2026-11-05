@@ -98,3 +98,14 @@ def test_noscript_notice() -> None:
 def test_output_uses_lf_newlines() -> None:
     # 데모 동기화와 CSP 해시가 체크아웃 줄바꿈 설정에 따라 달라지지 않아야 한다
     assert "\r" not in render_html(DEFAULT)
+
+
+def test_renders_report_without_findings() -> None:
+    html = render_html(sample_report(skipped=("IAM-001",)))
+    assert extract_payload(html)["report"]["findings"] == []
+
+
+def test_payload_keeps_nested_evidence() -> None:
+    deep = {"a": [{"b": [None, 1, {"2": "x" * 5000}]}]}
+    report = sample_report(finding("S3-004", Status.FAIL, "b", "ap-northeast-2", "m", deep))
+    assert extract_payload(render_html(report))["report"]["findings"][0]["evidence"] == deep

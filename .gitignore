@@ -41,3 +41,6 @@ knowledge/index.json
 .claude/hillclimb/**/traces/
 .claude/hillclimb/**/report.html
 .claude/hillclimb/**/trajectory/
+
+# Playwright MCP 브라우저 확인 출력 (화면 캡처·스냅샷)
+.playwright-mcp/
