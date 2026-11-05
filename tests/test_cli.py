@@ -11,6 +11,7 @@ import pytest
 from moto import mock_aws
 from typer.testing import CliRunner
 
+from kompass import cli
 from kompass.agent.llm import AgentTool
 from kompass.cli import EXIT_FAIL_ON, EXIT_LLM, EXIT_SESSION, EXIT_SNAPSHOT, EXIT_USAGE, app
 from kompass.interpreter.llm import LLMError
@@ -27,6 +28,7 @@ from kompass.models import (
     SourceEntry,
     SourceIndex,
 )
+from kompass.reporters.html_reporter import extract_payload
 from tests.agent.fakes import ScriptedAgent
 from tests.conftest import AwsFiles
 from tests.interpreter.fakes import (
@@ -552,6 +554,49 @@ def test_evidence_is_also_a_report_format(aws: None, store: Path) -> None:
     result = runner.invoke(app, ["report", "--store", str(store), "--format", "evidence"])
     assert result.exit_code == 0, result.output
     assert len(list(store.rglob("*.evidence.xlsx"))) == 1
+
+
+def test_report_html_format(aws: None, store: Path) -> None:
+    _scanned(store)
+    result = runner.invoke(app, ["report", "--store", str(store), "--format", "html"])
+    assert result.exit_code == 0, result.output
+    [path] = (store / "123456789012").glob("*.html")
+    payload = extract_payload(path.read_text(encoding="utf-8"))
+    assert payload["report"]["scan"]["account_id"] == "123456789012"
+
+
+def test_report_open_calls_browser(aws: None, store: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    opened: list[Path] = []
+    monkeypatch.setattr(cli, "open_in_browser", lambda p: opened.append(p) or True)
+    _scanned(store)
+    args = ["report", "--store", str(store), "--format", "html", "--open"]
+    result = runner.invoke(app, args)
+    assert result.exit_code == 0, result.output
+    [path] = (store / "123456789012").glob("*.html")
+    assert opened == [path]
+
+
+def test_report_open_without_html_does_not_open(
+    aws: None, store: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    opened: list[Path] = []
+    monkeypatch.setattr(cli, "open_in_browser", lambda p: opened.append(p) or True)
+    _scanned(store)
+    result = runner.invoke(app, ["report", "--store", str(store), "--format", "md", "--open"])
+    assert result.exit_code == 0, result.output
+    assert opened == []
+    assert "--open은 HTML 보고서를 만들 때만" in result.output
+
+
+def test_report_open_failure_warns(aws: None, store: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(cli, "open_in_browser", lambda p: False)
+    _scanned(store)
+    args = ["report", "--store", str(store), "--format", "html", "--open"]
+    result = runner.invoke(app, args)
+    assert result.exit_code == 0, result.output
+    assert "브라우저를 열지 못했습니다" in result.output
+    [path] = (store / "123456789012").glob("*.html")
+    assert str(path) in result.output.replace("\n", "")
 
 
 def test_evidence_without_findings(store: Path) -> None:

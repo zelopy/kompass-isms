@@ -37,6 +37,7 @@ from kompass.models import (
     Snapshot,
     Status,
 )
+from kompass.reporters.html_reporter import render_html
 from kompass.reporters.json_reporter import render_json
 from kompass.reporters.markdown_reporter import render_markdown
 from kompass.reporters.xlsx_reporter import render_evidence_xlsx, render_xlsx
@@ -66,6 +67,7 @@ REPORT_FORMATS: dict[str, tuple[str, Callable[[AuditReport], str | bytes]]] = {
     "xlsx": (".xlsx", render_xlsx),
     "json": (".report.json", render_json),
     "evidence": (".evidence.xlsx", render_evidence_xlsx),
+    "html": (".html", render_html),
 }
 
 # --fail-on 기준: 이 상태 중 하나라도 있으면 종료 코드 1

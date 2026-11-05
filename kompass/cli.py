@@ -16,6 +16,7 @@
 """
 
 import sys
+import webbrowser
 from collections import Counter
 from enum import StrEnum
 from importlib.metadata import version
@@ -114,6 +115,7 @@ class ReportFormat(StrEnum):
     XLSX = "xlsx"
     JSON = "json"
     EVIDENCE = "evidence"  # 담당자 증적 요청서 (xlsx)
+    HTML = "html"  # 브라우저로 여는 결과 뷰어 (ADR-055)
 
 
 DEFAULT_REPORT_FORMATS = (ReportFormat.MD, ReportFormat.XLSX)
@@ -262,7 +264,12 @@ def _evaluate(
     return path, exceeds(report, fail_on.value if fail_on else None)
 
 
-def _reports(store: SnapshotStore, findings_path: Path, formats: list[ReportFormat]) -> None:
+def open_in_browser(path: Path) -> bool:
+    """HTML 보고서를 기본 브라우저로 연다. 테스트는 이 함수를 바꿔 브라우저 호출을 확인한다."""
+    return webbrowser.open(path.resolve().as_uri())
+
+
+def _reports(store: SnapshotStore, findings_path: Path, formats: list[ReportFormat]) -> list[Path]:
     report, warning = attach_explanations(store, _audit_report(store, findings_path))
     report, investigation_warning = attach_investigations(store, report)
     report, review_warning = attach_evidence_reviews(store, report)
@@ -272,6 +279,7 @@ def _reports(store: SnapshotStore, findings_path: Path, formats: list[ReportForm
     paths = write_reports(report, [f.value for f in formats], default_reports_dir(store, report))
     for path in paths:
         typer.echo(f"보고서: {path}")
+    return paths
 
 
 def _audit_report(store: SnapshotStore, findings_path: Path) -> AuditReport:
@@ -378,7 +386,7 @@ def scan_command(
     report: list[ReportFormat] | None = typer.Option(
         None,
         "--report",
-        help="판정 후 이 형식의 보고서도 만듭니다 (md, xlsx, json, evidence). 여러 번 지정.",
+        help="판정 후 이 형식의 보고서도 만듭니다 (md, xlsx, json, evidence, html). 여러 번 지정.",
     ),
 ) -> None:
     """수집과 판정을 이어서 실행합니다."""
@@ -403,13 +411,28 @@ def report_command(
     formats: list[ReportFormat] | None = typer.Option(
         None,
         "--format",
-        help="보고서 형식 (md, xlsx, json, evidence). 여러 번 지정. 없으면 md와 xlsx.",
+        help="보고서 형식 (md, xlsx, json, evidence, html). 여러 번 지정. 없으면 md와 xlsx.",
+    ),
+    open_html: bool = typer.Option(
+        False, "--open", help="만든 HTML 보고서를 기본 브라우저로 엽니다."
     ),
 ) -> None:
     """판정 결과에 KISA·ISMS-P 매핑(해설이 있으면 해설도)을 붙여 보고서를 만듭니다."""
     snapshot_store = SnapshotStore(store)
     findings = _findings_path(snapshot_store, findings, account_id)
-    _reports(snapshot_store, findings, list(formats or DEFAULT_REPORT_FORMATS))
+    paths = _reports(snapshot_store, findings, list(formats or DEFAULT_REPORT_FORMATS))
+    if open_html:
+        _open_html(paths)
+
+
+def _open_html(paths: list[Path]) -> None:
+    html = [p for p in paths if p.suffix == ".html"]
+    if not html:
+        typer.echo("--open은 HTML 보고서를 만들 때만 동작합니다 (--format html).")
+        return
+    for path in html:
+        if not open_in_browser(path):
+            typer.echo(f"경고: 브라우저를 열지 못했습니다. 파일을 직접 여십시오: {path}", err=True)
 
 
 @app.command("evidence")
@@ -463,7 +486,7 @@ def explain_command(
     report: list[ReportFormat] | None = typer.Option(
         None,
         "--report",
-        help="해설 후 이 형식의 보고서도 다시 만듭니다 (md, xlsx, json, evidence).",
+        help="해설 후 이 형식의 보고서도 다시 만듭니다 (md, xlsx, json, evidence, html).",
     ),
 ) -> None:
     """조치가 필요한 결과를 룰별로 묶어 LLM 해설을 만듭니다. 판정은 바꾸지 않습니다.
@@ -647,7 +670,7 @@ def investigate_command(
     report: list[ReportFormat] | None = typer.Option(
         None,
         "--report",
-        help="조사 후 이 형식의 보고서도 다시 만듭니다 (md, xlsx, json, evidence).",
+        help="조사 후 이 형식의 보고서도 다시 만듭니다 (md, xlsx, json, evidence, html).",
     ),
 ) -> None:
     """취약·검토 필요 결과를 에이전트가 읽기 전용 도구로 추가 조사합니다. 판정은 바꾸지 않습니다.
@@ -749,7 +772,7 @@ def review_evidence_command(
     report: list[ReportFormat] | None = typer.Option(
         None,
         "--report",
-        help="검토 후 이 형식의 보고서도 다시 만듭니다 (md, xlsx, json, evidence).",
+        help="검토 후 이 형식의 보고서도 다시 만듭니다 (md, xlsx, json, evidence, html).",
     ),
 ) -> None:
     """제출된 증적 문서를 요청별로 LLM이 검토합니다. 판정·항목 결과는 바꾸지 않습니다.
