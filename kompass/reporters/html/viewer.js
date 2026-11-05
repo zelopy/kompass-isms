@@ -297,9 +297,161 @@
     );
   }
 
-  // 종합 위험 평가 등 개요 탭 아래쪽 (해설이 있을 때)
+  // 종합 위험 평가 (해설이 있을 때, 참고)
   function overviewExtras() {
-    return null;
+    var ex = R.explanations;
+    if (!ex) return el("p", { class: "empty" }, "AI 해설 없음");
+    if (!ex.assessment) {
+      return ex.assessment_failure
+        ? llmBox("종합 위험 평가", el("p", null, "종합 위험 평가 실패: " + ex.assessment_failure))
+        : null;
+    }
+    var a = ex.assessment.assessment;
+    return llmBox(
+      "종합 위험 평가",
+      el("p", { class: "hint" }, L.notices.explanation),
+      verifiedLine(ex.assessment.verified, "참조 검증됨", ex.assessment.problems),
+      el("p", null, a.summary),
+      el("h4", null, "위험 시나리오"),
+      list(a.scenarios, function (s) {
+        return [
+          el("strong", null, s.title),
+          " (영향 " + (L.priority[s.impact] || s.impact) + ") ",
+          s.description,
+          s.finding_keys.length ? el("div", { class: "keys" }, s.finding_keys.map(keyLink)) : null
+        ];
+      }),
+      el("h4", null, "조치 순서"),
+      el(
+        "ol",
+        null,
+        a.action_order.map(function (step) {
+          return el("li", null, ruleLabel(step.rule_id) + " — " + step.reason);
+        })
+      )
+    );
+  }
+
+  // --- 참고 영역 (LLM) 도우미 ---
+
+  function llmBox(title) {
+    var box = el("section", { class: "llm" }, el("h3", null, title));
+    for (var i = 1; i < arguments.length; i++) append(box, arguments[i]);
+    return box;
+  }
+
+  function list(items, render, emptyText) {
+    if (!items || !items.length) return el("p", { class: "empty" }, emptyText || "없음");
+    return el("ul", null, items.map(function (item) { return el("li", null, render(item)); }));
+  }
+
+  function verifiedLine(verified, label, problems) {
+    return [
+      el("p", { class: verified ? "ok" : "unverified" }, verified ? label : "검증되지 않음 (그대로 믿지 않음)"),
+      problems && problems.length ? list(problems, function (p) { return "검증 문제: " + p; }) : null
+    ];
+  }
+
+  // finding key가 이 보고서에 있으면 상세 링크, 없으면(마스킹된 값 등) 글자로만
+  function keyLink(key) {
+    var f = findingsByKey[key];
+    return f ? el("a", { href: findingHref(f), class: "key" }, key) : el("code", { class: "key" }, key);
+  }
+
+  function explanationFor(f) {
+    var ex = R.explanations;
+    if (!ex) return null;
+    var key = findingKey(f);
+    var byKey = ex.explanations.filter(function (e) { return e.finding_keys.indexOf(key) >= 0; })[0];
+    return byKey || ex.explanations.filter(function (e) { return e.rule_id === f.rule_id; })[0] || null;
+  }
+
+  function explanationSection(f) {
+    var ex = R.explanations;
+    if (!ex) return llmBox("AI 해설", el("p", { class: "empty" }, "해설 없음"));
+    var item = explanationFor(f);
+    if (!item) {
+      var failure = ex.failures.filter(function (x) { return x.rule_id === f.rule_id; })[0];
+      return llmBox(
+        "AI 해설",
+        el("p", { class: "empty" }, failure ? "해설 실패: " + failure.error : "이 룰의 해설 없음")
+      );
+    }
+    var d = item.explanation;
+    var r = d.remediation;
+    return llmBox(
+      "AI 해설",
+      el("p", { class: "hint" }, L.notices.explanation),
+      verifiedLine(item.verified, "원문 인용 검증됨", item.problems),
+      el(
+        "dl",
+        { class: "info" },
+        field("요약", d.summary),
+        field("위험", d.risk),
+        field("우선순위", (L.priority[d.priority] || d.priority) + " — " + d.priority_reason),
+        field("모델", item.model + (item.fallback_used ? " (거부되어 대체 모델이 답함)" : ""))
+      ),
+      el("h4", null, "근거 인용"),
+      list(d.citations, function (c) {
+        return (L.scheme[c.scheme] || c.scheme) + " " + c.code + ": “" + c.quote + "”";
+      }),
+      el("h4", null, "조치 절차"),
+      r.steps.length ? el("ol", null, r.steps.map(function (s) { return el("li", null, s); })) : el("p", { class: "empty" }, "없음"),
+      r.aws_cli.length ? [el("h4", null, "AWS CLI (명령 실행은 사람이 판단)"), el("pre", null, r.aws_cli.join("\n"))] : null,
+      r.terraform ? [el("h4", null, "Terraform"), el("pre", null, r.terraform)] : null,
+      d.resource_notes.length
+        ? [el("h4", null, "리소스별 메모"), list(d.resource_notes, function (n) { return [keyLink(n.finding_key), " ", n.note]; })]
+        : null
+    );
+  }
+
+  function investigationSection(f) {
+    var inv = R.investigations;
+    if (!inv) return llmBox("추가 조사", el("p", { class: "empty" }, "추가 조사 없음"));
+    var key = findingKey(f);
+    var item =
+      inv.investigations.filter(function (i) { return i.finding_keys.indexOf(key) >= 0; })[0] ||
+      inv.investigations.filter(function (i) { return i.rule_id === f.rule_id; })[0];
+    if (!item) {
+      var failure = inv.failures.filter(function (x) { return x.rule_id === f.rule_id; })[0];
+      return llmBox(
+        "추가 조사",
+        el("p", { class: "empty" }, failure ? "조사 실패: " + failure.error : "이 룰의 추가 조사 없음")
+      );
+    }
+    var d = item.investigation;
+    return llmBox(
+      "추가 조사",
+      el("p", { class: "hint" }, L.notices.investigation),
+      verifiedLine(item.verified, "근거 검증됨", item.problems),
+      el("p", null, d.summary),
+      el("h4", null, "확인된 사실"),
+      list(d.facts, function (fact) {
+        return fact.statement + " (근거: " + (fact.call_ids.join(", ") || "없음") + ")";
+      }),
+      d.open_questions.length ? [el("h4", null, "사람이 확인할 질문"), list(d.open_questions, function (q) { return q; })] : null,
+      d.finding_notes.length
+        ? [el("h4", null, "finding별 메모"), list(d.finding_notes, function (n) { return [keyLink(n.finding_key), " ", n.note]; })]
+        : null,
+      item.tool_calls.length
+        ? [
+            el("h4", null, "도구 호출 " + item.tool_calls.length + "회 (모델 " + item.model + ", 종료 " + item.stop + ")"),
+            table(
+              ["호출", "도구", "입력", "결과"],
+              item.tool_calls.map(function (c) {
+                return el(
+                  "tr",
+                  null,
+                  el("td", null, c.call_id),
+                  el("td", null, c.tool),
+                  el("td", { class: "resource" }, JSON.stringify(c.input_raw)),
+                  el("td", null, c.error ? "오류: " + c.error : "정상")
+                );
+              })
+            )
+          ]
+        : null
+    );
   }
 
   function countsText(counts) {
@@ -493,7 +645,112 @@
         null,
         el("h3", null, "증적 (판정 근거 원본 설정)"),
         el("details", null, el("summary", null, "펼치기"), el("pre", null, JSON.stringify(f.evidence, null, 2)))
-      )
+      ),
+      explanationSection(f),
+      investigationSection(f)
+    ];
+  }
+
+  // --- ISMS-P (초안) ---
+
+  function renderIsms() {
+    var rows = R.isms_p_controls.map(function (c) {
+      return el(
+        "tr",
+        null,
+        el("td", null, c.code),
+        el("td", null, c.name),
+        el("td", null, c.area),
+        el("td", null, outcomeBadge(c.outcome)),
+        el("td", null, c.kisa_items.join(", ")),
+        el("td", null, c.rule_ids.join(", "))
+      );
+    });
+    return el(
+      "section",
+      null,
+      el("h2", null, "ISMS-P 통제항목 (초안)"),
+      el("p", { class: "banner" }, "ISMS-P 매핑은 원문 검증 전 초안임. 담당자 확인 전까지 참고용"),
+      table(["코드", "통제항목", "영역", "결과", "KISA 항목", "룰"], rows)
+    );
+  }
+
+  // --- 증적 ---
+
+  function renderEvidence() {
+    return el("section", null, evidenceRequests(), evidenceReviews());
+  }
+
+  function evidenceRequests() {
+    var groups = R.evidence_requests;
+    var body = groups.length
+      ? groups.map(function (g) {
+          return el(
+            "article",
+            { class: "group" },
+            el("h3", null, g.code + " " + g.title + " (" + g.importance + ", " + g.automation + ") "),
+            el("p", null, outcomeBadge(g.outcome), " ", g.reason),
+            g.verified ? null : el("p", { class: "unverified" }, L.notices.evidence_unverified),
+            table(
+              ["요청 ID", "요청 증적", "확인 목적", "원문 근거"],
+              g.requests.map(function (r) {
+                return el("tr", null, el("td", null, r.id), el("td", null, r.request), el("td", null, r.purpose), el("td", null, r.basis));
+              })
+            ),
+            g.targets.length
+              ? [
+                  el("h4", null, "확인 대상 리소스"),
+                  list(g.targets, function (t) {
+                    return [statusBadge(t.status), " ", keyLink(t.finding_key), " ", t.message];
+                  })
+                ]
+              : null
+          );
+        })
+      : el("p", { class: "empty" }, "증적을 요청할 항목 없음");
+    return [el("h2", null, "증적 요청 목록"), el("p", { class: "hint" }, L.notices.evidence), body];
+  }
+
+  function evidenceReviews() {
+    var rv = R.evidence_reviews;
+    if (!rv) return [el("h2", null, "증적 검토 (참고)"), el("p", { class: "empty" }, "증적 검토 없음")];
+    return [
+      el("h2", null, "증적 검토 (참고)"),
+      el("p", { class: "hint" }, L.notices.evidence_review),
+      rv.reviews.map(function (item) {
+        var d = item.review;
+        return llmBox(
+          item.request_id,
+          verifiedLine(item.verified, "발췌 검증됨", item.problems),
+          el("h4", null, "검토한 문서"),
+          list(item.documents, function (doc) {
+            return doc.document_id + ": " + doc.path + (doc.truncated ? " (앞부분만 검토)" : "");
+          }),
+          el("p", null, d.summary),
+          el("h4", null, "문서로 확인된 사실"),
+          list(d.facts, function (fact) {
+            return [fact.statement + " (" + fact.document_id + ") ", el("q", null, fact.excerpt)];
+          }),
+          el("h4", null, "부족한 점"),
+          list(d.gaps, function (g) { return g; }),
+          el("h4", null, "추가 요청"),
+          list(d.follow_up_requests, function (r) { return r; })
+        );
+      }),
+      rv.failures.length
+        ? [el("h3", null, "검토하지 못한 요청"), list(rv.failures, function (x) { return x.request_id + ": " + x.error; })]
+        : null,
+      rv.unreadable.length
+        ? [
+            el("h3", null, "사람이 검토할 파일"),
+            table(
+              ["요청", "파일", "이유"],
+              rv.unreadable.map(function (u) {
+                return el("tr", null, el("td", null, u.request_id), el("td", { class: "resource" }, u.path), el("td", null, u.problem));
+              })
+            )
+          ]
+        : null
     ];
   }
 
@@ -562,6 +819,8 @@
     registerTab("overview", "개요", renderOverview);
     registerTab("kisa", "KISA 항목", renderKisa);
     registerTab("findings", "Finding", renderFindings);
+    registerTab("isms", "ISMS-P (초안)", renderIsms);
+    registerTab("evidence", "증적", renderEvidence);
     setChildren(app, 
       renderHeader(),
       warnings(),

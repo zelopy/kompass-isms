@@ -10,7 +10,7 @@ from kompass.models import Status
 from kompass.reporters._format import DISCLAIMER
 from kompass.reporters.html_reporter import extract_payload, render_html
 from kompass.reporters.json_reporter import render_json
-from tests.reporters.sample import DEFAULT, finding, sample_report
+from tests.reporters.sample import DEFAULT, FULL, finding, sample_report
 
 HOSTILE = "</script><img src=x onerror=alert(1)><!--    {{SCRIPT}} &amp;"
 
@@ -109,3 +109,17 @@ def test_payload_keeps_nested_evidence() -> None:
     deep = {"a": [{"b": [None, 1, {"2": "x" * 5000}]}]}
     report = sample_report(finding("S3-004", Status.FAIL, "b", "ap-northeast-2", "m", deep))
     assert extract_payload(render_html(report))["report"]["findings"][0]["evidence"] == deep
+
+
+def test_renders_full_report_with_llm_sections() -> None:
+    payload = extract_payload(render_html(FULL))
+    assert payload["report"]["explanations"] is not None
+    assert payload["report"]["investigations"] is not None
+    assert payload["report"]["evidence_reviews"] is not None
+    for key in ("explanations_at", "investigations_at", "evidence_reviews_at"):
+        assert key in payload["display"]
+
+
+def test_display_omits_absent_llm_sections() -> None:
+    display = extract_payload(render_html(DEFAULT))["display"]
+    assert "explanations_at" not in display and "evidence_reviews_at" not in display

@@ -321,3 +321,4 @@ def _evidence_review_report() -> EvidenceReviewReport:
 
 
 REVIEWED = DEFAULT.with_evidence_reviews(_evidence_review_report())
+FULL = INVESTIGATED.with_evidence_reviews(_evidence_review_report())  # 참고 영역 세 가지 모두

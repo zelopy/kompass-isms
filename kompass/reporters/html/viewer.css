@@ -63,3 +63,10 @@ button.toggle[aria-expanded="true"] { background: var(--bg-soft); }
   .layout { flex-direction: column; }
   aside#detail { width: 100%; position: static; max-height: none; }
 }
+h4 { font-size: 0.95rem; margin: 0.8rem 0 0.3rem; }
+.ok { color: var(--pass); font-weight: 600; }
+.unverified { color: var(--fail); font-weight: 600; }
+.keys { margin-top: 0.2rem; display: flex; flex-wrap: wrap; gap: 0.3rem 0.8rem; }
+.key { font-size: 12px; overflow-wrap: anywhere; }
+article.group { border-top: 1px solid var(--line); padding-top: 0.25rem; }
+q { color: var(--muted); }
