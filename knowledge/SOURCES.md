@@ -3,8 +3,14 @@
 원문 파일은 저작권 문제로 저장소에 커밋하지 않는다 (ADR-012). 아래 출처에서 직접 내려받아 지정된 경로에 두고, SHA-256 해시가 일치하는지 확인한다.
 
 ```bash
-sha256sum knowledge/kisa/*.pdf
+sha256sum knowledge/kisa/*.pdf knowledge/isms_p/*.pdf                          # macOS는 shasum -a 256
 ```
+
+```powershell
+Get-FileHash knowledge/kisa/*.pdf, knowledge/isms_p/*.pdf -Algorithm SHA256   # Windows PowerShell
+```
+
+원문 색인(아래)에 필요한 파일은 KISA 가이드와 고시 별표 7 두 개다. 안내서는 매핑 근거를 확인할 때 참고하는 자료이며 색인에는 쓰지 않으므로, 받지 않아도 색인을 만들 수 있다.
 
 ## KISA
 
@@ -33,4 +39,4 @@ uv run python scripts/build_source_index.py
 
 - 결과: `knowledge/index.json` (KISA CA-01~19, ISMS-P 별표 7 통제항목 101개). 원문 구절을 담으므로 커밋하지 않는다.
 - KISA는 854~872쪽(항목 본문)만 읽는다. ISMS-P는 고시 별표 7(인증기준 본문)만 읽는다. 안내서의 세부 확인사항은 아직 색인하지 않는다.
-- 파일 해시가 위 표와 다르면 색인을 만들지 않는다. 판이 바뀌었으면 이 문서, 스크립트의 해시, 매핑 YAML을 먼저 갱신한다.
+- KISA 가이드와 고시 별표 7의 파일 해시가 위 표와 다르면 색인을 만들지 않는다. 판이 바뀌었으면 이 문서, 스크립트의 해시, 매핑 YAML을 먼저 갱신한다.

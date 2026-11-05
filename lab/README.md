@@ -36,6 +36,32 @@ terraform apply
 - 다른 리전의 기본 VPC 결과가 섞이지 않도록 점검은 `--regions ap-northeast-2`로 한정한다.
 - 정리: `terraform destroy`. 계정 단위 변수를 바꿔서 만든 비밀번호 정책·계정 수준 차단 설정은 함께 **삭제**된다 (원래 값으로 복구되지 않는다).
 
+## 점검 프로필
+
+Terraform은 배포용·점검용 사용자를 만들지 않는다. 둘 다 미리 콘솔이나 AWS CLI로 만들어 둔다. [expected.yaml](expected.yaml)은 아래 이름과 구성을 가정하므로, 다르게 만들면 해당 IAM 기대값(IAM-006·007·010·011)을 함께 고친다.
+
+| 용도 | IAM 사용자 | 권한 | 액세스 키 | 프로필 이름 |
+|---|---|---|---|---|
+| 배포 (`terraform apply`/`destroy`) | `kompass-lab-admin` | 관리자 권한 그룹 경유 (직접 연결 아님) | 1개 | `kompass-lab-admin` (`terraform.tfvars`의 `aws_profile`) |
+| 점검 (`kompass`, 통합 테스트) | `security_manager` | `SecurityAudit`만 직접 연결 | 1개 | `kompass-lab-audit` (`expected.yaml`의 `profile`) |
+
+```bash
+# 점검용 사용자: 관리자 프로필로 한 번만 실행
+aws iam create-user --user-name security_manager --profile kompass-lab-admin
+aws iam attach-user-policy --user-name security_manager \
+  --policy-arn arn:aws:iam::aws:policy/SecurityAudit --profile kompass-lab-admin
+aws iam create-access-key --user-name security_manager --profile kompass-lab-admin
+aws configure --profile kompass-lab-audit   # 발급한 키, 리전 ap-northeast-2
+```
+
+```bash
+# 점검과 보고서
+uv run kompass scan --profile kompass-lab-audit --regions ap-northeast-2 --report md --report xlsx
+
+# 기대 결과표와 대조 (다른 프로필 이름을 쓰면 KOMPASS_LAB_PROFILE로 지정)
+uv run pytest -m lab
+```
+
 ## 변수로 바꿀 수 있는 케이스
 
 | 변수 | 기본값 | 바꾸면 |

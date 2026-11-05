@@ -83,7 +83,7 @@ kompass는 AWS 계정의 설정을 **읽기 전용**으로 수집하고, 코드�
 ### 2.2 설치
 
 ```bash
-git clone <저장소 주소> kompass-isms
+git clone https://github.com/zelopy/kompass-isms.git
 cd kompass-isms
 uv sync
 uv run kompass --version
@@ -117,9 +117,9 @@ region = ap-northeast-2
 ```
 
 - 역할 자격증명의 발급·갱신은 AWS SDK가 처리한다. 점검이 길어져도 다시 로그인할 필요가 없다.
-- `mfa_serial`이 있는 역할 프로필은 터미널에서 MFA 코드를 묻는다. 대화형으로 실행할 때만 쓴다.
+- `mfa_serial`이 있는 역할 프로필은 터미널에서 MFA 코드를 묻는다. 대화형으로 실행할 때만 쓴다. MCP 클라이언트가 실행하는 `mcp`에서는 코드를 입력할 수 없으므로 쓸 수 없다 ([10장](#10-mcp-서버-연동-mcp)).
 - **SSO(IAM Identity Center) 프로필은 지원하지 않는다.** 토큰 갱신 호출이 읽기 전용 가드에 막힐 수 있다.
-- 기본 리전은 `--region` → 프로필의 `region` 순서로 정한다. 둘 다 없으면 시작하지 않는다.
+- 기본 리전은 `--region` → 환경 변수 `AWS_DEFAULT_REGION` → 프로필의 `region` 순서로 정한다. 모두 없으면 시작하지 않는다. 환경 변수가 설정된 PC에서는 프로필의 리전보다 환경 변수가 먼저 쓰인다.
 
 엉뚱한 프로필로 다른 계정을 점검하는 실수를 막으려면 `--account-id <대상 계정 ID>`를 함께 준다. 실제 계정이 다르면 아무것도 수집하지 않고 멈춘다.
 
@@ -381,7 +381,7 @@ uv run kompass explain --report md --report xlsx       # 해설 후 보고서 �
 uv run kompass explain --assessment-only --report md   # 종합 위험 평가만 다시
 ```
 
-조치가 필요한 결과(취약·확인 불가·검토 필요)를 룰 단위로 묶어 해설한다. 원문 색인과 `ANTHROPIC_API_KEY`가 필요하다 ([2.4](#24-llm-기능-준비-선택)).
+조치가 필요한 결과(취약·확인 불가·검토 필요)를 룰 단위로 묶어 해설한다. 원문 색인과 `ANTHROPIC_API_KEY`가 필요하다 ([2.4](#24-llm-기능-준비-선택)). 입력 토큰을 Anthropic API로 세므로 `--dry-run`에도 API 키가 필요하다 (비용은 들지 않는다). `review-evidence --dry-run`도 같고, `investigate --dry-run`은 키 없이 된다.
 
 **룰별 해설 내용**: KISA·ISMS-P 원문 인용, 위험 설명, 우선순위 의견, 조치 방안(AWS CLI 명령, Terraform 수정안).
 
@@ -430,6 +430,7 @@ claude mcp add kompass -- uv --directory <저장소 경로> run kompass mcp --pr
 - 노출 대상은 가장 최근 판정 결과다. 다른 결과는 `--findings`, 여러 계정이면 `--account-id`로 고른다. 판정 결과와 다른 계정의 프로필이면 시작하지 않는다.
 - 클라이언트 뒤의 LLM에도 가린 값만 보낸다. 세션 동안 같은 리소스는 같은 자리표시자로 보이며, 도구 입력에 자리표시자를 쓰면 서버가 원래 값으로 바꿔 조회한다.
 - 세션당 AWS 조회 상한 `--max-calls` (기본 50회).
+- 표준 입력을 MCP 통신에 쓰므로 MFA 코드를 묻는 프로필(`mfa_serial`)은 쓸 수 없다. 액세스 키 프로필이나 MFA가 없는 역할 프로필을 쓴다.
 - 호출 로그: `reports/mcp/<계정 ID>/<점검 ID>.<시작 시각>.mcp.jsonl` (원래 입력값과 마스킹한 결과)
 
 ## 11. 보안과 데이터 취급
@@ -496,7 +497,7 @@ reports/
 | 2 | 사용법·설정 오류 (`kompass.yaml`, 옵션, 원문 색인 없음, API 키 없음 등) |
 | 3 | 세션 오류 (자격증명, 프로필, 리전, 계정 불일치) 또는 조사 중 읽기 전용 가드 차단 |
 | 4 | 스냅샷 오류 (점검·판정 결과 없음, 중단된 점검, 해시 불일치) |
-| 5 | LLM 해설·추가 조사·증적 검토가 모두 실패, 또는 마스킹 검사를 통과한 대상이 없음 |
+| 5 | LLM 해설·추가 조사·증적 검토가 모두 실패, 또는 마스킹 검사를 통과한 대상(해설의 룰, 증적 검토의 요청)이 없음 |
 
 **자주 만나는 상황**
 
