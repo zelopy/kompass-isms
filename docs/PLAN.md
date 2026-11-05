@@ -148,6 +148,12 @@
   - [x] 평가 케이스 추가: 실습 가공 1개(`lab-bkp-002`, BKP-001·003은 실습에서 PASS라 없음), 보강 5개와 실제 모델 실행 (evals/README.md). 오라클이 찾은 BKP-002 증적의 계획 ID 누락 수정
 - [x] Prowler OCSF 출력 어댑터 필요성 검토 — 보류, 후보로 내림 (2026-10-17, ADR-050). 대신 Prowler ISMS-P 대응표를 매핑 협의 참고 자료로 비교
   - [x] Prowler `kisa_isms_p_2023_aws` 대응표와 ISMS-P 매핑 초안 비교표 (`docs/ISMS_P_MAPPING_REVIEW.md` 참고 절) — 같음 10·다름 21·대응 없음 4, 협의 쟁점 4건에 참고 의견. RDS-005 추가 후 같음 11 (Prowler `rds_instance_transport_encrypted`도 2.7.1·2.10.2)
+- [x] HTML 결과 뷰어와 공개 데모 (ADR-055, 2026-11-05) — 사용 편의·시연용 GUI. 실행 마법사·로컬 서버는 이후로 미룸
+  - [x] `--format html` 리포터: 파일 하나짜리 오프라인 뷰어, JSON 이스케이프·해시 CSP, `textContent`만 사용 (`kompass/reporters/html_reporter.py`, `html/`)
+  - [x] `kompass report --open`
+  - [x] 화면: 개요·KISA 항목·Finding(필터·검색)·ISMS-P(초안)·증적 탭, finding 상세(판정·매핑·증적·AI 해설·추가 조사), 주소 해시
+  - [x] 공개 데모: 가공 시나리오 `kompass/demo.py`, `scripts/build_demo.py` → `docs/demo/index.html`, 동기화 테스트
+  - [ ] GitHub Pages 켜기 (사용자, 저장소 설정 `main` `/docs`)
 - [ ] Azure 지원
 - [ ] 다른 기준 추가 (CSAP 등)
 

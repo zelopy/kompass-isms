@@ -57,7 +57,10 @@ kompass-isms/
 │   ├── reporters/
 │   │   ├── json_reporter.py
 │   │   ├── markdown_reporter.py
-│   │   └── xlsx_reporter.py
+│   │   ├── xlsx_reporter.py
+│   │   ├── html_reporter.py # 파일 하나짜리 HTML 뷰어 조립·이스케이프·CSP (ADR-055)
+│   │   └── html/            # 뷰어 템플릿·viewer.js·viewer.css (패키지 데이터)
+│   ├── demo.py              # 공개 데모용 가공 보고서 (ADR-055)
 │   ├── agent/               # 추가 조사, MCP 서버 (ADR-035)
 │   │   ├── tools.py         # 목적별 읽기 전용 조사 도구 (가드가 걸린 점검 세션만 사용)
 │   │   ├── toolbox.py       # 마스킹 다리·도구 호출 예산·호출 기록 (T1, T2, …)
@@ -67,7 +70,7 @@ kompass-isms/
 │   └── evals/               # 평가셋 케이스 로더·채점기·실행기 (ADR-033, ADR-049)
 ├── knowledge/               # 기준 문서 원문 (커밋 안 함), SOURCES.md, index.json(생성물, 커밋 안 함)
 ├── evals/                   # 평가 케이스·정답 (evals/README.md)
-├── scripts/                 # 원문 색인 생성, 평가 케이스 생성, 평가 실행
+├── scripts/                 # 원문 색인 생성, 평가 케이스 생성, 평가 실행, 공개 데모 생성
 ├── lab/                     # 취약 실습 환경 Terraform, 기대 결과(expected.yaml)
 ├── tests/                   # kompass/ 구조를 따름. 실습 계정 통합 테스트는 tests/lab/
 └── docs/

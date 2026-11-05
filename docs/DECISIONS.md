@@ -545,3 +545,17 @@
 - 실습 계정 확인 (2026-10-18, `enable_backup = true`, 첫 백업 뒤): 기대값 일치. `SecurityAudit`으로 5개 호출 모두 성공. 실제 응답은 Stubber 형식과 같고, 선택의 `ListOfTags`·`NotResources`·`Conditions`는 비어 있어도 빈 목록으로 온다. `LastBackupTime`은 시간대가 붙은 시각으로 저장된다. 실습 백업 서비스 역할은 관리형 정책 `AWSBackupServiceRolePolicyForBackup`의 `ssm:SendCommand`(Windows VSS 백업용) 때문에 IAM-010 REVIEW다. 룰은 의도대로 동작하며(서비스 연결 역할이 아니므로 현황에 포함), 실제 계정에서도 백업 역할이 현황에 나올 수 있다.
 - 매핑 확정 (사용자 결정, 2026-10-18): CA-18. BKP-003은 직접(판단 기준 "주기적으로 백업이 수행된 경우", 사례 "주기적 백업 수행 여부 및 검토 진행"). BKP-001은 직접(조치 방법 "클라우드 리소스를 주기적으로 백업 설정", 사례 "백업 설정 기능 확인"). 계획이 없을 때 REVIEW로 두는 것은 "기관 정책에 따라"와 맞다. BKP-002는 해석. 원문에 보존 기간이 없고, 보존 기간이 짧아도 백업은 수행되므로 "백업 및 복구 절차를 기관의 정책에 맞게 수립 적용"의 일부로 읽어야 연결된다.
   - RDS-004 비고: 근거 수준 직접은 그대로 두고, 보존 기간 0일(자동 백업 꺼짐)은 직접, 7일 기준은 BKP-002와 같은 해석이라는 비고를 RULES.md·COVERAGE.md에 더했다 (사용자 결정). 확정한 근거 수준을 바꾸지 않으면서 같은 성격의 두 룰의 차이를 드러낸다.
+
+## ADR-055 HTML 결과 뷰어와 공개 데모
+- 상태: 채택 (사용자 결정, 2026-11-05). 설계: [docs/superpowers/specs/2026-11-05-html-viewer-design.md](superpowers/specs/2026-11-05-html-viewer-design.md)
+- 맥락: 결과를 보려면 md·xlsx를 열어 찾아야 했고, AWS 자격증명이 없는 사람(면접관 등)은 결과 화면을 볼 방법이 없었다. 사용 편의를 위한 GUI를 검토했다.
+- 결정:
+  - 보고서 형식 `html`을 더한다. `AuditReport` JSON과 표기 라벨을 담은 파일 하나짜리 오프라인 뷰어다. 서버·외부 요청·새 의존성이 없다. 기본 형식은 md·xlsx 그대로다.
+  - 화면은 순수 JS(`kompass/reporters/html/viewer.js`)가 그린다. 탭(개요·KISA 항목·Finding·ISMS-P 초안·증적), 필터·검색, finding 상세(판정·매핑·증적·AI 해설·추가 조사), 주소 해시(`#tab=…`, `#finding=…`)를 둔다. 판정은 표시만 하고 LLM 산출물은 "(참고)"로 구분한다 (원칙 1). 상태 라벨·안내 문구는 `_format.py`의 상수를 데이터로 넘겨 md·xlsx와 같은 표기를 쓴다.
+  - 신뢰할 수 없는 문자열(리소스 이름, 메시지, 증적, 해설, 문서 발췌) 처리: 값은 `textContent`로만 넣고 `innerHTML` 등은 쓰지 않는다(테스트로 정적 검사). 데이터 블록은 `type="application/json"`이고 `<`·`>`·`&`·U+2028·U+2029를 이스케이프한다. CSP는 `default-src 'none'`에 인라인 스크립트·스타일을 SHA-256 해시로만 허용한다.
+  - `kompass report --open`은 만든 HTML을 기본 브라우저로 연다. 열지 못하면 경고만 하고 종료 코드는 바꾸지 않는다.
+  - 공개 데모 `docs/demo/index.html`은 가공 시나리오(`kompass/demo.py`)로만 만든다. 계정은 예시 값 `123456789012`, 시각은 고정, 원문 인용은 짧은 구절만 쓴다. `scripts/build_demo.py`로 다시 만들고, `tests/test_demo.py`가 커밋된 파일이 현재 출력과 같은지 확인한다. 뷰어 자산과 데모는 `.gitattributes`로 LF를 고정한다 (CSP 해시·동기화 테스트가 바이트 단위로 같아야 함).
+  - 미룬 것: 로컬 웹 서버, 화면에서 점검·해설 실행(실행 마법사), 점검 이력 목록, 다크 모드·인쇄용 레이아웃·차트. 실행 기능이 필요해지면 같은 `viewer.js`를 서버 위에 재사용한다.
+- 이유: 파일 하나짜리 HTML은 의존성·빌드 단계 없이 결과 탐색과 공개 시연을 함께 해결한다. 데이터가 `AuditReport` 하나로 모이는 기존 리포터 구조를 그대로 따른다.
+- 결과: GitHub Pages는 사용자가 저장소 설정에서 켠다(`main` 브랜치 `/docs`). 주소는 https://zelopy.github.io/kompass-isms/demo/다. 실제 계정 HTML은 마스킹하지 않은 원본이라 md·xlsx와 같이 `reports/` 아래에만 생기고, 외부 전달은 사람이 판단한다.
+

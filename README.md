@@ -32,6 +32,10 @@ uv run kompass scan --profile <점검 프로필> --account-id <대상 계정 ID>
 
 ## 출력 예시
 
+**[HTML 결과 뷰어 데모](https://zelopy.github.io/kompass-isms/demo/)** — 가공 데이터로 만든 점검 결과 화면이다 (저장소 파일 [docs/demo/index.html](docs/demo/index.html)). `kompass report --format html --open`으로 같은 화면을 만든다.
+
+![HTML 결과 뷰어](docs/images/viewer-overview.png)
+
 [실습 환경](lab/README.md)을 점검한 Markdown 보고서의 일부다. 결과는 KISA 항목 단위로 집계한다. `partial` 항목은 API로 확인할 수 없는 조건(주기적 검토 등)이 있어 자동 점검만으로는 "양호"가 되지 않는다.
 
 | 코드 | 항목 | 중요도 | 분류 | 결과 | 룰 | finding |

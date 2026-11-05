@@ -50,7 +50,7 @@ kompass는 AWS 계정의 설정을 **읽기 전용**으로 수집하고, 코드�
 ### 1.3 전체 흐름
 
 ```
- collect ──► evaluate ──► report ─────────────► 보고서 (md, xlsx, json)
+ collect ──► evaluate ──► report ─────────────► 보고서 (md, xlsx, json, html)
  └───── scan ─────┘          │
                              ├─ evidence ───────► 증적 요청서 → 담당자 → 제출 문서
                              │                                            │
@@ -262,7 +262,7 @@ finding(리소스 단위 판정 결과)의 상태다.
 ### 6.1 보고서 만들기 (`report`)
 
 ```bash
-uv run kompass report [--findings <판정 결과 파일>] [--format md --format xlsx]
+uv run kompass report [--findings <판정 결과 파일>] [--format md --format xlsx] [--format html --open]
 ```
 
 | 형식 | 파일 | 내용 |
@@ -271,11 +271,14 @@ uv run kompass report [--findings <판정 결과 파일>] [--format md --format 
 | `xlsx` | `<점검 ID>.xlsx` | 점검표. 결과별 색상과 필터 |
 | `json` | `<점검 ID>.report.json` | 매핑을 붙인 finding과 전체 증적 (다른 도구 연동용) |
 | `evidence` | `<점검 ID>.evidence.xlsx` | 담당자 증적 요청서 ([7.1](#71-증적-요청서-evidence)) |
+| `html` | `<점검 ID>.html` | 브라우저로 여는 결과 뷰어. 탭·필터·검색, finding 상세 |
 
 - `--format`을 생략하면 `md`와 `xlsx`를 만든다. 파일은 `reports/<계정 ID>/`에 생긴다.
 - 매핑(KISA·ISMS-P)은 판정 때가 아니라 보고서를 만들 때 붙인다. 매핑 데이터가 바뀌어도 다시 판정할 필요 없이 `report`만 다시 실행하면 된다. 보고서에는 매핑 데이터 해시가 남는다.
 - 보고서를 만들 때도 스냅샷 해시를 다시 대조한다. 판정 뒤 증적이 바뀌었으면 보고서를 만들지 않는다.
 - 같은 판정 결과에 대한 해설·추가 조사·증적 검토 결과가 있으면 "참고" 절로 함께 붙는다. 그 뒤에 다시 판정했으면 붙이지 않고 경고한다.
+- `html`은 서버나 인터넷 연결 없이 파일 하나로 열린다. `--open`을 붙이면 만든 HTML을 기본 브라우저로 연다. JavaScript가 꺼져 있으면 md·xlsx를 본다.
+- HTML 화면 예시는 가공 데이터로 만든 [공개 데모](https://zelopy.github.io/kompass-isms/demo/)(저장소 파일 `docs/demo/index.html`)에서 볼 수 있다.
 
 ### 6.2 보고서 읽는 법
 
@@ -453,7 +456,7 @@ claude mcp add kompass -- uv --directory <저장소 경로> run kompass mcp --pr
 
 **로컬 결과물**
 
-- `reports/` 아래의 모든 파일은 실제 계정 데이터다. 저장소 안이면 자동으로 git에서 제외된다(`reports/.gitignore`). 보고서를 외부에 전달할 때는 전달 범위를 확인한다.
+- `reports/` 아래의 모든 파일은 실제 계정 데이터다. 저장소 안이면 자동으로 git에서 제외된다(`reports/.gitignore`). 보고서를 외부에 전달할 때는 전달 범위를 확인한다. HTML 보고서에는 JSON 보고서와 같은 전체 증적이 마스킹 없이 들어 있다.
 - 해설·조사·검토 결과 파일은 마스킹이 복원된 원문이고, 증적 검토 결과에는 개인정보가 들어 있을 수 있다.
 - 오래된 점검 결과는 자동으로 지워지지 않는다. 진단이 끝나면 조직의 보관 기준에 따라 보관하거나 폐기한다.
 - 점검이 끝나면 점검용 액세스 키나 역할을 회수하도록 담당자에게 요청한다.
@@ -469,6 +472,7 @@ reports/
 │   ├── <점검 ID>.md                                  # 보고서
 │   ├── <점검 ID>.xlsx                                # 점검표
 │   ├── <점검 ID>.report.json                         # JSON 보고서
+│   ├── <점검 ID>.html                                # HTML 결과 뷰어
 │   └── <점검 ID>.evidence.xlsx                       # 증적 요청서
 ├── findings/<계정 ID>/<점검 ID>.findings.json         # 판정 결과
 ├── explanations/<계정 ID>/<점검 ID>.explanations.json # LLM 해설
@@ -533,7 +537,7 @@ reports/
 | `--store` | 전체 | 결과 저장 위치 ([12장](#12-결과물-구조)) |
 | `--config` | evaluate, scan, explain, investigate, review-evidence | 기준값·LLM 설정 파일. 없으면 현재 폴더의 `kompass.yaml` |
 | `--findings` | report, evidence, explain, investigate, review-evidence, mcp | 판정 결과 파일. 없으면 가장 최근 것 |
-| `--report` | scan, explain, investigate, review-evidence | 끝난 뒤 이 형식의 보고서도 만듦 (`md`, `xlsx`, `json`, `evidence`, 여러 번 지정) |
+| `--report` | scan, explain, investigate, review-evidence | 끝난 뒤 이 형식의 보고서도 만듦 (`md`, `xlsx`, `json`, `evidence`, `html`, 여러 번 지정) |
 | `--dry-run` | explain, investigate, review-evidence | 요청하지 않고 대상과 비용만 보여 줌 |
 | `--yes`, `-y` | explain, investigate, review-evidence | 확인 없이 진행 |
 
@@ -546,6 +550,7 @@ reports/
 | `evaluate`, `scan` | `--output` | 판정 결과 파일 경로 |
 | `evaluate`, `scan` | `--fail-on` | `fail`, `error`, `review` ([5.2](#52-판정-evaluate)) |
 | `report` | `--format` | 보고서 형식. 여러 번 지정. 없으면 `md`, `xlsx` |
+| `report` | `--open` | 만든 HTML 보고서를 기본 브라우저로 엶 (`--format html`과 함께) |
 | `explain` | `--no-assessment` | 종합 위험 평가를 하지 않음 |
 | `explain` | `--assessment-only` | 저장된 룰별 해설을 두고 종합 위험 평가만 다시 만듦 |
 | `investigate` | `--max-calls` | 룰 하나의 도구 호출 상한 (기본 15) |

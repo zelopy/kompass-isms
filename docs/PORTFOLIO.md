@@ -103,6 +103,10 @@ LLM 판정자 없이 코드 채점기로만 평가해, 같은 응답은 언제 �
 
 ![엑셀 점검표](images/portfolio/report-xlsx.png)
 
+**HTML 결과 뷰어**: 탭·필터·검색과 finding 상세(판정·증적·LLM 해설·추가 조사)를 파일 하나로 제공함. 가공 데이터로 만든 [공개 데모](https://zelopy.github.io/kompass-isms/demo/)에서 자격증명 없이 확인 가능함.
+
+![HTML 결과 뷰어](images/viewer-finding.png)
+
 **LLM 해설**: SG-001(관리 포트 전체 개방)에 대한 원문 인용, 위험, 조치 절차, AWS CLI 명령. 인용은 원문 대조를 통과해 "원문 인용 검증됨"으로 표시됨.
 
 ![LLM 해설](images/portfolio/explain.png)
