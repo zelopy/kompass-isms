@@ -7,8 +7,8 @@
   var P, R, L;
   var tabs = [];
   var currentTab = null;
-  var findingsByKey = {};
-  var findingsByRule = {};
+  // 프로토타입이 없는 객체: `constructor`·`__proto__` 같은 키가 finding으로 잡히지 않는다
+  var findingsByKey = Object.create(null);
 
   var STATUS_ORDER = ["FAIL", "ERROR", "REVIEW", "PASS", "N/A"];
   var OUTCOME_ORDER = ["FAIL", "ERROR", "REVIEW", "PASS", "N/A", "NOT_EVALUATED", "NOT_IMPLEMENTED"];
@@ -142,7 +142,7 @@
       el("td", null, f.rule_id),
       el("td", { class: "resource" }, el("a", { href: findingHref(f) }, f.resource)),
       el("td", null, f.region || "전역"),
-      el("td", null, f.message)
+      el("td", { class: "message" }, f.message)
     );
   }
 
@@ -624,7 +624,7 @@
           field("리소스", el("span", { class: "resource" }, f.resource)),
           field("리전", f.region || "전역"),
           field("수집 시각", kst(f.collected_at)),
-          field("메시지", f.message)
+          field("메시지", el("span", { class: "message" }, f.message))
         )
       ),
       el(
@@ -814,7 +814,6 @@
     L = P.labels;
     R.findings.forEach(function (f) {
       findingsByKey[findingKey(f)] = f;
-      (findingsByRule[f.rule_id] = findingsByRule[f.rule_id] || []).push(f);
     });
     registerTab("overview", "개요", renderOverview);
     registerTab("kisa", "KISA 항목", renderKisa);

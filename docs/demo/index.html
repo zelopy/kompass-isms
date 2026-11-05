@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-SDnaVpKqmelYWJiVZ3leMUZQRALeM5JdAJg0UW7xsuY='; style-src 'sha256-TXA9ZDFx54xZY/oMakR0Jv9UbY46wuIvTLWB7BDCH7g='; img-src data:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-y6wwNlJMZYqwhbeowIzuckMLKwwz+JtBkePZQCUiaIA='; style-src 'sha256-SJJEj1uGipIls2TDcERJasaob7hyoI0NUgXdJbqwyyY='; img-src data:; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
 <title>kompass 점검 결과</title>
@@ -58,7 +58,8 @@ aside#detail[hidden] { display: none; }
 table { border-collapse: collapse; width: 100%; }
 th, td { border-bottom: 1px solid var(--line); padding: 0.35rem 0.5rem; text-align: left; vertical-align: top; }
 th { background: var(--bg-soft); white-space: nowrap; }
-td.resource, .resource { overflow-wrap: anywhere; word-break: break-all; }
+td.resource, .resource { overflow-wrap: anywhere; word-break: break-all; white-space: pre-wrap; }
+.message { white-space: pre-wrap; }
 tr.expand > td { background: var(--bg-soft); }
 button.toggle { font: inherit; background: none; border: 1px solid var(--line); cursor: pointer; padding: 0 0.4rem; }
 button.toggle[aria-expanded="true"] { background: var(--bg-soft); }
@@ -93,8 +94,8 @@ q { color: var(--muted); }
   var P, R, L;
   var tabs = [];
   var currentTab = null;
-  var findingsByKey = {};
-  var findingsByRule = {};
+  // 프로토타입이 없는 객체: `constructor`·`__proto__` 같은 키가 finding으로 잡히지 않는다
+  var findingsByKey = Object.create(null);
 
   var STATUS_ORDER = ["FAIL", "ERROR", "REVIEW", "PASS", "N/A"];
   var OUTCOME_ORDER = ["FAIL", "ERROR", "REVIEW", "PASS", "N/A", "NOT_EVALUATED", "NOT_IMPLEMENTED"];
@@ -228,7 +229,7 @@ q { color: var(--muted); }
       el("td", null, f.rule_id),
       el("td", { class: "resource" }, el("a", { href: findingHref(f) }, f.resource)),
       el("td", null, f.region || "전역"),
-      el("td", null, f.message)
+      el("td", { class: "message" }, f.message)
     );
   }
 
@@ -710,7 +711,7 @@ q { color: var(--muted); }
           field("리소스", el("span", { class: "resource" }, f.resource)),
           field("리전", f.region || "전역"),
           field("수집 시각", kst(f.collected_at)),
-          field("메시지", f.message)
+          field("메시지", el("span", { class: "message" }, f.message))
         )
       ),
       el(
@@ -900,7 +901,6 @@ q { color: var(--muted); }
     L = P.labels;
     R.findings.forEach(function (f) {
       findingsByKey[findingKey(f)] = f;
-      (findingsByRule[f.rule_id] = findingsByRule[f.rule_id] || []).push(f);
     });
     registerTab("overview", "개요", renderOverview);
     registerTab("kisa", "KISA 항목", renderKisa);

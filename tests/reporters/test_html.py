@@ -123,3 +123,21 @@ def test_renders_full_report_with_llm_sections() -> None:
 def test_display_omits_absent_llm_sections() -> None:
     display = extract_payload(render_html(DEFAULT))["display"]
     assert "explanations_at" not in display and "evidence_reviews_at" not in display
+
+
+def _asset_text(name: str) -> str:
+    return (files("kompass.reporters") / "html" / name).read_text(encoding="utf-8")
+
+
+def test_finding_lookup_ignores_object_prototype() -> None:
+    # `#finding=constructor` 같은 내장 속성 이름이 finding으로 잡히지 않아야 한다
+    js = _asset_text("viewer.js")
+    assert "findingsByKey = Object.create(null)" in js
+    assert "findingsByKey = {}" not in js
+
+
+def test_resource_and_message_keep_whitespace() -> None:
+    # 공백·탭·개행만 다른 리소스 이름이 같아 보이지 않게 원문 그대로 표시한다
+    css = _asset_text("viewer.css")
+    assert re.search(r"\.resource[^{]*\{[^}]*white-space:\s*pre-wrap", css)
+    assert re.search(r"\.message[^{]*\{[^}]*white-space:\s*pre-wrap", css)

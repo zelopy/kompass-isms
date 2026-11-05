@@ -50,7 +50,8 @@ aside#detail[hidden] { display: none; }
 table { border-collapse: collapse; width: 100%; }
 th, td { border-bottom: 1px solid var(--line); padding: 0.35rem 0.5rem; text-align: left; vertical-align: top; }
 th { background: var(--bg-soft); white-space: nowrap; }
-td.resource, .resource { overflow-wrap: anywhere; word-break: break-all; }
+td.resource, .resource { overflow-wrap: anywhere; word-break: break-all; white-space: pre-wrap; }
+.message { white-space: pre-wrap; }
 tr.expand > td { background: var(--bg-soft); }
 button.toggle { font: inherit; background: none; border: 1px solid var(--line); cursor: pointer; padding: 0 0.4rem; }
 button.toggle[aria-expanded="true"] { background: var(--bg-soft); }
