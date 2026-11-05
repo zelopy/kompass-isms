@@ -14,6 +14,9 @@ output/
 # 담당자가 제출한 증적 문서 (개인정보가 담길 수 있음, ADR-049)
 /evidence/
 
+# 개인 면접 준비 자료 — 공개 저장소에 올리지 않음
+docs/INTERVIEW.md
+
 # 자격증명
 .env
 *.pem

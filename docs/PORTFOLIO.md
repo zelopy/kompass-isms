@@ -1,5 +1,7 @@
 # kompass-isms
 
+**김창현** · [zelopy@gmail.com](mailto:zelopy@gmail.com) · [github.com/zelopy](https://github.com/zelopy)
+
 AWS 계정을 읽기 전용으로 점검해 KISA 클라우드 취약점 점검 가이드·ISMS-P 기준의 점검표를 만들고, LLM이 원문 근거 해설과 증적 문서 검토를, 에이전트가 읽기 전용 추가 조사를 맡는 보안 진단 도구.
 판정은 결정론적 룰이 내리고, LLM 출력은 원문·도구 호출 기록·문서 발췌와 코드로 대조해 검증하며, 품질은 평가셋으로 수치화함.
 
