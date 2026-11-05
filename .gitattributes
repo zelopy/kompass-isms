@@ -1,0 +1,4 @@
+# HTML 뷰어 자산과 공개 데모는 운영체제와 관계없이 LF로 둔다.
+# CSP 해시와 데모 동기화 테스트가 바이트 단위로 같은 출력을 기대한다 (ADR-055)
+kompass/reporters/html/* text eol=lf
+docs/demo/index.html text eol=lf
