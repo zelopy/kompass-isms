@@ -14,6 +14,7 @@ from typer.testing import CliRunner
 from kompass.agent.llm import AgentTool
 from kompass.cli import EXIT_FAIL_ON, EXIT_LLM, EXIT_SESSION, EXIT_SNAPSHOT, EXIT_USAGE, app
 from kompass.interpreter.llm import LLMError
+from kompass.interpreter.masking import MaskingError
 from kompass.interpreter.sources import INDEX_ENV
 from kompass.mappings.data import load_mappings
 from kompass.models import (
@@ -686,6 +687,22 @@ def test_review_evidence_without_readable_files_sends_nothing(
     result = runner.invoke(app, _review_args(store, root, terms_file, "--yes"))
     assert result.exit_code == 0, result.output
     assert "검토할 것이 없습니다" in result.output and review_llm.calls == []
+
+
+def test_review_evidence_all_blocked_by_masking_exit_code(
+    aws: None, store: Path, source_index: Path, review_llm: ReviewProvider,
+    evidence_dir: Path, terms_file: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:  # fmt: skip
+    def blocked(*args: Any, **kwargs: Any) -> Any:
+        raise MaskingError("일부만 가려진 값")
+
+    monkeypatch.setattr("kompass.interpreter.evidence_reviewer.prepare_review", blocked)
+    _scanned(store)
+    result = runner.invoke(app, _review_args(store, evidence_dir, terms_file, "--yes"))
+    assert result.exit_code == EXIT_LLM
+    assert "보내지 않을 요청: CA-09-1" in result.output
+    assert "마스킹 검증을 통과한 요청이 없어" in result.output
+    assert "검토할 것이 없습니다" not in result.output and review_llm.calls == []
 
 
 def test_review_evidence_all_failed_exit_code(

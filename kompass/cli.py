@@ -11,7 +11,8 @@
 - `mcp`: 판정 결과와 조사 도구를 MCP 서버로 노출한다 (ADR-038)
 
 종료 코드 (docs/MANUAL.md 13장): 0 완료(FAIL이 있어도 0), 1 `--fail-on` 기준 해당,
-2 사용법·설정 오류, 3 세션 오류, 4 스냅샷 오류, 5 LLM 해설·추가 조사·증적 검토 전부 실패.
+2 사용법·설정 오류, 3 세션 오류, 4 스냅샷 오류, 5 LLM 해설·추가 조사·증적 검토 전부 실패
+또는 마스킹 검증을 통과한 대상 없음.
 """
 
 import sys
@@ -162,7 +163,8 @@ RegionsOption = typer.Option(
     None,
     "--regions",
     help=(
-        "리전 리소스(EC2·VPC)를 점검할 리전. 쉼표로 구분하거나 여러 번 지정. 없으면 활성 리전 전체."
+        "리전 리소스(EC2·VPC·RDS·ELB·GuardDuty·Backup·Logs)를 점검할 리전. "
+        "쉼표로 구분하거나 여러 번 지정. 없으면 활성 리전 전체."
     ),
 )
 AccountOption = typer.Option(
@@ -792,6 +794,8 @@ def review_evidence_command(
             f"경고: 마스킹 검증에 실패해 보내지 않을 요청: {', '.join(estimate.blocked)}", err=True
         )
     if not estimate.requests:
+        if estimate.blocked:
+            _abort("마스킹 검증을 통과한 요청이 없어 검토를 요청하지 않습니다", EXIT_LLM)
         typer.echo("텍스트를 읽을 수 있는 제출 문서가 없어 검토할 것이 없습니다.")
         return
     preview_path = default_evidence_preview_path(
