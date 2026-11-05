@@ -48,7 +48,7 @@ flowchart LR
     C --> S[스냅샷]
     S --> R[룰 판정<br/>PASS·FAIL·ERROR·REVIEW]
     R --> M[KISA·ISMS-P 매핑]
-    M --> P[점검표<br/>MD·XLSX·JSON]
+    M --> P[점검표<br/>MD·XLSX·JSON·HTML]
 
     M --> K[마스킹]
     K --> L[LLM<br/>해설 · 추가 조사 · 증적 검토]
@@ -99,7 +99,7 @@ LLM 판정자 없이 코드 채점기로만 평가해, 같은 응답은 언제 �
 
 실습 계정(취약·양호 리소스를 함께 배포한 별도 AWS 계정)을 점검한 실제 출력임. 계정 ID·버킷 이름 접미사·출발지 IP는 가렸고, 보안그룹 등 실습 리소스 ID는 일회용이라 그대로 둠.
 
-**점검표**: 룰별 판정에 KISA 항목·ISMS-P 통제항목, 대상 리소스, 판정 근거가 된 원본 설정(증적)을 붙임. Markdown·Excel·JSON으로 출력함.
+**점검표**: 룰별 판정에 KISA 항목·ISMS-P 통제항목, 대상 리소스, 판정 근거가 된 원본 설정(증적)을 붙임. Markdown·Excel·JSON·HTML로 출력함.
 
 ![엑셀 점검표](images/portfolio/report-xlsx.png)
 
