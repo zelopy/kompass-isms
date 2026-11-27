@@ -76,11 +76,35 @@ kompass는 AWS 계정의 설정을 **읽기 전용**으로 수집하고, 코드�
 
 ### 2.1 요구 사항
 
-- Python 3.12, [uv](https://docs.astral.sh/uv/)
 - Windows, macOS, Linux
+- [uv](https://docs.astral.sh/uv/) (설치는 [2.2](#22-설치))
+- Python 3.12. `uv sync`가 자동으로 받아 저장소의 `.venv`에만 설치하므로 따로 설치하지 않아도 된다. kompass는 3.12만 지원한다(`requires-python = ">=3.12,<3.13"`). PC에 다른 버전(3.13 이상 등)이 설치되어 있어도 그대로 두면 되고, 그 버전으로는 kompass를 설치할 수 없다.
+- AWS CLI는 필요 없다. 자격증명 설정 파일만 있으면 된다 ([2.3](#23-점검용-aws-자격증명)).
 - 점검 대상 AWS API에 접속할 수 있는 네트워크. LLM 기능을 쓰면 Anthropic API에도 접속해야 한다.
 
 ### 2.2 설치
+
+**1. uv 설치**
+
+```powershell
+# Windows PowerShell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+```bash
+# macOS·Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Windows에서는 `%USERPROFILE%\.local\bin\uv.exe`에 설치되고 이 폴더가 사용자 PATH에 추가된다. 바뀐 PATH는 **새로 시작한 프로그램에만** 적용된다.
+
+- VS Code·Cursor 같은 편집기의 터미널에서 쓸 때는 편집기의 **모든 창**을 닫아 프로세스를 완전히 끝낸 뒤 다시 실행한다. 창이 하나라도 남아 있으면 메인 프로세스가 유지되어 새 창도 예전 PATH를 물려받는다. "Reload Window"로도 반영되지 않는다.
+- 편집기를 닫지 않고 지금 터미널에서만 쓰려면 PATH를 다시 읽는다. 이 터미널을 닫으면 효과가 사라진다.
+  ```powershell
+  $env:Path = [Environment]::GetEnvironmentVariable('Path','User') + ';' + [Environment]::GetEnvironmentVariable('Path','Machine')
+  ```
+
+**2. kompass 설치**
 
 ```bash
 git clone https://github.com/zelopy/kompass-isms.git
@@ -89,39 +113,132 @@ uv sync
 uv run kompass --version
 ```
 
+`uv sync`가 Python 3.12와 [uv.lock](../uv.lock)에 기록된 버전의 의존 패키지를 `.venv`에 설치한다.
+
+**사내망 인증서 오류**: `uv sync`에서 `invalid peer certificate: UnknownIssuer`가 나면 사내 보안 장비가 HTTPS를 검사하는 환경이다. uv는 기본적으로 OS 인증서 저장소가 아닌 자체 목록을 쓰므로, OS 인증서 저장소를 쓰도록 설정한 뒤 다시 실행한다.
+
+```powershell
+[Environment]::SetEnvironmentVariable('UV_SYSTEM_CERTS', '1', 'User')   # Windows: 사용자 환경 변수로 저장 (새 터미널부터 적용)
+$env:UV_SYSTEM_CERTS = '1'                                              # 지금 터미널에만 적용
+```
+
+```bash
+export UV_SYSTEM_CERTS=1   # macOS·Linux
+```
+
+이 설정은 uv의 다운로드에만 적용된다. 점검 중 AWS 접속에서 인증서 오류가 나면 [13장](#13-문제-해결)을 본다.
+
 ### 2.3 점검용 AWS 자격증명
 
-점검 주체(IAM 사용자 또는 역할)에는 AWS 관리형 정책 `SecurityAudit`만 부여한다. kompass는 AWS CLI 프로필(`~/.aws/config`, `~/.aws/credentials`)로만 자격증명을 받는다.
+점검 주체(IAM 사용자 또는 역할)에는 AWS 관리형 정책 `SecurityAudit`만 부여한다. kompass는 AWS 설정 파일의 프로필로만 자격증명을 받는다. AWS CLI를 설치할 필요는 없다.
 
-**액세스 키 프로필**
+| 파일 | Windows | macOS·Linux | 내용 |
+|---|---|---|---|
+| credentials | `C:\Users\<사용자>\.aws\credentials` (`%USERPROFILE%\.aws\credentials`) | `~/.aws/credentials` | 액세스 키 |
+| config | `C:\Users\<사용자>\.aws\config` | `~/.aws/config` | 리전, 역할 |
+
+- 파일 이름에 **확장자가 없다.** `credentials.txt`로 저장되면 읽지 않는다.
+- 같은 프로필을 credentials에서는 `[kompass-audit]`, config에서는 `[profile kompass-audit]`으로 쓴다. 프로필 이름(`kompass-audit`)은 마음대로 정하며 `--profile`로 고른다.
+- 키가 들어 있으므로 kompass 저장소 안에 두지 않는다.
+
+#### 2.3.1 액세스 키 프로필
+
+**콘솔에서 준비**
+
+1. **IAM → 사용자 → 사용자 생성**. 콘솔 접근은 주지 않는다. 권한 옵션에서 "직접 정책 연결"을 고르고 `SecurityAudit`만 체크한다.
+2. 만든 사용자의 **보안 자격 증명 탭 → 액세스 키 만들기**. 사용 사례는 "Command Line Interface(CLI)"를 고른다. 비밀 액세스 키는 이 화면에서만 볼 수 있으므로 `.csv`로 내려받아 둔다.
+
+- **루트 계정의 액세스 키는 쓰지 않는다.** 루트 키가 있다는 것 자체가 IAM-002의 취약 사항이다.
+- 다른 권한이 함께 붙은 기존 사용자의 키로도 점검은 된다. 이 경우 쓰기 차단은 kompass 코드의 가드 하나만 남으므로 실제 진단에서는 점검 전용 사용자를 쓴다. 점검에 쓴 사용자도 점검 대상에 포함되어 결과에 나온다.
+
+**파일 내용**
 
 ```ini
-# ~/.aws/credentials
+# credentials
 [kompass-audit]
 aws_access_key_id = <액세스 키 ID>
 aws_secret_access_key = <비밀 액세스 키>
-
-# ~/.aws/config
-[profile kompass-audit]
-region = ap-northeast-2
 ```
-
-**역할 프로필** (점검 대상 계정에 점검 전용 역할을 두는 경우)
 
 ```ini
-# ~/.aws/config
+# config
 [profile kompass-audit]
-role_arn = arn:aws:iam::<대상 계정 ID>:role/<점검 역할 이름>
-source_profile = <자격증명이 있는 프로필>
 region = ap-northeast-2
 ```
+
+액세스 키 ID는 `AKIA`로 시작하는 20자, 비밀 액세스 키는 40자다. `< >`까지 지우고 값만 넣는다.
+
+**파일 만드는 법**
+
+- **메모장**: 위 상자의 대괄호 줄부터 내용만 붙여 넣는다(`# credentials` 같은 설명 줄은 넣지 않아도 된다). "다른 이름으로 저장"에서 위치를 `%USERPROFILE%\.aws`(폴더가 없으면 `.aws` 폴더를 만든다), 파일 형식을 "모든 파일 (\*.\*)", 이름을 `credentials`로 하고 UTF-8로 저장한다. config도 같다.
+- **Windows PowerShell 5.1**: `>`나 `Out-File`로 쓰면 UTF-16으로 저장되어 AWS SDK가 읽지 못한다. 아래처럼 `Set-Content -Encoding ascii`를 쓴다. 이 블록 전체는 **터미널에서 실행하는 명령**이다. `@'`와 `'@ | Set-Content …` 줄을 파일에 넣으면 설정 파일로 읽히지 않는다. 닫는 `'@`는 줄 맨 앞에 있어야 한다.
+  ```powershell
+  New-Item -ItemType Directory -Force "$env:USERPROFILE\.aws" | Out-Null
+
+  @'
+  [kompass-audit]
+  aws_access_key_id = <액세스 키 ID>
+  aws_secret_access_key = <비밀 액세스 키>
+  '@ | Set-Content -Encoding ascii "$env:USERPROFILE\.aws\credentials"
+
+  @'
+  [profile kompass-audit]
+  region = ap-northeast-2
+  '@ | Set-Content -Encoding ascii "$env:USERPROFILE\.aws\config"
+  ```
+- **AWS CLI가 있으면**: `aws configure --profile kompass-audit`으로 키와 리전을 입력한다.
+
+#### 2.3.2 역할 프로필
+
+점검 대상 계정에 점검 전용 역할을 두고, 액세스 키가 있는 다른 프로필로 그 역할에 전환해 점검하는 방식이다.
+
+```ini
+# credentials: 역할로 전환할 때 쓸 원래 자격증명
+[kompass-base]
+aws_access_key_id = <액세스 키 ID>
+aws_secret_access_key = <비밀 액세스 키>
+```
+
+```ini
+# config
+[profile kompass-audit]
+role_arn = arn:aws:iam::<대상 계정 ID>:role/<점검 역할 이름>
+source_profile = kompass-base
+region = ap-northeast-2
+```
+
+| 키 | 뜻 | 콘솔에서 찾는 곳 |
+|---|---|---|
+| `role_arn` | 전환할 점검 역할의 ARN | **IAM → 역할 → (역할) → 요약의 ARN**을 복사한다. 계정 ID는 콘솔 오른쪽 위 계정 메뉴의 12자리 숫자 |
+| `source_profile` | 역할로 전환할 때 쓸 자격증명이 있는 **credentials의 프로필 이름** (위 예시의 `kompass-base`) | 그 프로필의 키는 **IAM → 사용자 → 보안 자격 증명 → 액세스 키 만들기**로 발급한다 |
+| `region` | 기본 호출 리전 ([2.3.3](#233-리전과-계정-확인)) | 콘솔 오른쪽 위 리전 선택기의 코드. 서울은 `ap-northeast-2` |
+| `mfa_serial` (선택) | 전환할 때 요구할 MFA 장치 | **IAM → 사용자 → 보안 자격 증명 → MFA 디바이스**의 식별자 ARN |
+
+**콘솔에서 역할 만들기** (점검 대상 계정에서)
+
+1. **IAM → 역할 → 역할 생성**. 신뢰할 수 있는 엔터티 유형은 "AWS 계정"이다. `source_profile`의 사용자가 같은 계정에 있으면 "이 계정", 다른 계정에 있으면 "다른 AWS 계정"에 그 계정 ID를 넣는다.
+2. 권한 정책은 `SecurityAudit`만 체크하고, 역할 이름(예: `KompassAudit`)을 정해 만든다.
+3. 역할의 **신뢰 관계** 탭이 누가 이 역할로 전환할 수 있는지 정한다. `Principal`에 `source_profile` 사용자의 ARN(`arn:aws:iam::<계정 ID>:user/<사용자>`)을 넣으면 가장 좁게 허용된다.
+
+`source_profile`의 사용자에게는 `SecurityAudit`이 아니라 **그 역할에 대한 `sts:AssumeRole` 권한**이 필요하다. 신뢰 정책에 사용자 ARN을 직접 넣었고 같은 계정이면 신뢰 정책만으로 된다. 신뢰 정책에 계정 전체(`arn:aws:iam::<계정 ID>:root`)를 넣었거나 계정이 다르면, 사용자에게도 `sts:AssumeRole`을 허용하는 정책을 붙인다.
 
 - 역할 자격증명의 발급·갱신은 AWS SDK가 처리한다. 점검이 길어져도 다시 로그인할 필요가 없다.
 - `mfa_serial`이 있는 역할 프로필은 터미널에서 MFA 코드를 묻는다. 대화형으로 실행할 때만 쓴다. MCP 클라이언트가 실행하는 `mcp`에서는 코드를 입력할 수 없으므로 쓸 수 없다 ([10장](#10-mcp-서버-연동-mcp)).
 - **SSO(IAM Identity Center) 프로필은 지원하지 않는다.** 토큰 갱신 호출이 읽기 전용 가드에 막힐 수 있다.
-- 기본 리전은 `--region` → 환경 변수 `AWS_DEFAULT_REGION` → 프로필의 `region` 순서로 정한다. 모두 없으면 시작하지 않는다. 환경 변수가 설정된 PC에서는 프로필의 리전보다 환경 변수가 먼저 쓰인다.
 
-엉뚱한 프로필로 다른 계정을 점검하는 실수를 막으려면 `--account-id <대상 계정 ID>`를 함께 준다. 실제 계정이 다르면 아무것도 수집하지 않고 멈춘다.
+#### 2.3.3 리전과 계정 확인
+
+- 프로필의 `region`은 **기본 호출 리전**이다. 처음 접속해 계정과 활성 리전을 확인하는 데 쓰며, 점검 범위가 아니다. 점검할 리전은 `--regions`로 정한다 ([5.1](#51-수집-collect)).
+- 기본 리전은 `--region` → 환경 변수 `AWS_DEFAULT_REGION` → 프로필의 `region` 순서로 정한다. 모두 없으면 시작하지 않는다. 환경 변수가 설정된 PC에서는 프로필의 리전보다 환경 변수가 먼저 쓰인다.
+- 엉뚱한 프로필로 다른 계정을 점검하는 실수를 막으려면 `--account-id <대상 계정 ID>`를 함께 준다. 실제 계정이 다르면 아무것도 수집하지 않고 멈춘다. 계정 ID는 콘솔 오른쪽 위 계정 메뉴의 12자리 숫자다.
+
+**연결 확인**: 점검 전에 프로필이 읽히고 어느 계정·주체로 접속되는지 확인한다. `sts:GetCallerIdentity`는 권한이 없어도 되는 조회다.
+
+```bash
+uv run python -c "import boto3; r = boto3.Session(profile_name='kompass-audit').client('sts').get_caller_identity(); print(r['Account'], r['Arn'])"
+```
+
+`<계정 ID> arn:aws:iam::<계정 ID>:user/<사용자>` 형태로 나오면 정상이다. 역할 프로필이면 `assumed-role/<역할 이름>/…`으로 나온다. ARN이 `:root`로 끝나면 루트 키이므로 쓰지 않는다. 오류가 나면 [13장](#13-문제-해결)을 본다.
 
 ### 2.4 LLM 기능 준비 (선택)
 
@@ -160,6 +277,8 @@ ec2:
 전체 키와 기본값은 [부록 B](#b-kompassyaml-전체-키).
 
 ## 3. 빠른 시작
+
+[2.2](#22-설치)의 설치와 [2.3](#23-점검용-aws-자격증명)의 프로필 설정, 연결 확인을 마친 뒤 실행한다.
 
 ```bash
 uv run kompass scan --profile <점검 프로필> --account-id <대상 계정 ID> --report md --report xlsx
@@ -459,7 +578,7 @@ claude mcp add kompass -- uv --directory <저장소 경로> run kompass mcp --pr
 - `reports/` 아래의 모든 파일은 실제 계정 데이터다. 저장소 안이면 자동으로 git에서 제외된다(`reports/.gitignore`). 보고서를 외부에 전달할 때는 전달 범위를 확인한다. HTML 보고서에는 JSON 보고서와 같은 전체 증적이 마스킹 없이 들어 있다.
 - 해설·조사·검토 결과 파일은 마스킹이 복원된 원문이고, 증적 검토 결과에는 개인정보가 들어 있을 수 있다.
 - 오래된 점검 결과는 자동으로 지워지지 않는다. 진단이 끝나면 조직의 보관 기준에 따라 보관하거나 폐기한다.
-- 점검이 끝나면 점검용 액세스 키나 역할을 회수하도록 담당자에게 요청한다.
+- 점검이 끝나면 점검용 액세스 키나 역할을 회수하도록 담당자에게 요청한다. 직접 발급한 키는 콘솔의 **IAM → 사용자 → 보안 자격 증명 → 액세스 키 → 작업**에서 비활성화하거나 삭제하고, 이 PC의 credentials 파일에서도 지운다.
 
 ## 12. 결과물 구조
 
@@ -507,8 +626,13 @@ reports/
 
 | 메시지 | 원인과 대응 |
 |---|---|
+| `uv` 명령을 찾을 수 없음 (`'uv' 용어가 … 인식되지 않습니다`) | 설치 뒤 PATH가 반영되지 않았다. 편집기의 모든 창을 닫고 다시 실행하거나 터미널에서 PATH를 다시 읽는다 ([2.2](#22-설치)) |
+| `uv sync`에서 `invalid peer certificate: UnknownIssuer` | 사내망 HTTPS 검사 환경이다. `UV_SYSTEM_CERTS=1`을 설정한다 ([2.2](#22-설치)) |
+| `uv sync`에서 Python 버전 오류 | kompass는 Python 3.12만 지원한다. 다른 버전의 Python으로 설치하지 말고 uv가 3.12를 받게 둔다 |
+| 점검 중 AWS 접속에서 `CERTIFICATE_VERIFY_FAILED` | 사내망 HTTPS 검사 환경이다. boto3는 OS 인증서 저장소가 아닌 자체 목록을 쓰므로, 사내 루트 인증서(PEM)를 받아 환경 변수 `AWS_CA_BUNDLE`에 경로를 지정한다. Anthropic API 접속은 OS 인증서 저장소를 쓴다 |
 | `기본 리전을 정할 수 없습니다` | `--region`을 주거나 프로필에 `region`을 설정한다 |
-| `AWS 프로필을 찾을 수 없습니다` / `AWS 자격증명을 찾을 수 없습니다` | `--profile` 이름과 `~/.aws/config`·`credentials`를 확인한다 |
+| `AWS 프로필을 찾을 수 없습니다` / `AWS 자격증명을 찾을 수 없습니다` / 설정 파일을 읽지 못하는 오류(`ConfigParseError`, `MissingSectionHeaderError`) | `--profile` 이름과 설정 파일을 확인한다. 흔한 원인: 파일 이름에 `.txt`가 붙음, config에 `profile `이 빠짐, UTF-16으로 저장됨, 파일 생성 명령(`@'`, `'@ \| Set-Content …`)이 파일에 들어감 ([2.3.1](#231-액세스-키-프로필)) |
+| `자격증명 확인(sts:GetCallerIdentity) 실패` | 메시지의 오류 코드를 본다. `InvalidClientTokenId`: 액세스 키 ID가 틀렸거나 비활성화된 키. `SignatureDoesNotMatch`: 비밀 액세스 키가 틀림(앞뒤 공백, 일부만 복사). `AssumeRole`의 `AccessDenied`: 역할의 신뢰 관계나 `source_profile` 사용자의 `sts:AssumeRole` 권한을 확인한다 ([2.3.2](#232-역할-프로필)) |
 | `점검 대상 계정이 예상과 다릅니다` | `--account-id`와 다른 계정의 프로필이다. 프로필을 확인한다 |
 | `알 수 없는 리전` / `이 계정에서 활성화되지 않은 리전` | `--regions` 값을 확인한다 |
 | `기본 리전 … 에 연결할 수 없습니다` | 리전 이름과 네트워크(프록시, 방화벽)를 확인한다 |

@@ -154,6 +154,8 @@
   - [x] 화면: 개요·KISA 항목·Finding(필터·검색)·ISMS-P(초안)·증적 탭, finding 상세(판정·매핑·증적·AI 해설·추가 조사), 주소 해시
   - [x] 공개 데모: 가공 시나리오 `kompass/demo.py`, `scripts/build_demo.py` → `docs/demo/index.html`, 동기화 테스트
   - [ ] GitHub Pages 켜기 (사용자, 저장소 설정 `main` `/docs`)
+- [x] 실제 계정 첫 점검 후속 (2026-11-27)
+  - [x] 매뉴얼 보강: uv 설치·PATH·사내망 인증서, AWS 설정 파일 작성(Windows), 역할 프로필 콘솔 설명, 연결 확인, 문제 해결
 - [ ] Azure 지원
 - [ ] 다른 기준 추가 (CSAP 등)
 
