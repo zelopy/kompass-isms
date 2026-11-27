@@ -41,8 +41,13 @@ def _run(
     lifecycles: dict[str, Any],
     *errors: CollectError,
     settings: Settings | None = None,
+    status: dict[str, Any] | None = None,
 ) -> list[Finding]:
-    data: dict[str, Any] = {"status": {}, "event_selectors": {}, "bucket_lifecycles": lifecycles}
+    data: dict[str, Any] = {
+        "status": status or {},
+        "event_selectors": {},
+        "bucket_lifecycles": lifecycles,
+    }
     if trails is not None:
         data["trails"] = trails
     snapshot = Snapshot(
@@ -131,14 +136,91 @@ def test_error_when_trails_missing() -> None:
     assert finding.status == Status.ERROR and finding.resource == "account"
 
 
-def test_error_when_lifecycle_not_collected() -> None:
-    error = CollectError(
-        operation="s3:GetBucketLocation",
+def _bucket_error(code: str, operation: str = "s3:GetBucketLocation") -> CollectError:
+    return CollectError(
+        operation=operation,
         region="ap-northeast-2",
-        error_code="AccessDenied",
+        error_code=code,
         message="m",
         resource=BUCKET,
     )
-    finding = _one([_trail()], {}, error)
+
+
+def _status(trail: dict[str, Any], is_logging: bool) -> dict[str, Any]:
+    return {trail["TrailARN"]: {"IsLogging": is_logging}}
+
+
+def test_error_when_lifecycle_not_collected() -> None:
+    finding = _one([_trail()], {}, _bucket_error("AccessDenied"))
     assert finding.status == Status.ERROR
     assert finding.evidence["errors"][0]["error_code"] == "AccessDenied"
+
+
+def test_error_message_names_error_code() -> None:
+    # 확인 불가의 원인이 권한인지 보고서 요약에서 바로 보이게 한다 (ADR-056)
+    finding = _one([_trail()], {}, _bucket_error("AccessDenied"))
+    assert "(AccessDenied)" in finding.message
+
+
+@pytest.mark.parametrize(
+    "operation", ["s3:GetBucketLocation", "s3:GetBucketLifecycleConfiguration"]
+)
+def test_fail_when_bucket_does_not_exist(operation: str) -> None:
+    # NoSuchBucket은 버킷이 없다는 확정된 사실이다. 로그를 보존할 곳이 없으므로 FAIL (ADR-056)
+    finding = _one([_trail()], {}, _bucket_error("NoSuchBucket", operation))
+    assert finding.status == Status.FAIL
+    assert "존재하지 않음" in finding.message
+    assert finding.evidence["errors"][0]["error_code"] == "NoSuchBucket"
+
+
+def test_no_such_bucket_wins_over_other_errors() -> None:
+    errors = (_bucket_error("NoSuchBucket"), _bucket_error("AccessDenied"))
+    assert _one([_trail()], {}, *errors).status == Status.FAIL
+
+
+def test_errors_of_other_buckets_are_ignored() -> None:
+    other = CollectError(
+        operation="s3:GetBucketLocation",
+        region="ap-northeast-2",
+        error_code="NoSuchBucket",
+        message="m",
+        resource="other",
+    )
+    assert _one([_trail()], {}, other).status == Status.ERROR
+
+
+def test_evidence_lists_trails_and_logging_state() -> None:
+    a, b, c = _trail("a"), _trail("b"), _trail("c")
+    status = {**_status(a, True), **_status(b, False)}  # c는 상태를 수집하지 못함
+    finding = _one([a, b, c], {BUCKET: None}, status=status)
+    assert finding.evidence["trails"] == [
+        {"trail": "a", "is_logging": True},
+        {"trail": "b", "is_logging": False},
+        {"trail": "c", "is_logging": None},
+    ]
+    assert "로깅 중지" not in finding.message
+
+
+@pytest.mark.parametrize(
+    ("lifecycles", "errors", "status"),
+    [
+        ({BUCKET: None}, (), Status.PASS),
+        ({BUCKET: [_expire(30)]}, (), Status.FAIL),
+        ({}, (_bucket_error("NoSuchBucket"),), Status.FAIL),
+        ({}, (_bucket_error("AccessDenied"),), Status.ERROR),
+    ],
+)
+def test_message_marks_bucket_used_only_by_stopped_trails(
+    lifecycles: dict[str, Any], errors: tuple[CollectError, ...], status: Status
+) -> None:
+    trail = _trail()
+    finding = _one([trail], lifecycles, *errors, status=_status(trail, False))
+    assert finding.status == status
+    assert finding.message.endswith("(로깅 중지된 추적만 사용)")
+
+
+def test_unknown_logging_state_is_not_marked_stopped() -> None:
+    # 상태를 모르는 추적이 섞이면 중지되었다고 단정하지 않는다
+    a, b = _trail("a"), _trail("b")
+    finding = _one([a, b], {BUCKET: None}, status=_status(a, False))
+    assert "로깅 중지" not in finding.message

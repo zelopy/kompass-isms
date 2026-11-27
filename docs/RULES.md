@@ -315,7 +315,9 @@ finding 단위: SG 룰은 보안그룹별, VPC-001은 VPC별, VPC-002는 공인 
 - 판정: 추적이 로그를 보내는 S3 버킷마다, 추적 로그 경로(`<S3KeyPrefix>/AWSLogs/`)와 겹치는 활성(`Status == "Enabled"`) 수명주기 규칙이 `logs.min_retention_days`(기본 365일)보다 짧은 `Expiration.Days`를 가지면 FAIL. 날짜 지정 삭제(`Expiration.Date`)도 보존 일수를 보장할 수 없으므로 FAIL. 삭제 규칙이 없으면(수명주기 설정 없음 포함) PASS. 버킷별 finding.
 - 경로 겹침: 규칙 접두사(`Filter.Prefix`, `Filter.And.Prefix`, 옛 형식 `Prefix`, 없으면 버킷 전체)가 로그 경로의 앞부분이거나 로그 경로가 규칙 접두사의 앞부분이면 겹친다고 본다. 태그·크기 조건은 보지 않는다 (보수적으로 겹친다고 본다).
 - 해당 없음: S3로 로그를 보내는 추적이 없으면 `NOT_APPLICABLE`.
-- 오류: 추적 목록이나 버킷의 수명주기 설정을 수집하지 못하면 ERROR. 조직 추적처럼 버킷이 다른 계정에 있으면 보통 조회가 거부되어 ERROR가 된다.
+- 버킷 없음: 버킷 조회(`GetBucketLocation`, `GetBucketLifecycleConfiguration`)가 `NoSuchBucket`이면 로그를 보존할 곳이 없으므로 FAIL ("추적 로그 버킷이 존재하지 않음"). 권한 오류와 달리 버킷이 없다는 확정된 사실이다 (ADR-056).
+- 오류: 추적 목록을 수집하지 못하거나, 버킷의 수명주기 설정을 `NoSuchBucket` 외의 이유로 수집하지 못하면 ERROR. 메시지에 오류 코드를 붙인다 (예: `(AccessDenied)`). 조직 추적처럼 버킷이 다른 계정에 있으면 보통 조회가 거부되어 ERROR가 된다.
+- evidence: 버킷마다 그 버킷을 쓰는 추적과 로깅 상태(`trails`: `trail`, `is_logging`. 상태를 수집하지 못했으면 `null`)를 남긴다. 로깅이 중지된 추적도 판정한다(버킷에 남은 과거 로그의 보존 기간도 CA-17 대상이며, 로깅 중지는 CT-001이 판정한다). 버킷을 쓰는 추적이 모두 중지된 것으로 확인되면 메시지 끝에 "(로깅 중지된 추적만 사용)"을 붙인다.
 - 비고: 이전 버전 삭제(`NoncurrentVersionExpiration`)와 저장 등급 전환(Glacier 등)은 보존을 해치지 않으므로 보지 않는다. 로그 백업·주기적 검토는 사람이 확인한다 (CA-17 `partial`).
 - ISMS-P(초안): 2.9.4 로그 및 접속기록 관리, 2.10.2 클라우드 보안
 - KISA: CA-17 로그 보관 기간 설정 (중, 870쪽) — 근거 수준: 직접 ("클라우드 서비스 로그 보관 기간을 기관 정책에 맞게 수립된 경우")
