@@ -631,7 +631,8 @@ reports/
 | `uv sync`에서 Python 버전 오류 | kompass는 Python 3.12만 지원한다. 다른 버전의 Python으로 설치하지 말고 uv가 3.12를 받게 둔다 |
 | 점검 중 AWS 접속에서 `CERTIFICATE_VERIFY_FAILED` | 사내망 HTTPS 검사 환경이다. boto3는 OS 인증서 저장소가 아닌 자체 목록을 쓰므로, 사내 루트 인증서(PEM)를 받아 환경 변수 `AWS_CA_BUNDLE`에 경로를 지정한다. Anthropic API 접속은 OS 인증서 저장소를 쓴다 |
 | `기본 리전을 정할 수 없습니다` | `--region`을 주거나 프로필에 `region`을 설정한다 |
-| `AWS 프로필을 찾을 수 없습니다` / `AWS 자격증명을 찾을 수 없습니다` / 설정 파일을 읽지 못하는 오류(`ConfigParseError`, `MissingSectionHeaderError`) | `--profile` 이름과 설정 파일을 확인한다. 흔한 원인: 파일 이름에 `.txt`가 붙음, config에 `profile `이 빠짐, UTF-16으로 저장됨, 파일 생성 명령(`@'`, `'@ \| Set-Content …`)이 파일에 들어감 ([2.3.1](#231-액세스-키-프로필)) |
+| `AWS 프로필을 찾을 수 없습니다` / `AWS 자격증명을 찾을 수 없습니다` | `--profile` 이름과 설정 파일을 확인한다. 흔한 원인: 파일 이름에 `.txt`가 붙음, config에 `profile `이 빠짐 ([2.3.1](#231-액세스-키-프로필)) |
+| `AWS 설정 파일을 읽을 수 없습니다: <경로>` | 메시지의 파일이 설정 파일 형식이 아니다. 흔한 원인: UTF-16으로 저장됨(PowerShell 5.1의 `>`·`Out-File`), 파일 생성 명령(`@'`, `'@ \| Set-Content …`)이 파일에 들어감 ([2.3.1](#231-액세스-키-프로필)) |
 | `자격증명 확인(sts:GetCallerIdentity) 실패` | 메시지의 오류 코드를 본다. `InvalidClientTokenId`: 액세스 키 ID가 틀렸거나 비활성화된 키. `SignatureDoesNotMatch`: 비밀 액세스 키가 틀림(앞뒤 공백, 일부만 복사). `AssumeRole`의 `AccessDenied`: 역할의 신뢰 관계나 `source_profile` 사용자의 `sts:AssumeRole` 권한을 확인한다 ([2.3.2](#232-역할-프로필)) |
 | `점검 대상 계정이 예상과 다릅니다` | `--account-id`와 다른 계정의 프로필이다. 프로필을 확인한다 |
 | `알 수 없는 리전` / `이 계정에서 활성화되지 않은 리전` | `--regions` 값을 확인한다 |

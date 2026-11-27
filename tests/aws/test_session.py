@@ -167,6 +167,41 @@ def test_unknown_profile_aborts(aws: None) -> None:
         open_scan(profile="does-not-exist")
 
 
+_GOOD_CONFIG = "[profile audit]\nregion = ap-northeast-2\n"
+_GOOD_CREDENTIALS = "[audit]\naws_access_key_id = testing\naws_secret_access_key = testing\n"
+
+
+def _pasted(content: str) -> str:
+    # PowerShell 생성 명령까지 파일에 붙여 넣은 경우 (MANUAL 2.3.1)
+    return f"@'\n{content}'@ | Set-Content -Encoding ascii x\n"
+
+
+@pytest.mark.parametrize(
+    ("config", "credentials"),
+    [
+        (_pasted(_GOOD_CONFIG), _GOOD_CREDENTIALS),
+        (_GOOD_CONFIG, _pasted(_GOOD_CREDENTIALS)),
+    ],
+    ids=["config", "credentials"],
+)
+def test_unparsable_aws_file_aborts(
+    aws: None, isolated_aws_env: AwsFiles, config: str, credentials: str
+) -> None:
+    _write_profiles(isolated_aws_env, config=config, credentials=credentials)
+    broken = isolated_aws_env.config if config != _GOOD_CONFIG else isolated_aws_env.credentials
+    with pytest.raises(SessionError, match="AWS 설정 파일을 읽을 수 없습니다") as excinfo:
+        open_scan(profile="audit")
+    assert str(broken) in str(excinfo.value)
+
+
+def test_utf16_aws_config_aborts(aws: None, isolated_aws_env: AwsFiles) -> None:
+    # Windows PowerShell 5.1의 `>`·Out-File은 UTF-16으로 저장한다
+    isolated_aws_env.config.write_text(_GOOD_CONFIG, encoding="utf-16")
+    isolated_aws_env.credentials.write_text(_GOOD_CREDENTIALS, encoding="utf-8")
+    with pytest.raises(SessionError, match="인코딩"):
+        open_scan(profile="audit")
+
+
 def test_missing_credentials_aborts(
     aws: None, isolated_aws_env: AwsFiles, monkeypatch: pytest.MonkeyPatch
 ) -> None:

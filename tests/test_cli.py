@@ -179,6 +179,17 @@ def test_unknown_profile_is_session_error(aws: None, store: Path) -> None:
     assert "nope" in result.output
 
 
+def test_unparsable_aws_config_is_session_error(
+    aws: None, isolated_aws_env: AwsFiles, store: Path
+) -> None:
+    # 트레이스백이 아니라 안내 메시지와 세션 오류 코드로 끝나야 한다
+    config = isolated_aws_env.config
+    config.write_text("@'\n" + config.read_text(encoding="utf-8"), encoding="utf-8")
+    result = runner.invoke(app, ["collect", "--profile", "audit", "--store", str(store)])
+    assert result.exit_code == EXIT_SESSION
+    assert "AWS 설정 파일을 읽을 수 없습니다" in result.output
+
+
 def test_account_mismatch_is_session_error(aws: None, store: Path) -> None:
     result = runner.invoke(
         app,

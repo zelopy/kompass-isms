@@ -28,6 +28,7 @@ from botocore.config import Config
 from botocore.exceptions import (
     BotoCoreError,
     ClientError,
+    ConfigParseError,
     EndpointConnectionError,
     NoCredentialsError,
     ProfileNotFound,
@@ -171,6 +172,8 @@ def open_scan(
         home_region = session.region_name
     except ProfileNotFound as exc:
         raise SessionError(f"AWS 프로필을 찾을 수 없습니다: {profile}") from exc
+    except ConfigParseError as exc:
+        raise SessionError(_unparsable(exc)) from exc
 
     if not home_region:
         raise SessionError(
@@ -179,6 +182,9 @@ def open_scan(
 
     try:
         identity = session.client("sts", region_name=home_region).get_caller_identity()
+    except ConfigParseError as exc:
+        # credentials 파일은 자격증명을 찾을 때 읽힐 수 있다
+        raise SessionError(_unparsable(exc)) from exc
     except NoCredentialsError as exc:
         raise SessionError(f"AWS 자격증명을 찾을 수 없습니다 (프로필: {profile})") from exc
     except EndpointConnectionError as exc:
@@ -232,6 +238,18 @@ def _probe_regions(session: Any, regions: Sequence[str]) -> dict[str, str | None
     clients = [session.client("ec2", region_name=region) for region in unique]
     with ThreadPoolExecutor(max_workers=_PROBE_WORKERS) as pool:
         return dict(zip(unique, pool.map(region_denial, clients), strict=True))
+
+
+def _unparsable(exc: ConfigParseError) -> str:
+    """AWS 설정 파일(config·credentials)을 해석하지 못했을 때의 안내.
+
+    흔한 원인은 파일 생성 명령까지 붙여 넣은 경우와 PowerShell 5.1이 UTF-16으로 저장한 경우다.
+    """
+    path = exc.kwargs.get("path", "(경로 모름)")
+    return (
+        f"AWS 설정 파일을 읽을 수 없습니다: {path}. 파일이 [프로필 이름] 줄로 시작하고 "
+        "그 아래가 '키 = 값' 줄인지, 인코딩이 UTF-8 또는 ASCII인지 확인해 주십시오"
+    )
 
 
 def _unreachable(home_region: str) -> str:
